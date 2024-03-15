@@ -30,6 +30,7 @@ body {
     justify-content: flex-start;
     height: 80vh;
     flex-direction: column;
+    margin: 0;
 }
 
 header {
