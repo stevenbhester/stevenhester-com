@@ -205,6 +205,19 @@ header {
     align-items: center;
 }
 
+.venn {
+    position: relative;
+    z-index: 3;
+    color: #333;
+    text-align: center;
+    margin-left: 15%;
+    margin-right: 15%;
+    margin-top: 1vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .hero-content h1 {
     font-family: 'Blanka', 'Cabin Sketch';
     font-size: 5em;
