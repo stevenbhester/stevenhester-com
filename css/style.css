@@ -190,6 +190,7 @@ header {
     bottom: 0;
     background: rgba(0, 0, 0, 0.6); /* Semi-transparent white overlay */
     z-index: 2;
+    min-height: 200vh;
 }
 
 .hero-content {
