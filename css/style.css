@@ -13,6 +13,13 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: Leoscar Sans Serif;
+    src: url("../../fonts/Leoscar Sans Serif.ttf") format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
 
 
 
@@ -67,7 +74,7 @@ header {
     display: flex;
     align-items: center;
     font-weight: bold;
-    font-family: 'Cabin Sketch';
+    font-family: 'Leoscar Sans Serif';
 }
 
 .header-logo {
@@ -180,7 +187,7 @@ header {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.2); /* Semi-transparent white overlay */
+    background: rgba(0, 0, 0, 0.6); /* Semi-transparent white overlay */
     z-index: 2;
 }
 
