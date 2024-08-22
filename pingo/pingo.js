@@ -1,7 +1,4 @@
-
-var threadId = null;
-
-document.getElementById('question-form').addEventListener('submit', function(event) {
+document.getElementById('question-form').addEventListener('submit', async function(event) {
     event.preventDefault();
 
     // Get the user's question
@@ -18,35 +15,40 @@ document.getElementById('question-form').addEventListener('submit', function(eve
     userMessage.textContent = userInput;
     conversation.appendChild(userMessage);
 
-    // Simulate a bot response (you would replace this with an actual API call)
-    setTimeout(function() {
-        const botResponse = document.createElement('div');
-        botResponse.classList.add('message', 'bot-message');
-        botResponse.textContent = getBotResponse(userInput);
-        conversation.appendChild(botResponse);
+    // Fetch the bot's response
+    const botResponseText = await getBotResponse(userInput);
+    const botResponse = document.createElement('div');
+    botResponse.classList.add('message', 'bot-message');
+    botResponse.textContent = botResponseText;
+    conversation.appendChild(botResponse);
 
-        // Scroll to the bottom of the chat box
-        conversation.scrollTop = conversation.scrollHeight;
-    }, 500);
+    // Scroll to the bottom of the chat box
+    conversation.scrollTop = conversation.scrollHeight;
 });
 
-// placeholder for gpt api hookup (through heroku?)
-function getBotResponse(question) {
-  var threadExists = false;
-  try {
-    const response = await fetch("https://music-grid-io-42616e204fd3.herokuapp.com/fetch-ai-weddingresponse", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, threadExists, threadId  })
-    });
-    const data = await response.json();
-    console.dir(data);
-    threadId = data.threadId;
-    let response = data.msg.content.trim();
-    console.log(response);
-    return response;
-  } catch (error) {
-    console.error("Error generating response: ", error.message);
-    return "AI Error, Not Talking To You Now";
-  }
+let threadExists = false;
+let threadId = null;
+
+async function getBotResponse(question) {
+    try {
+        const response = await fetch("https://music-grid-io-42616e204fd3.herokuapp.com/fetch-ai-weddingresponse", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question, threadExists, threadId })
+        });
+        const data = await response.json();
+        console.dir(data);
+        threadId = data.threadId;
+        threadExists = !!threadId;
+        return data.msg.content.trim();
+    } catch (error) {
+        console.error("AI got pissed: ", error.message);
+        return "AI refuses to speak with the unworthy, go reflect on your crimes. ";
+    }
 }
+
+
+
+
+
+
