@@ -1,3 +1,6 @@
+
+var threadId = null;
+
 document.getElementById('question-form').addEventListener('submit', function(event) {
     event.preventDefault();
 
@@ -29,15 +32,17 @@ document.getElementById('question-form').addEventListener('submit', function(eve
 
 // placeholder for gpt api hookup (through heroku?)
 function getBotResponse(question) {
+  var threadExists = false;
   try {
     const response = await fetch("https://music-grid-io-42616e204fd3.herokuapp.com/fetch-ai-weddingresponse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: question })
+      body: JSON.stringify({ question, threadExists, threadId  })
     });
     const data = await response.json();
     console.dir(data);
-    let response = data.message.content.trim();
+    threadId = data.threadId;
+    let response = data.msg.content.trim();
     console.log(response);
     return response;
   } catch (error) {
