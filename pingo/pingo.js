@@ -29,5 +29,19 @@ document.getElementById('question-form').addEventListener('submit', function(eve
 
 // placeholder for gpt api hookup (through heroku?)
 function getBotResponse(question) {
-    return "PINGBOT KNOWS ALL, DO NOT ASK IT " + question;
+  try {
+    const response = await fetch("https://music-grid-io-42616e204fd3.herokuapp.com/fetch-ai-weddingresponse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: question })
+    });
+    const data = await response.json();
+    console.dir(data);
+    let response = data.message.content.trim();
+    console.log(response);
+    return response;
+  } catch (error) {
+    console.error("Error generating response: ", error.message);
+    return "AI Error, Not Talking To You Now";
+  }
 }
