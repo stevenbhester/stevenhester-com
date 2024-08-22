@@ -40,7 +40,7 @@ async function getBotResponse(question) {
         console.dir(data);
         threadId = data.threadId;
         threadExists = !!threadId;
-        return data.msg.content.trim();
+        return data.msg.trim();
     } catch (error) {
         console.error("AI got pissed: ", error.message);
         return "AI refuses to speak with the unworthy, go reflect on your crimes. ";
