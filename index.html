@@ -174,7 +174,8 @@
     font-weight: 450;
     color: var(--on-cobalt-soft);
   }
-  .hero-links { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+  .hero-links { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 24px; }
+  .hero-links .hero-link { line-height: 44px; }
   .hero-link {
     display: inline-block;
     font-size: 18px;
@@ -200,6 +201,14 @@
   }
   .shuffle:hover { transform: translateY(2px); box-shadow: 0 2px 0 var(--sun-deep); }
   .shuffle:active { transform: translateY(4px); box-shadow: 0 0 0 var(--sun-deep); }
+
+  .shuffle-wrap { display: grid; gap: 10px; justify-items: start; }
+  .tally b { font-weight: 750; color: var(--on-cobalt); font-variant-numeric: tabular-nums; display: inline-block; }
+  .tally.small { font-size: 14px; color: var(--on-cobalt-soft); }
+  @media (prefers-reduced-motion: no-preference) {
+    .tally b.bump { animation: bump 0.25s cubic-bezier(0.3, 0.8, 0.3, 1.6); }
+    @keyframes bump { 50% { transform: scale(1.25); color: var(--sun); } }
+  }
 
   /* Confetti bits spawned when a tile is clicked */
   .bit {
@@ -567,10 +576,13 @@
       </span>
     </h1>
     <div class="hero-row">
-      <p class="role">I work on insights, strategy, and growth at Riot&nbsp;Games. On the side, I build small games. The letters up there are clickable, for no reason.</p>
+      <p class="role">I work on insights, strategy, and growth at Riot&nbsp;Games. On the side, I build small games. The letters up there are clickable, for no reason.<span class="tally" id="letterTally" hidden> People have clicked them <b id="letterCount">0</b> times.</span></p>
       <div class="hero-links">
-        <button class="shuffle" type="button" id="shuffle">Shuffle my name</button>
-        <a class="hero-link" href="https://www.linkedin.com/in/stevenbradyhester">Find me on LinkedIn</a>
+        <div class="shuffle-wrap">
+          <button class="shuffle" type="button" id="shuffle">Shuffle my name</button>
+          <span class="tally small" id="shuffleTally" hidden>Shuffled <b id="shuffleCount">0</b> times so far</span>
+        </div>
+        <a class="hero-link" href="https://www.linkedin.com/in/stevenbradyhester" data-track="linkedin">Find me on LinkedIn</a>
       </div>
     </div>
   </div>
@@ -590,8 +602,8 @@
           <h3>MusicGrid</h3>
           <p>A daily music trivia game. Fill each square with a song that fits both its artist and its category, or sign in with Spotify to build a grid of your own.</p>
           <div class="actions">
-            <a class="btn" href="https://musicgrid.stevenhester.com/">Play today's grid</a>
-            <a class="link" href="https://musicgrid.stevenhester.com/grid-builder/">Build your own grid</a>
+            <a class="btn" href="https://musicgrid.stevenhester.com/" data-track="musicgrid-play">Play today's grid</a>
+            <a class="link" href="https://musicgrid.stevenhester.com/grid-builder/" data-track="musicgrid-builder">Build your own grid</a>
           </div>
         </div>
 
@@ -626,7 +638,7 @@
           <h3>Trickle Down <span class="sticker">in beta</span></h3>
           <p>A daily trading game that is also a joke about trading. Every day you get $100 of fake money to put into real stocks and crypto. Returns are amplified ten times, because this is a game and not advice. Profits get taxed, the taxes hire lobbyists for charities, and the site's real ad money follows the lobbyists. It's in beta, which means some things are broken on purpose and some by accident.</p>
           <div class="actions">
-            <a class="btn sun" href="https://trickledown.stevenhester.com/">Try the beta</a>
+            <a class="btn sun" href="https://trickledown.stevenhester.com/" data-track="trickledown-beta">Try the beta</a>
           </div>
         </div>
 
@@ -658,7 +670,7 @@
   <section class="quiz" id="quiz">
     <div class="wrap">
       <h2>How well do you know Steven?</h2>
-      <p class="quiz-intro"><span id="count">Fourteen</span> questions. No prizes. Your score isn't saved anywhere, but you'll remember it.</p>
+      <p class="quiz-intro"><span id="count">Fourteen</span> questions. No prizes, and nothing to sign up for.</p>
 
       <div class="board" id="board" aria-live="polite">
         <div class="board-top">
@@ -698,8 +710,103 @@
     ['TEEMO', '▼ BANNED', 'down'],
   ];
   const tape = document.getElementById("tape");
-  const tapeHTML = tapeItems.map(([t, v, c]) => `<span>${t} <span class="${c}">${v}</span></span>`).join("");
-  tape.innerHTML = tapeHTML + tapeHTML; /* doubled so the loop is seamless */
+  function buildTape() {
+    const html = tapeItems.map(([t, v, c, live]) =>
+      `<span>${t} <span class="${c}"${live ? ` data-live="${live}"` : ""}>${v}</span></span>`).join("");
+    tape.innerHTML = html + html; /* doubled so the loop is seamless */
+  }
+  buildTape();
+
+  /* ---------- Counters and visit stats ----------
+     Letter clicks and shuffles feed the public counters. Events are also
+     logged for the private stats page, under a random id kept in this
+     browser: no cookies, no names, and the server never stores IPs.
+     Events are batched and sent every couple of seconds. */
+  const API = "https://music-grid-io-42616e204fd3.herokuapp.com";
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+  const ID_OK = /^(me-)?[A-Za-z0-9-]{8,64}$/;
+  let visitor = store.get("sh:visitor");
+  if (!visitor || !ID_OK.test(visitor)) {
+    visitor = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+    store.set("sh:visitor", visitor);
+  }
+  /* The stats page can mark a browser as Steven's own, so it's left out of the stats. */
+  const sentAs = store.get("sh:me") === "1" ? "me-" + visitor.replace(/^me-/, "") : visitor.replace(/^me-/, "");
+
+  const queue = new Map();
+  let flushTimer = null;
+  function track(e, t = null, v) {
+    const key = v === undefined ? `${e}|${t}` : `${e}|${t}|${queue.size}`; /* events with a value never merge */
+    const item = queue.get(key);
+    if (item) item.n += 1; else queue.set(key, { e, t, n: 1, v });
+    if (queue.size >= 40) flush();
+    else if (!flushTimer) flushTimer = setTimeout(flush, 2000);
+  }
+  function queued(e) {
+    let n = 0;
+    for (const item of queue.values()) if (item.e === e) n += item.n;
+    return n;
+  }
+  function flush(closing) {
+    clearTimeout(flushTimer); flushTimer = null;
+    if (!queue.size) return;
+    const body = JSON.stringify({ visitor: sentAs, events: [...queue.values()] });
+    queue.clear();
+    if (closing && navigator.sendBeacon) {
+      navigator.sendBeacon(`${API}/site/events`, new Blob([body], { type: "text/plain" }));
+      return;
+    }
+    fetch(`${API}/site/events`, { method: "POST", body, keepalive: true, headers: { "Content-Type": "text/plain" } })
+      .then(r => r.ok ? r.json() : null)
+      .then(c => c && showCounts(c))
+      .catch(() => {});
+  }
+  addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(true); });
+  addEventListener("pagehide", () => flush(true));
+
+  /* Public tallies. They only appear once the real numbers have loaded, and never count down. */
+  const shown = { letters: null, shuffles: null };
+  const fmt = n => n.toLocaleString("en-US");
+  function paint(name, bump) {
+    const el = document.getElementById(name === "letters" ? "letterCount" : "shuffleCount");
+    el.textContent = fmt(shown[name]);
+    document.getElementById(name === "letters" ? "letterTally" : "shuffleTally").hidden = false;
+    tape.querySelectorAll(`[data-live="${name}"]`).forEach(x => x.textContent = "▲ " + fmt(shown[name]));
+    if (bump) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+  }
+  function showCounts(c) {
+    if (typeof c.letters !== "number" || typeof c.shuffles !== "number") return;
+    const first = shown.letters === null;
+    shown.letters = Math.max(shown.letters ?? 0, c.letters + queued("letter"));
+    shown.shuffles = Math.max(shown.shuffles ?? 0, c.shuffles + queued("shuffle"));
+    if (first) {
+      tapeItems.splice(1, 0,
+        ["LETTERS CLICKED", "", "up", "letters"],
+        ["NAME SHUFFLES", "", "up", "shuffles"]);
+      buildTape();
+    }
+    paint("letters"); paint("shuffles");
+  }
+  function countLocally(name) {
+    if (shown[name] === null) return;
+    shown[name] += 1;
+    paint(name, true);
+  }
+
+  let from = "";
+  try { from = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : ""; } catch {}
+  if (from === location.hostname.replace(/^www\./, "")) from = "";
+  track("visit", from);
+  flush();
+  fetch(`${API}/site/counters`).then(r => r.ok ? r.json() : null).then(c => c && showCounts(c)).catch(() => {});
+
+  document.addEventListener("click", e => {
+    const a = e.target.closest("a[data-track]");
+    if (a) { track("link", a.dataset.track); flush(true); }
+  });
 
   /* ---------- Hero tiles: click to spin and spray, shuffle to scramble ---------- */
   const nameBoard = document.getElementById("name");
@@ -729,6 +836,8 @@
       t.classList.toggle("sun");
       t.classList.remove("spin"); void t.offsetWidth; t.classList.add("spin");
       spray(e.clientX, e.clientY);
+      track("letter", t.textContent);
+      countLocally("letters");
     });
   });
 
@@ -744,6 +853,8 @@
     }
     shuffled = !shuffled;
     shuffleBtn.textContent = shuffled ? "Put it back" : "Shuffle my name";
+    track(shuffled ? "shuffle" : "unshuffle");
+    if (shuffled) countLocally("shuffles");
     if (reduceMotion) return;
     tiles.forEach((t, i) => {
       const after = t.getBoundingClientRect();
@@ -757,7 +868,7 @@
 
   /* ---------- Coin flip on tap (hover handles mouse) ---------- */
   const coin = document.getElementById("coin");
-  coin.addEventListener("click", () => coin.classList.toggle("flipped"));
+  coin.addEventListener("click", () => { coin.classList.toggle("flipped"); track("coin"); });
 
   /* ---------- Quiz ----------
      Edit QUESTIONS freely. Types:
@@ -840,7 +951,7 @@
       <p class="kind">Multiple choice, yes-or-no, and two truths and a lie. All about one guy.</p>
       <p class="q">Ready?</p>
       <div class="actions"><button class="btn" type="button" id="go">Start the quiz</button></div>`;
-    document.getElementById("go").addEventListener("click", ask);
+    document.getElementById("go").addEventListener("click", () => { track("quiz_start"); ask(); });
   }
 
   function kindLabel(qd) {
@@ -900,6 +1011,7 @@
     else got = +v === qd.a ? 1 : 0;
 
     results[i] = got; score += got;
+    track("quiz_answer", `${i + 1}. ${qd.q}`.slice(0, 150), got);
     renderPips(); renderScore();
 
     stage.querySelectorAll(".opt").forEach(b => {
@@ -925,6 +1037,7 @@
   function finish() {
     renderPips();
     const tier = [...TIERS].reverse().find(t => score / QUESTIONS.length >= t[0]);
+    track("quiz_finish", null, score);
     const emoji = results.map(r => r === 1 ? "🟨" : r === 0.5 ? "🟦" : "⬜").join("");
     const shareText = `How well do I know Steven? ${score}/${QUESTIONS.length}\n${emoji}\nstevenhester.com`;
     stage.innerHTML = `
@@ -940,11 +1053,12 @@
       </div>`;
     const copy = document.getElementById("copy");
     copy.addEventListener("click", async () => {
+      track("quiz_copy");
       try { await navigator.clipboard.writeText(shareText); copy.textContent = "Copied"; }
       catch { copy.textContent = "Couldn't copy, sorry"; }
       setTimeout(() => copy.textContent = "Copy my result", 1800);
     });
-    document.getElementById("again").addEventListener("click", start);
+    document.getElementById("again").addEventListener("click", () => { track("quiz_again"); start(); });
     const r = stage.getBoundingClientRect();
     spray(r.left + r.width / 2, r.top + 40, score >= 10 ? 40 : 18);
   }
