@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Site stats</title>
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cobalt: #1f35c7;
+    --cobalt-deep: #13219a;
+    --paper: #f4f5fa;
+    --surface: #ffffff;
+    --ink: #12152b;
+    --muted: #535a7b;
+    --line: #d7dbe8;
+    --grid: #e6e8f0;
+    --sun: #ffcf3f;
+    --sun-deep: #d9a400;
+    --sun-ink: #2b2200;
+    --bar: #1f35c7;
+    --bad: #c62828;
+    --gutter: clamp(16px, 4vw, 48px);
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0e1124;
+      --surface: #171b36;
+      --ink: #eceef8;
+      --muted: #a3a8c8;
+      --line: #2b3054;
+      --grid: #232848;
+      --bar: #6f7ff5;
+      --bad: #ff8a80;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; border-radius: 6px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px var(--gutter) 64px; }
+  h1 { margin: 0; font-size: clamp(28px, 4vw, 40px); font-weight: 850; font-stretch: 115%; letter-spacing: -0.02em; line-height: 1; }
+  h2 { margin: 0 0 14px; font-size: 20px; font-weight: 750; font-stretch: 106%; }
+  .muted { color: var(--muted); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px;
+    background: var(--cobalt); color: #fff; font-weight: 650; cursor: pointer;
+    box-shadow: 0 4px 0 var(--cobalt-deep);
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--cobalt-deep); }
+  .btn.quiet { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
+
+  /* Sign-in */
+  .gate { max-width: 420px; margin: 12vh auto 0; }
+  .gate h1 { margin-bottom: 10px; }
+  .gate p { margin: 0 0 20px; }
+  .gate label { display: block; font-weight: 650; margin-bottom: 6px; }
+  .gate input[type="password"] {
+    width: 100%; min-height: 48px; padding: 0 14px; margin-bottom: 14px;
+    border: 2px solid var(--line); border-radius: 10px; background: var(--surface);
+  }
+  .check { display: flex; gap: 10px; align-items: center; margin: 0 0 18px; }
+  .check input { width: 18px; height: 18px; accent-color: var(--cobalt); }
+  .error { color: var(--bad); font-weight: 600; min-height: 1.5em; margin: 12px 0 0; }
+
+  /* Dashboard */
+  .top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 24px; margin-bottom: 28px; }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+  .controls select { min-height: 44px; padding: 0 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); }
+  .controls .check { margin: 0; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .tile b { display: block; font-size: 32px; font-weight: 850; font-stretch: 112%; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .tile span { font-size: 14px; color: var(--muted); }
+  .tile.sun { background: var(--sun); border-color: var(--sun-deep); color: var(--sun-ink); }
+  .tile.sun span { color: var(--sun-ink); opacity: 0.8; }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 14px; margin-bottom: 20px; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .two .panel { margin-bottom: 0; }
+  @media (min-width: 820px) { .two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .two + .panel, .panel + .two { margin-top: 20px; }
+
+  .chart { position: relative; }
+  .chart { min-height: 220px; }
+  .chart svg { display: block; overflow: visible; }
+  .chart .gridline { stroke: var(--grid); stroke-width: 1; }
+  .chart .axis { fill: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .chart .bar { fill: var(--bar); }
+  .chart .hit { fill: transparent; cursor: default; }
+  .chart .hit:hover + .bar, .chart .hit:focus + .bar { fill: var(--sun-deep); }
+  .tip {
+    position: absolute; pointer-events: none; z-index: 2;
+    background: var(--ink); color: var(--paper); border-radius: 8px;
+    padding: 6px 10px; font-size: 13px; line-height: 1.35; white-space: nowrap;
+    transform: translate(-50%, calc(-100% - 8px));
+  }
+  .tip[hidden] { display: none; }
+  details { margin-top: 10px; font-size: 14px; }
+  summary { cursor: pointer; color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; font-size: 13px; font-weight: 650; color: var(--muted); padding: 0 8px 8px 0; border-bottom: 1px solid var(--line); }
+  td { padding: 8px 8px 8px 0; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-right: 0; padding-left: 12px; }
+  tr:last-child td { border-bottom: 0; }
+  .meter { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .meter i { display: block; height: 8px; width: 72px; border-radius: 4px; background: var(--grid); overflow: hidden; }
+  .meter i::before { content: ""; display: block; height: 100%; width: var(--p); background: var(--bar); border-radius: 4px; }
+  .meter span { min-width: 5ch; text-align: right; }
+  @media (max-width: 560px) { .meter i { display: none; } }
+  .empty { color: var(--muted); margin: 4px 0 8px; }
+  .quizline { margin: 0 0 14px; }
+  .quizline b { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main class="wrap" id="app"></main>
+
+<script>
+  const API = "https://music-grid-io-42616e204fd3.herokuapp.com";
+  const app = document.getElementById("app");
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    del(k) { try { localStorage.removeItem(k); } catch {} },
+  };
+  let key = store.get("sh:adminKey") || "";
+  let days = Number(store.get("sh:statsDays")) || 30;
+
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fmt = n => Number(n || 0).toLocaleString("en-US");
+  const EVENT_NAMES = {
+    letter: "Letter in my name", shuffle: "Shuffle my name", unshuffle: "Put my name back",
+    coin: "Trickle Down coin", link: "Link", quiz_start: "Started the quiz", quiz_finish: "Finished the quiz",
+    quiz_copy: "Copied a quiz result", quiz_again: "Played the quiz again",
+  };
+  const LINK_NAMES = {
+    linkedin: "LinkedIn", "musicgrid-play": "MusicGrid: play today's grid",
+    "musicgrid-builder": "MusicGrid: build a grid", "trickledown-beta": "Trickle Down: try the beta",
+  };
+
+  function gate(message = "") {
+    app.innerHTML = `
+      <form class="gate" id="gate">
+        <h1>Site stats</h1>
+        <p class="muted">Use the ADMIN_KEY from the MusicGrid Heroku app.</p>
+        <label for="key">Admin key</label>
+        <input type="password" id="key" autocomplete="current-password" required>
+        <label class="check"><input type="checkbox" id="remember" checked> Remember the key on this browser</label>
+        <label class="check"><input type="checkbox" id="me" ${store.get("sh:me") === "0" ? "" : "checked"}> Leave this browser out of the stats</label>
+        <button class="btn" type="submit">Show stats</button>
+        <p class="error" role="alert">${esc(message)}</p>
+      </form>`;
+    document.getElementById("key").focus();
+    document.getElementById("gate").addEventListener("submit", e => {
+      e.preventDefault();
+      key = document.getElementById("key").value.trim();
+      if (document.getElementById("remember").checked) store.set("sh:adminKey", key); else store.del("sh:adminKey");
+      store.set("sh:me", document.getElementById("me").checked ? "1" : "0");
+      load();
+    });
+  }
+
+  async function load() {
+    if (!key) return gate();
+    app.innerHTML = `<p class="muted">Loading stats…</p>`;
+    let res;
+    try {
+      res = await fetch(`${API}/site/stats?days=${days}`, { headers: { "x-admin-key": key } });
+    } catch {
+      return gate("Couldn't reach the MusicGrid server. If it was asleep, try again in a few seconds.");
+    }
+    if (res.status === 401) { store.del("sh:adminKey"); key = ""; return gate("That key didn't work. Check ADMIN_KEY in the MusicGrid Heroku config vars."); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return gate(data.error || `The server answered with an error (${res.status}).`);
+    render(data);
+  }
+
+  function fillDays(rows) {
+    const byDay = new Map(rows.map(r => [r.day, r]));
+    const out = [];
+    const end = new Date();
+    for (let k = days - 1; k >= 0; k--) {
+      const d = new Date(end); d.setDate(end.getDate() - k);
+      const id = d.toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+      out.push(byDay.get(id) || { day: id, people: 0, visits: 0 });
+    }
+    return out;
+  }
+  const shortDate = id => new Date(id + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+  let chartY = () => 0;
+  function chart(rows, W) {
+    const H = 220, L = 36, B = 24, T = 8;
+    const max = Math.max(1, ...rows.map(r => r.people));
+    const step = max <= 5 ? 1 : Math.ceil(max / 4 / 5) * 5;
+    const top = Math.ceil(max / step) * step;
+    const y = v => T + (H - T - B) * (1 - v / top);
+    chartY = y;
+    const slot = (W - L) / rows.length;
+    const gap = Math.min(2 + slot * 0.2, 8);
+    const bw = Math.max(1, slot - gap);
+    const r = Math.min(4, bw / 2);
+    let grid = "";
+    for (let v = 0; v <= top; v += step) {
+      grid += `<line class="gridline" x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${fmt(v)}</text>`;
+    }
+    const labelAt = new Set(W < 480 ? [0, rows.length - 1] : [0, Math.floor((rows.length - 1) / 2), rows.length - 1]);
+    let bars = "";
+    rows.forEach((row, k) => {
+      const x = L + k * slot + gap / 2;
+      const h = y(0) - y(row.people);
+      const path = h <= 0 ? "" : h < r
+        ? `M${x},${y(0)} h${bw} v${-h} h${-bw} Z`
+        : `M${x},${y(0)} v${-(h - r)} q0,${-r} ${r},${-r} h${bw - 2 * r} q${r},0 ${r},${r} v${h - r} Z`;
+      bars += `<rect class="hit" x="${L + k * slot}" y="${T}" width="${slot}" height="${H - T - B}" tabindex="0" data-k="${k}"
+                 aria-label="${shortDate(row.day)}: ${row.people} people, ${row.visits} visits"></rect>
+               <path class="bar" d="${path}"/>`;
+      if (labelAt.has(k)) bars += `<text class="axis" x="${x + bw / 2}" y="${H - 6}" text-anchor="${k === 0 ? "start" : k === rows.length - 1 ? "end" : "middle"}">${shortDate(row.day)}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="People per day over the last ${days} days">${grid}${bars}</svg><div class="tip" hidden></div>`;
+  }
+
+  function table(head, rows, empty) {
+    if (!rows.length) return `<p class="empty">${empty}</p>`;
+    return `<table><thead><tr>${head.map(h => `<th class="${h.num ? "num" : ""}">${h.label}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map(r => `<tr>${r.map((c, k) => `<td class="${head[k].num ? "num" : ""}">${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  }
+
+  function render(d) {
+    const v = d.visitors, q = d.quiz;
+    const rows = fillDays(d.daily);
+    const since = v.first_seen ? new Date(v.first_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
+    const clickRows = d.clicks.map(c => [
+      esc(EVENT_NAMES[c.event] || c.event) + (c.event === "link" ? `: ${esc(LINK_NAMES[c.target] || c.target)}` : c.event === "letter" ? ` (${esc(c.target)})` : ""),
+      fmt(c.clicks), fmt(c.people)]);
+    const sourceRows = d.sources.map(s => [s.source === "direct" ? "Typed in, or no referrer" : esc(s.source), fmt(s.visits), fmt(s.people)]);
+    const questionRows = q.questions.map(x => [esc(x.question), fmt(x.answers),
+      `<span class="meter"><i style="--p:${x.percent_right}%"></i><span>${x.percent_right}%</span></span>`]);
+
+    app.innerHTML = `
+      <div class="top">
+        <div>
+          <h1>Site stats</h1>
+          <p class="muted" style="margin:8px 0 0">${since ? `Counting since ${since}.` : "Nobody has visited yet."} Your own browser ${store.get("sh:me") === "1" ? "is left out" : "is included"}.</p>
+        </div>
+        <div class="controls">
+          <select id="days" aria-label="Date range">
+            ${[7, 30, 90, 365].map(n => `<option value="${n}" ${n === days ? "selected" : ""}>Last ${n} days</option>`).join("")}
+          </select>
+          <label class="check"><input type="checkbox" id="me" ${store.get("sh:me") === "1" ? "checked" : ""}> Leave this browser out</label>
+          <button class="btn quiet" type="button" id="out">Forget key</button>
+        </div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><b>${fmt(v.last_day)}</b><span>people, last 24 hours</span></div>
+        <div class="tile"><b>${fmt(v.last_week)}</b><span>people, last 7 days</span></div>
+        <div class="tile"><b>${fmt(v.in_range)}</b><span>people, last ${days} days</span></div>
+        <div class="tile"><b>${fmt(v.returning_in_range)}</b><span>came back on another day</span></div>
+        <div class="tile"><b>${fmt(v.all_time)}</b><span>people, all time</span></div>
+        <div class="tile sun"><b>${fmt(d.counters.letters)}</b><span>letter clicks, public</span></div>
+        <div class="tile sun"><b>${fmt(d.counters.shuffles)}</b><span>name shuffles, public</span></div>
+      </div>
+
+      <section class="panel">
+        <h2>People per day</h2>
+        <div class="chart" id="chart"></div>
+        <details><summary>Show as a table</summary>
+          ${table([{ label: "Day" }, { label: "People", num: true }, { label: "Visits", num: true }],
+            rows.slice().reverse().map(r => [shortDate(r.day), fmt(r.people), fmt(r.visits)]), "")}
+        </details>
+      </section>
+
+      <div class="two">
+        <section class="panel">
+          <h2>What people clicked</h2>
+          ${table([{ label: "Element" }, { label: "Clicks", num: true }, { label: "People", num: true }], clickRows, "No clicks yet in this range.")}
+        </section>
+        <section class="panel">
+          <h2>Where visits came from</h2>
+          ${table([{ label: "Source" }, { label: "Visits", num: true }, { label: "People", num: true }], sourceRows, "No visits yet in this range.")}
+        </section>
+      </div>
+
+      <section class="panel">
+        <h2>The quiz</h2>
+        <p class="quizline">${fmt(q.people_started)} ${q.people_started === 1 ? "person" : "people"} started it and ${fmt(q.people_finished)} finished${q.finishes ? `, with an average score of <b>${q.average_score}</b>` : ""}.</p>
+        ${table([{ label: "Question" }, { label: "Answers", num: true }, { label: "Got it right", num: true }], questionRows, "No answers yet in this range.")}
+      </section>`;
+
+    document.getElementById("days").addEventListener("change", e => { days = Number(e.target.value); store.set("sh:statsDays", days); load(); });
+    document.getElementById("me").addEventListener("change", e => { store.set("sh:me", e.target.checked ? "1" : "0"); render(d); });
+    document.getElementById("out").addEventListener("click", () => { store.del("sh:adminKey"); key = ""; gate(); });
+
+    const box = document.getElementById("chart");
+    function draw() {
+      box.innerHTML = chart(rows, Math.max(280, Math.floor(box.clientWidth)));
+      const tip = box.querySelector(".tip");
+      const show = el => {
+        const row = rows[+el.dataset.k];
+        const b = el.getBoundingClientRect(), c = box.getBoundingClientRect();
+        tip.innerHTML = `<b>${shortDate(row.day)}</b><br>${fmt(row.people)} ${row.people === 1 ? "person" : "people"}, ${fmt(row.visits)} ${row.visits === 1 ? "visit" : "visits"}`;
+        tip.style.left = `${Math.min(Math.max(b.left - c.left + b.width / 2, 70), c.width - 70)}px`;
+        tip.style.top = `${chartY(row.people)}px`;
+        tip.hidden = false;
+      };
+      box.querySelectorAll(".hit").forEach(el => {
+        el.addEventListener("mouseenter", () => show(el));
+        el.addEventListener("focus", () => show(el));
+        el.addEventListener("mouseleave", () => tip.hidden = true);
+        el.addEventListener("blur", () => tip.hidden = true);
+      });
+    }
+    draw();
+    clearTimeout(window.redraw);
+    window.onresize = () => { clearTimeout(window.redraw); window.redraw = setTimeout(draw, 150); };
+  }
+
+  load();
+</script>
+</body>
+</html>
