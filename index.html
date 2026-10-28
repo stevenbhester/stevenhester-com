@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steven Hester</title>
-<meta name="description" content="Steven Hester works on insights, strategy, and growth at Riot Games, and builds small games like MusicGrid.">
+<meta name="description" content="Steven Hester works on insights, strategy, and growth at Riot Games, and builds small games like MusicGrid and Trickle Down. Take the quiz to find out how well you know him.">
 <meta name="theme-color" content="#1f35c7">
 <meta property="og:title" content="Steven Hester">
-<meta property="og:description" content="Insights, strategy, and growth at Riot Games.">
+<meta property="og:description" content="Insights, strategy, and growth at Riot Games. Small games on the side. One quiz about Steven.">
 <meta property="og:url" content="https://www.stevenhester.com/">
 <meta property="og:type" content="website">
 <link rel="icon" href="img/shester-logo.png">
@@ -18,8 +18,9 @@
   :root {
     --cobalt: #1f35c7;
     --cobalt-deep: #13219a;
+    --cobalt-soft: #dfe4ff;
     --on-cobalt: #ffffff;
-    --on-cobalt-soft: rgba(255, 255, 255, 0.8);
+    --on-cobalt-soft: rgba(255, 255, 255, 0.82);
     --tile: #f4f5fa;
     --paper: #f4f5fa;
     --surface: #ffffff;
@@ -29,6 +30,8 @@
     --sun: #ffcf3f;
     --sun-deep: #d9a400;
     --sun-ink: #2b2200;
+    --up: #35d07f;
+    --down: #ff6b6b;
     --gutter: clamp(16px, 5vw, 64px);
     --max: 1120px;
     color-scheme: light dark;
@@ -40,11 +43,12 @@
       --ink: #eceef8;
       --muted: #a3a8c8;
       --line: #2b3054;
+      --cobalt-soft: #1b2460;
     }
   }
 
   *, *::before, *::after { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     margin: 0;
     background: var(--paper);
@@ -53,8 +57,10 @@
     font-size: 17px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
   a { color: inherit; }
+  button { font: inherit; color: inherit; }
   :focus-visible { outline: 3px solid var(--focus, var(--cobalt)); outline-offset: 3px; border-radius: 6px; }
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -62,13 +68,62 @@
   }
   .wrap { max-width: var(--max); margin: 0 auto; }
 
+  /* ---------- Shared pieces: buttons, links, tile-shaped things ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 24px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--cobalt);
+    color: #fff;
+    font-weight: 650;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--cobalt-deep);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--cobalt-deep); }
+  .btn:active { transform: translateY(5px); box-shadow: 0 0 0 var(--cobalt-deep); }
+  .btn.sun { background: var(--sun); color: var(--sun-ink); box-shadow: 0 5px 0 var(--sun-deep); }
+  .btn.sun:hover { box-shadow: 0 3px 0 var(--sun-deep); }
+  .btn.sun:active { box-shadow: 0 0 0 var(--sun-deep); }
+  .btn.ghost {
+    background: transparent;
+    color: inherit;
+    box-shadow: inset 0 0 0 2px var(--line);
+  }
+  .btn.ghost:hover { transform: none; box-shadow: inset 0 0 0 2px var(--muted); }
+  .btn.ghost:active { transform: translateY(2px); }
+  .link {
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-decoration-color: var(--sun);
+    text-underline-offset: 5px;
+  }
+  .link:hover { text-decoration-color: var(--cobalt); }
+
   /* ---------- Hero: the name as a board of letter tiles ---------- */
   .hero {
     --focus: var(--sun);
+    position: relative;
     background: var(--cobalt);
     color: var(--on-cobalt);
     padding: clamp(56px, 11vw, 136px) var(--gutter) clamp(56px, 9vw, 112px);
+    overflow: hidden;
   }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.14) 1.2px, transparent 1.3px);
+    background-size: 22px 22px;
+    pointer-events: none;
+  }
+  .hero > .wrap { position: relative; }
   .hero h1 { margin: 0; }
   .name {
     --g: clamp(5px, 1.1vw, 10px);
@@ -81,6 +136,8 @@
   .tile {
     display: grid;
     place-items: center;
+    padding: 0;
+    border: 0;
     background: var(--tile);
     color: var(--cobalt);
     border-radius: calc(var(--t) * 0.13);
@@ -90,18 +147,34 @@
     font-stretch: 112%;
     line-height: 1;
     user-select: none;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4), background 0.15s ease;
+  }
+  .tile:hover { transform: translateY(-4px) rotate(-3deg); }
+  .tile:active { transform: translateY(2px) scale(0.96); }
+  .tile.sun { background: var(--sun); color: var(--sun-ink); box-shadow: 0 calc(var(--t) * 0.07) 0 var(--sun-deep); }
+  .tile.spin { animation: spin 0.6s cubic-bezier(0.3, 0.8, 0.3, 1.2) both; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hero-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px 40px;
+    margin-top: clamp(32px, 4.5vw, 52px);
   }
   .role {
-    margin: clamp(32px, 4.5vw, 52px) 0 0;
-    max-width: 30ch;
+    margin: 0;
+    max-width: 32ch;
     font-size: clamp(19px, 2.3vw, 27px);
     line-height: 1.35;
     font-weight: 450;
     color: var(--on-cobalt-soft);
   }
+  .hero-links { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
   .hero-link {
     display: inline-block;
-    margin-top: 20px;
     font-size: 18px;
     font-weight: 600;
     color: var(--on-cobalt);
@@ -111,9 +184,37 @@
     text-underline-offset: 6px;
   }
   .hero-link:hover { text-decoration-color: var(--on-cobalt); }
+  .shuffle {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--sun);
+    color: var(--sun-ink);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--sun-deep);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .shuffle:hover { transform: translateY(2px); box-shadow: 0 2px 0 var(--sun-deep); }
+  .shuffle:active { transform: translateY(4px); box-shadow: 0 0 0 var(--sun-deep); }
+
+  /* Confetti bits spawned when a tile is clicked */
+  .bit {
+    position: fixed;
+    width: 10px; height: 14px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 50;
+    animation: bit 0.9s cubic-bezier(0.2, 0.7, 0.4, 1) forwards;
+  }
+  @keyframes bit {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+  }
 
   @media (prefers-reduced-motion: no-preference) {
-    .tile {
+    .tile.drop {
       animation: drop 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
       animation-delay: calc(var(--i) * 55ms + 150ms);
     }
@@ -123,9 +224,34 @@
     }
   }
 
+  /* ---------- Ticker tape ---------- */
+  .ticker {
+    overflow: hidden;
+    background: var(--ink);
+    color: var(--sun);
+    font-weight: 700;
+    font-stretch: 108%;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    border-top: 3px solid var(--sun);
+    border-bottom: 3px solid var(--sun);
+  }
+  @media (prefers-color-scheme: dark) { .ticker { background: #05071a; } }
+  .ticker-track { display: inline-flex; padding: 12px 0; }
+  .ticker-track > span { display: inline-block; padding: 0 28px; }
+  .ticker .up { color: var(--up); }
+  .ticker .down { color: var(--down); }
+  .ticker .beta { color: #fff; }
+  @media (prefers-reduced-motion: no-preference) {
+    .ticker-track { animation: tape 42s linear infinite; }
+    .ticker:hover .ticker-track { animation-play-state: paused; }
+    @keyframes tape { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  }
+
   /* ---------- Projects ---------- */
   .projects { padding: clamp(56px, 9vw, 112px) var(--gutter) clamp(48px, 7vw, 88px); }
-  .projects h2 {
+  .projects h2, .quiz h2 {
     margin: 0 0 clamp(28px, 4vw, 48px);
     font-size: clamp(24px, 2.6vw, 30px);
     font-weight: 700;
@@ -138,8 +264,15 @@
     gap: clamp(32px, 5vw, 72px);
     align-items: center;
   }
+  .feature + .feature {
+    margin-top: clamp(64px, 9vw, 120px);
+    padding-top: clamp(48px, 7vw, 88px);
+    border-top: 1px solid var(--line);
+  }
   @media (min-width: 860px) {
     .feature { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+    .feature.flip > div { order: 2; }
+    .feature.flip > figure { order: 1; }
   }
   .feature h3 {
     margin: 0 0 18px;
@@ -151,29 +284,25 @@
   }
   .feature p { margin: 0 0 30px; max-width: 42ch; color: var(--muted); font-size: 18px; }
   .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    min-height: 50px;
-    padding: 0 24px;
-    border-radius: 12px;
-    background: var(--cobalt);
-    color: #fff;
-    font-weight: 650;
-    text-decoration: none;
-    box-shadow: 0 5px 0 var(--cobalt-deep);
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
+
+  /* "In beta" sticker, shaped like one of the name tiles */
+  .sticker {
+    display: inline-grid;
+    place-items: center;
+    vertical-align: 0.35em;
+    margin-left: 0.2em;
+    padding: 0.18em 0.5em;
+    border-radius: 0.22em;
+    background: var(--sun);
+    color: var(--sun-ink);
+    font-size: 0.3em;
+    font-weight: 800;
+    font-stretch: 112%;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    box-shadow: 0 0.14em 0 var(--sun-deep);
+    transform: rotate(-6deg);
   }
-  .btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--cobalt-deep); }
-  .btn:active { transform: translateY(5px); box-shadow: 0 0 0 var(--cobalt-deep); }
-  .link {
-    font-weight: 600;
-    text-decoration: underline;
-    text-decoration-thickness: 3px;
-    text-decoration-color: var(--sun);
-    text-underline-offset: 5px;
-  }
-  .link:hover { text-decoration-color: var(--cobalt); }
 
   /* Sample MusicGrid board */
   .sample { margin: 0; }
@@ -203,7 +332,77 @@
     font-weight: 700;
     box-shadow: 0 4px 0 var(--sun-deep);
   }
-  .sample figcaption { margin-top: 18px; font-size: 14px; color: var(--muted); }
+  .sample figcaption, .coin-fig figcaption { margin-top: 18px; font-size: 14px; color: var(--muted); }
+
+  /* The Trickle Down coin: a pie of today's $100, flips to the other side on hover/tap */
+  .coin-fig { margin: 0; display: grid; justify-items: start; }
+  .coin-scene {
+    --c: clamp(220px, 32vw, 330px);
+    width: var(--c);
+    height: var(--c);
+    perspective: 900px;
+    cursor: pointer;
+    border: 0;
+    padding: 0;
+    background: none;
+    border-radius: 50%;
+  }
+  .coin {
+    position: relative;
+    width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.3, 0.8, 0.3, 1.1);
+  }
+  .coin-scene:hover .coin, .coin-scene.flipped .coin { transform: rotateY(180deg); }
+  .face {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    backface-visibility: hidden;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 0 var(--sun-deep), inset 0 0 0 10px rgba(255,255,255,0.35), inset 0 0 0 12px var(--sun-deep);
+  }
+  .face.front {
+    background: conic-gradient(var(--cobalt) 0 40%, var(--up) 40% 75%, var(--sun) 75% 100%);
+  }
+  .face.back {
+    background: var(--sun);
+    color: var(--sun-ink);
+    transform: rotateY(180deg);
+  }
+  .face .label {
+    display: grid;
+    place-items: center;
+    width: 46%; height: 46%;
+    border-radius: 50%;
+    background: var(--tile);
+    color: var(--cobalt);
+    text-align: center;
+    line-height: 1.05;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+  }
+  .face .label b { display: block; font-size: clamp(26px, 4vw, 40px); font-weight: 850; font-stretch: 118%; }
+  .face .label small { font-size: 12px; font-weight: 650; color: var(--muted); }
+  .slice-tag {
+    position: absolute;
+    padding: 4px 9px;
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 3px 0 var(--line);
+  }
+  .army {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: 6px 8px;
+    font-size: clamp(22px, 3.4vw, 34px);
+    line-height: 1;
+    text-align: center;
+  }
+  .army span:last-child { position: relative; overflow: hidden; width: 0.55em; text-align: left; }
 
   .later {
     margin: clamp(56px, 7vw, 88px) 0 0;
@@ -212,11 +411,136 @@
     color: var(--muted);
   }
 
-  footer { padding: 0 var(--gutter) 40px; font-size: 14px; color: var(--muted); }
-  @media (prefers-color-scheme: dark) {
-    .projects { --focus: var(--sun); }
-    .link:hover { text-decoration-color: var(--ink); }
+  /* ---------- Quiz ---------- */
+  .quiz {
+    --focus: var(--sun);
+    background: var(--cobalt);
+    color: var(--on-cobalt);
+    padding: clamp(56px, 9vw, 112px) var(--gutter);
   }
+  .quiz h2 { color: #fff; }
+  .quiz-intro { max-width: 46ch; margin: -16px 0 32px; color: var(--on-cobalt-soft); font-size: 18px; }
+  .board {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 22px;
+    padding: clamp(20px, 3.5vw, 40px);
+    box-shadow: 0 10px 0 var(--cobalt-deep);
+    max-width: 760px;
+  }
+  .board-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 20px;
+    margin-bottom: 24px;
+  }
+  .score { font-weight: 750; font-stretch: 108%; font-variant-numeric: tabular-nums; }
+  .pips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pip {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    border: 2px solid var(--line);
+    background: var(--surface);
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .pip.current { border-color: var(--cobalt); }
+  .pip.right { background: var(--sun); border-color: var(--sun-deep); }
+  .pip.half { background: var(--cobalt); border-color: var(--cobalt-deep); }
+  .pip.wrong { background: var(--line); }
+
+  .kind { margin: 0 0 8px; font-size: 14px; font-weight: 650; color: var(--muted); }
+  .q { margin: 0 0 24px; font-size: clamp(22px, 2.8vw, 30px); font-weight: 750; font-stretch: 108%; letter-spacing: -0.015em; line-height: 1.2; }
+  .opts { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .opts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .opt {
+    width: 100%;
+    min-height: 56px;
+    padding: 14px 18px;
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    text-align: left;
+    font-weight: 600;
+    font-size: 17px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--line);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  .opts.two .opt { text-align: center; font-size: 20px; font-weight: 750; min-height: 72px; }
+  .opt:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--cobalt); box-shadow: 0 6px 0 var(--cobalt-soft); }
+  .opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
+  .opt:disabled { cursor: default; }
+  .opt.right { background: var(--sun); border-color: var(--sun-deep); color: var(--sun-ink); box-shadow: 0 4px 0 var(--sun-deep); }
+  .opt.wrong { background: var(--line); border-color: var(--line); color: var(--muted); box-shadow: none; animation: shake 0.4s ease; }
+  .opt.dim { opacity: 0.55; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+  .stepper { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .stepper button.pm {
+    width: 56px; height: 56px;
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    font-size: 28px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--line);
+  }
+  .stepper button.pm:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
+  .stepper output {
+    min-width: 96px;
+    text-align: center;
+    font-size: 44px;
+    font-weight: 850;
+    font-stretch: 118%;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .slider { display: grid; gap: 16px; justify-items: start; }
+  .slider output {
+    font-size: 44px;
+    font-weight: 850;
+    font-stretch: 118%;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .slider input[type="range"] {
+    width: min(100%, 420px);
+    accent-color: var(--cobalt);
+    height: 32px;
+    cursor: pointer;
+  }
+
+  .verdict {
+    display: none;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 14px 20px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .verdict.show { display: flex; }
+  .verdict p { margin: 0; max-width: 46ch; }
+  .verdict p b { font-weight: 750; }
+
+  .end .big {
+    margin: 0 0 6px;
+    font-size: clamp(40px, 6vw, 64px);
+    font-weight: 850;
+    font-stretch: 118%;
+    letter-spacing: -0.025em;
+    line-height: 1;
+  }
+  .end .tier { margin: 0 0 18px; font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; font-stretch: 108%; }
+  .end .emoji { margin: 0 0 24px; font-size: 22px; letter-spacing: 2px; word-break: break-all; }
+  .end .note { margin: 0 0 24px; color: var(--muted); max-width: 46ch; }
+
+  footer { padding: 40px var(--gutter); font-size: 14px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -225,78 +549,406 @@
   <div class="wrap">
     <h1>
       <span class="sr-only">Steven Hester</span>
-      <span class="name" aria-hidden="true">
-        <span class="tile" style="--i:0">S</span>
-        <span class="tile" style="--i:1">T</span>
-        <span class="tile" style="--i:2">E</span>
-        <span class="tile" style="--i:3">V</span>
-        <span class="tile" style="--i:4">E</span>
-        <span class="tile" style="--i:5">N</span>
-        <span class="tile" style="--i:6">H</span>
-        <span class="tile" style="--i:7">E</span>
-        <span class="tile" style="--i:8">S</span>
-        <span class="tile" style="--i:9">T</span>
-        <span class="tile" style="--i:10">E</span>
-        <span class="tile" style="--i:11">R</span>
+      <span class="name" id="name" aria-hidden="true">
+        <button class="tile drop" type="button" tabindex="-1" style="--i:0">S</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:1">T</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:2">E</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:3">V</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:4">E</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:5">N</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:6">H</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:7">E</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:8">S</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:9">T</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:10">E</button>
+        <button class="tile drop" type="button" tabindex="-1" style="--i:11">R</button>
       </span>
     </h1>
-    <p class="role">I work on insights, strategy, and growth at Riot&nbsp;Games. On the side, I build small games.</p>
-    <a class="hero-link" href="https://www.linkedin.com/in/stevenbradyhester">Find me on LinkedIn</a>
+    <div class="hero-row">
+      <p class="role">I work on insights, strategy, and growth at Riot&nbsp;Games. On the side, I build small games. The letters up there are clickable, for no reason.</p>
+      <div class="hero-links">
+        <button class="shuffle" type="button" id="shuffle">Shuffle my name</button>
+        <a class="hero-link" href="https://www.linkedin.com/in/stevenbradyhester">Find me on LinkedIn</a>
+      </div>
+    </div>
   </div>
 </header>
 
-<main class="projects">
-  <div class="wrap">
-    <h2>Projects</h2>
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track" id="tape"></div>
+</div>
 
-    <article class="feature">
-      <div>
-        <h3>MusicGrid</h3>
-        <p>A daily music trivia game. Fill each square with a song that fits both its artist and its category, or sign in with Spotify to build a grid of your own.</p>
-        <div class="actions">
-          <a class="btn" href="https://musicgrid.stevenhester.com/">Play today's grid</a>
-          <a class="link" href="https://musicgrid.stevenhester.com/grid-builder/">Build your own grid</a>
+<main>
+  <section class="projects">
+    <div class="wrap">
+      <h2>Things I made</h2>
+
+      <article class="feature">
+        <div>
+          <h3>MusicGrid</h3>
+          <p>A daily music trivia game. Fill each square with a song that fits both its artist and its category, or sign in with Spotify to build a grid of your own.</p>
+          <div class="actions">
+            <a class="btn" href="https://musicgrid.stevenhester.com/">Play today's grid</a>
+            <a class="link" href="https://musicgrid.stevenhester.com/grid-builder/">Build your own grid</a>
+          </div>
         </div>
+
+        <figure class="sample">
+          <div class="grid" role="img" aria-label="A sample MusicGrid board: rows Adele, Bruno Mars and Ed Sheeran; columns released in the 2010s, Billboard top 5, and Grammy Song of the Year. Three squares are solved: Hello, Grenade, and Thinking Out Loud.">
+            <div class="cell"></div>
+            <div class="cell col">Released in the 2010s</div>
+            <div class="cell col">Billboard top&nbsp;5</div>
+            <div class="cell col">Grammy Song of the Year</div>
+
+            <div class="cell row">Adele</div>
+            <div class="cell slot solved">Hello</div>
+            <div class="cell slot"></div>
+            <div class="cell slot"></div>
+
+            <div class="cell row">Bruno Mars</div>
+            <div class="cell slot"></div>
+            <div class="cell slot solved">Grenade</div>
+            <div class="cell slot"></div>
+
+            <div class="cell row">Ed Sheeran</div>
+            <div class="cell slot"></div>
+            <div class="cell slot"></div>
+            <div class="cell slot solved">Thinking Out Loud</div>
+          </div>
+          <figcaption>A sample board with three of nine squares solved.</figcaption>
+        </figure>
+      </article>
+
+      <article class="feature flip">
+        <div>
+          <h3>Trickle Down <span class="sticker">in beta</span></h3>
+          <p>A daily trading game that is also a joke about trading. Every day you get $100 of fake money to put into real stocks and crypto. Returns are amplified ten times, because this is a game and not advice. Profits get taxed, the taxes hire lobbyists for charities, and the site's real ad money follows the lobbyists. It's in beta, which means some things are broken on purpose and some by accident.</p>
+          <div class="actions">
+            <a class="btn sun" href="https://trickledown.stevenhester.com/">Try the beta</a>
+          </div>
+        </div>
+
+        <figure class="coin-fig">
+          <button class="coin-scene" type="button" id="coin" aria-label="Today's coin in Trickle Down: $100 split into three slices. Press to flip it over and see the lobbyist army.">
+            <div class="coin">
+              <div class="face front">
+                <span class="slice-tag" style="top:14%; right:4%">BTC $40</span>
+                <span class="slice-tag" style="bottom:10%; left:2%">NVDA $35</span>
+                <span class="slice-tag" style="top:22%; left:0">Cash $25</span>
+                <div class="label"><b>$100</b><small>today's coin</small></div>
+              </div>
+              <div class="face back">
+                <div class="army" aria-hidden="true">
+                  <span>🧍</span><span>🧍</span><span>🧍</span><span>🧍</span>
+                  <span>🧍</span><span>🧍</span><span>🧍</span><span>🧍</span>
+                </div>
+              </div>
+            </div>
+          </button>
+          <figcaption>Today's $100, carved into slices. Flip it to count your lobbyists. Seven and a half of them.</figcaption>
+        </figure>
+      </article>
+
+      <p class="later">Those two have taken over 750 commits and 350 pull requests so far. More small things are on the way, and some of them are even finished.</p>
+    </div>
+  </section>
+
+  <section class="quiz" id="quiz">
+    <div class="wrap">
+      <h2>How well do you know Steven?</h2>
+      <p class="quiz-intro"><span id="count">Fourteen</span> questions. No prizes. Your score isn't saved anywhere, but you'll remember it.</p>
+
+      <div class="board" id="board" aria-live="polite">
+        <div class="board-top">
+          <span class="score" id="score">0 points</span>
+          <div class="pips" id="pips"></div>
+        </div>
+        <div id="stage"></div>
       </div>
-
-      <figure class="sample">
-        <div class="grid" role="img" aria-label="A sample MusicGrid board: rows Adele, Bruno Mars and Ed Sheeran; columns released in the 2010s, Billboard top 5, and Grammy Song of the Year. Three squares are solved: Hello, Grenade, and Thinking Out Loud.">
-          <div class="cell"></div>
-          <div class="cell col">Released in the 2010s</div>
-          <div class="cell col">Billboard top&nbsp;5</div>
-          <div class="cell col">Grammy Song of the Year</div>
-
-          <div class="cell row">Adele</div>
-          <div class="cell slot solved">Hello</div>
-          <div class="cell slot"></div>
-          <div class="cell slot"></div>
-
-          <div class="cell row">Bruno Mars</div>
-          <div class="cell slot"></div>
-          <div class="cell slot solved">Grenade</div>
-          <div class="cell slot"></div>
-
-          <div class="cell row">Ed Sheeran</div>
-          <div class="cell slot"></div>
-          <div class="cell slot"></div>
-          <div class="cell slot solved">Thinking Out Loud</div>
-        </div>
-        <figcaption>A sample board with three of nine squares solved.</figcaption>
-      </figure>
-    </article>
-
-    <p class="later">I'm moving my older projects over to this site, so more will show up here soon.</p>
-  </div>
+    </div>
+  </section>
 </main>
 
 <footer>
   <div class="wrap">
-    &copy; <span id="year">2026</span> Steven Hester
+    &copy; <span id="year">2026</span> Steven Hester. Made in Texas, with boba.
   </div>
 </footer>
 
 <script>
   document.getElementById("year").textContent = new Date().getFullYear();
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- Ticker ---------- */
+  const tapeItems = [
+    ['STVN', '▲ 4 YRS AT RIOT', 'up'],
+    ['BABIES', '▲ 1 (ADORABLE)', 'up'],
+    ['NAPS', '▼ 100%', 'down'],
+    ['BOBA', '▲ ▲ ▲', 'up'],
+    ['MSGD', '▲ 9/9 SQUARES', 'up'],
+    ['TRKL', '◆ BETA', 'beta'],
+    ['HOUSEPLANTS', '▼ 0 ALIVE', 'down'],
+    ['CRANKY CATS', '◆ 1', 'beta'],
+    ['WORDLE STREAK', '▲ 155', 'up'],
+    ['COMMITS', '▲ 750+', 'up'],
+    ['PULL REQUESTS', '▲ 350+', 'up'],
+    ['LOBBYISTS', '▲ $1.00 EA', 'up'],
+    ['TEEMO', '▼ BANNED', 'down'],
+  ];
+  const tape = document.getElementById("tape");
+  const tapeHTML = tapeItems.map(([t, v, c]) => `<span>${t} <span class="${c}">${v}</span></span>`).join("");
+  tape.innerHTML = tapeHTML + tapeHTML; /* doubled so the loop is seamless */
+
+  /* ---------- Hero tiles: click to spin and spray, shuffle to scramble ---------- */
+  const nameBoard = document.getElementById("name");
+  const tiles = [...nameBoard.querySelectorAll(".tile")];
+  const colors = ["#ffcf3f", "#f4f5fa", "#35d07f", "#ff6b6b"];
+
+  function spray(x, y, n = 12) {
+    if (reduceMotion) return;
+    for (let i = 0; i < n; i++) {
+      const b = document.createElement("span");
+      b.className = "bit";
+      b.style.left = x + "px";
+      b.style.top = y + "px";
+      b.style.background = colors[i % colors.length];
+      const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 90;
+      b.style.setProperty("--dx", Math.cos(a) * d + "px");
+      b.style.setProperty("--dy", Math.sin(a) * d + 40 + "px");
+      b.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+      document.body.appendChild(b);
+      b.addEventListener("animationend", () => b.remove());
+    }
+  }
+
+  tiles.forEach(t => {
+    t.addEventListener("animationend", () => t.classList.remove("drop", "spin"));
+    t.addEventListener("click", e => {
+      t.classList.toggle("sun");
+      t.classList.remove("spin"); void t.offsetWidth; t.classList.add("spin");
+      spray(e.clientX, e.clientY);
+    });
+  });
+
+  let shuffled = false;
+  const shuffleBtn = document.getElementById("shuffle");
+  shuffleBtn.addEventListener("click", () => {
+    const before = tiles.map(t => t.getBoundingClientRect());
+    if (shuffled) {
+      tiles.forEach(t => t.style.order = "");
+    } else {
+      const order = tiles.map((_, i) => i).sort(() => Math.random() - 0.5);
+      tiles.forEach((t, i) => t.style.order = order[i]);
+    }
+    shuffled = !shuffled;
+    shuffleBtn.textContent = shuffled ? "Put it back" : "Shuffle my name";
+    if (reduceMotion) return;
+    tiles.forEach((t, i) => {
+      const after = t.getBoundingClientRect();
+      const dx = before[i].left - after.left, dy = before[i].top - after.top;
+      t.animate(
+        [{ transform: `translate(${dx}px, ${dy}px) rotate(${dx ? 8 : 0}deg)` }, { transform: "none" }],
+        { duration: 480, easing: "cubic-bezier(0.2, 0.9, 0.3, 1.2)" }
+      );
+    });
+  });
+
+  /* ---------- Coin flip on tap (hover handles mouse) ---------- */
+  const coin = document.getElementById("coin");
+  coin.addEventListener("click", () => coin.classList.toggle("flipped"));
+
+  /* ---------- Quiz ----------
+     Edit QUESTIONS freely. Types:
+       yesno  : { q, a: true|false, why }
+       choice : { q, opts: [...], a: index, why }
+       lie    : { q, opts: [truth, truth, lie] in any order, a: index of the lie, why }
+       number : { q, a: number, near: tolerance for half credit, min, max, why }
+     Every question is worth 1 point; a near miss on a number question is worth half. */
+  const QUESTIONS = [
+    { type: "choice", q: "What does Steven actually do at Riot Games?",
+      opts: ["Insights, strategy, and growth", "Professional Teemo main", "Chief Vibes Officer", "Pentakill compliance"],
+      a: 0, why: "Insights, strategy, and growth, for four years now. The other three are not real jobs, or at least not his." },
+    { type: "choice", q: "Steven's first video game was…",
+      opts: ["Pokémon Yellow", "RuneScape", "Halo", "Solitaire, on a work computer"],
+      a: 0, why: "Pokémon Yellow. RuneScape came a little later, and that one was less a game than an addiction." },
+    { type: "yesno", q: "At least one of Steven's houseplants is currently alive.",
+      a: false, why: "All dead. The cat, however, is thriving. Cranky, but thriving." },
+    { type: "number", q: "How many git commits have Steven's games taken so far?",
+      a: 750, near: 150, min: 0, max: 2000, step: 50, why: "Over 750 commits and 350 pull requests, for two small games. Small is doing a lot of work in that sentence." },
+    { type: "choice", q: "Steven's first concert was…",
+      opts: ["Warped Tour", "Taylor Swift", "A Hamilton matinee", "Coachella"],
+      a: 0, why: "Warped Tour, at about twelve years old. He passed out in a mosh pit, which is a kind of review." },
+    { type: "lie", q: "Two truths and a lie, food edition. Tap the lie.",
+      opts: ["Pineapple belongs on pizza.", "Steven is deathly allergic to eggs.", "Steven can't handle spicy food."],
+      a: 2, why: "He loves spicy food and has finished the One Chip Challenge. The pineapple and the egg allergy are both real. He'll also mix cheese and chocolate, on purpose." },
+    { type: "choice", q: "The highest mountain Steven has climbed is…",
+      opts: ["Quandary Peak, Colorado (14,272 ft)", "Everest", "Mount Bonnell, Austin (775 ft)", "The Riot parking garage"],
+      a: 0, why: "Quandary Peak, a real fourteener. Mount Bonnell is a lovely twenty-minute walk." },
+    { type: "number", q: "What's Steven's longest Wordle streak?",
+      a: 155, near: 20, min: 0, max: 300, step: 5, why: "155 days. It ended, and he would rather not discuss how." },
+    { type: "yesno", q: "Steven walked out of Hamilton at intermission.",
+      a: true, why: "He did. He couldn't follow what was happening, and he's upfront that auditory processing isn't his thing." },
+    { type: "lie", q: "Two truths and a lie, outdoors edition. Tap the lie.",
+      opts: ["Steven canoed 125 miles through the Boundary Waters over ten days, living on fish, berries, and what the group could carry.", "Steven has summited a mountain in Nepal.", "Steven sailed a 90-foot wooden sailboat around Washington for a week with friends."],
+      a: 1, why: "No Nepal. The canoe trip and the sailboat are both real, and both were with friends, which is the only way to do them." },
+    { type: "number", q: "How many countries has Steven been to?",
+      a: 10, near: 2, min: 0, max: 25, why: "Ten: Germany, Switzerland, Canada, the Netherlands, Mexico, Costa Rica, Italy, France, Spain, and China." },
+    { type: "choice", q: "Steven's peak rank in League of Legends is…",
+      opts: ["Gold 3", "Challenger", "Iron 4, and proud of it", "Unranked, he just watches"],
+      a: 0, why: "Gold 3. In Teamfight Tactics he's Emerald 4, which he will bring up unprompted." },
+    { type: "choice", q: "Steven's first job was…",
+      opts: ["Teaching kids to mod Minecraft at a summer camp", "Lifeguard", "Selling cannabis, legally", "Riot Games, straight out of the womb"],
+      a: 0, why: "Camp counselor, teaching Minecraft modding. The cannabis one isn't wrong, it just wasn't first." },
+    { type: "lie", q: "Two truths and a lie, the ones that sound fake. Tap the lie.",
+      opts: ["Steven published a paper on lunar crater impact chains and what their length and direction say about the impact.", "Steven was a child actor in a regional furniture commercial.", "At a previous job, Steven legally sold over half a billion dollars of cannabis."],
+      a: 1, why: "No furniture commercial. The crater paper is real and so is the half-billion, which was legal, and which he would like you to note was legal." },
+    { type: "choice", q: "Last one. How did Steven meet his wife?",
+      opts: ["Invited himself into her first date with another guy and took it over", "A dating app", "Through MusicGrid", "In a mosh pit at Warped Tour"],
+      a: 0, why: "He crashed her first date with someone else and simply took it over. The other guy did not get a second date." },
+  ];
+
+  const TIERS = [
+    [0,    "Total stranger", "Respect for finishing, though."],
+    [0.35, "Acquaintance", "You've seen him in a group chat at least once."],
+    [0.6,  "Friend", "You know the lore."],
+    [0.85, "Close friend", "Or a very thorough researcher."],
+    [1,    "Are you Steven?", "Blink twice."],
+  ];
+
+  const stage = document.getElementById("stage");
+  const pipsEl = document.getElementById("pips");
+  const scoreEl = document.getElementById("score");
+  let i = 0, score = 0, results = [];
+
+  function renderPips() {
+    pipsEl.innerHTML = QUESTIONS.map((_, k) => {
+      const r = results[k];
+      const cls = r === 1 ? "right" : r === 0.5 ? "half" : r === 0 ? "wrong" : (k === i ? "current" : "");
+      return `<span class="pip ${cls}"></span>`;
+    }).join("");
+  }
+  function renderScore() {
+    scoreEl.textContent = `${score % 1 ? score : score} ${score === 1 ? "point" : "points"}`;
+  }
+
+  function start() {
+    i = 0; score = 0; results = [];
+    renderPips(); renderScore();
+    stage.innerHTML = `
+      <p class="kind">Yes-or-no, multiple choice, two truths and a lie, and a couple of numbers. All about one guy.</p>
+      <p class="q">Ready?</p>
+      <div class="actions"><button class="btn" type="button" id="go">Start the quiz</button></div>`;
+    document.getElementById("go").addEventListener("click", ask);
+  }
+
+  function kindLabel(qd) {
+    return { yesno: "Yes or no", choice: "Multiple choice", lie: "Two truths and a lie", number: "Closest guess" }[qd.type]
+      + ` · ${i + 1} of ${QUESTIONS.length}`;
+  }
+
+  function ask() {
+    const qd = QUESTIONS[i];
+    renderPips();
+    let body = "";
+    if (qd.type === "yesno") {
+      body = `<ul class="opts two"><li><button class="opt" data-v="true">Yes</button></li><li><button class="opt" data-v="false">No</button></li></ul>`;
+    } else if (qd.type === "choice" || qd.type === "lie") {
+      body = `<ul class="opts">${qd.opts.map((o, k) => `<li><button class="opt" data-v="${k}">${o}</button></li>`).join("")}</ul>`;
+    } else if (qd.type === "number") {
+      const mid = qd.min; /* start at the bottom so a lazy lock-in earns nothing */
+      body = qd.max - qd.min > 30
+        ? `<div class="slider">
+            <output id="num">${mid}</output>
+            <input type="range" id="range" min="${qd.min}" max="${qd.max}" step="${qd.step || 1}" value="${mid}" aria-label="Your guess">
+            <button class="btn sun" type="button" id="lock">Lock it in</button>
+          </div>`
+        : `<div class="stepper">
+            <button class="pm" type="button" data-d="-1" aria-label="Lower">−</button>
+            <output id="num">${mid}</output>
+            <button class="pm" type="button" data-d="1" aria-label="Higher">+</button>
+            <button class="btn sun" type="button" id="lock">Lock it in</button>
+          </div>`;
+    }
+    stage.innerHTML = `
+      <p class="kind">${kindLabel(qd)}</p>
+      <p class="q">${qd.q}</p>
+      ${body}
+      <div class="verdict" id="verdict"><p id="why"></p><button class="btn" type="button" id="next">Next</button></div>`;
+
+    if (qd.type === "number") {
+      const out = document.getElementById("num");
+      const range = document.getElementById("range");
+      if (range) range.addEventListener("input", () => out.textContent = range.value);
+      stage.querySelectorAll(".pm").forEach(b => b.addEventListener("click", () => {
+        out.textContent = Math.min(qd.max, Math.max(qd.min, +out.textContent + +b.dataset.d));
+      }));
+      document.getElementById("lock").addEventListener("click", () => answer(+out.textContent));
+    } else {
+      stage.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => answer(b.dataset.v)));
+    }
+  }
+
+  function answer(v) {
+    const qd = QUESTIONS[i];
+    let got = 0;
+    if (qd.type === "yesno") got = (v === "true") === qd.a ? 1 : 0;
+    else if (qd.type === "number") got = v === qd.a ? 1 : Math.abs(v - qd.a) <= qd.near ? 0.5 : 0;
+    else got = +v === qd.a ? 1 : 0;
+
+    results[i] = got; score += got;
+    renderPips(); renderScore();
+
+    stage.querySelectorAll(".opt").forEach(b => {
+      b.disabled = true;
+      const isAns = qd.type === "yesno" ? (b.dataset.v === "true") === qd.a : +b.dataset.v === qd.a;
+      if (isAns) b.classList.add("right");
+      else if (b.dataset.v === String(v)) b.classList.add("wrong");
+      else b.classList.add("dim");
+    });
+    stage.querySelectorAll(".pm, #lock, #range").forEach(b => b.disabled = true);
+
+    const lead = got === 1 ? "Correct. " : got === 0.5 ? "Close. " : "Nope. ";
+    document.getElementById("why").innerHTML = `<b>${lead}</b>${qd.why}`;
+    const verdict = document.getElementById("verdict");
+    verdict.classList.add("show");
+    const next = document.getElementById("next");
+    next.textContent = i === QUESTIONS.length - 1 ? "See your score" : "Next";
+    next.focus();
+    next.addEventListener("click", () => { i++; i < QUESTIONS.length ? ask() : finish(); });
+    if (got === 1) { const r = verdict.getBoundingClientRect(); spray(r.left + 40, r.top, 10); }
+  }
+
+  function finish() {
+    renderPips();
+    const tier = [...TIERS].reverse().find(t => score / QUESTIONS.length >= t[0]);
+    const emoji = results.map(r => r === 1 ? "🟨" : r === 0.5 ? "🟦" : "⬜").join("");
+    const shareText = `How well do I know Steven? ${score}/${QUESTIONS.length}\n${emoji}\nstevenhester.com`;
+    stage.innerHTML = `
+      <div class="end">
+        <p class="big">${score} of ${QUESTIONS.length}</p>
+        <p class="tier">${tier[1]}. ${tier[2]}</p>
+        <p class="emoji" aria-label="Your results as colored squares">${emoji}</p>
+        <p class="note">Yellow is right, blue is close, white is a learning opportunity.</p>
+        <div class="actions">
+          <button class="btn sun" type="button" id="copy">Copy my result</button>
+          <button class="btn ghost" type="button" id="again">Play again</button>
+        </div>
+      </div>`;
+    const copy = document.getElementById("copy");
+    copy.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(shareText); copy.textContent = "Copied"; }
+      catch { copy.textContent = "Couldn't copy, sorry"; }
+      setTimeout(() => copy.textContent = "Copy my result", 1800);
+    });
+    document.getElementById("again").addEventListener("click", start);
+    const r = stage.getBoundingClientRect();
+    spray(r.left + r.width / 2, r.top + 40, score >= 10 ? 40 : 18);
+  }
+
+  const words = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
+  const n = QUESTIONS.length;
+  document.getElementById("count").textContent = (words[n] || String(n)).replace(/^./, c => c.toUpperCase());
+  start();
 </script>
 </body>
 </html>
