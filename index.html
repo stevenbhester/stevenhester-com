@@ -765,46 +765,46 @@
        number : { q, a: number, near: tolerance for half credit, min, max, why }
      Every question is worth 1 point; a near miss on a number question is worth half. */
   const QUESTIONS = [
-    { type: "choice", q: "What does Steven actually do at Riot Games?",
-      opts: ["Insights, strategy, and growth", "Professional Teemo main", "Chief Vibes Officer", "Pentakill compliance"],
-      a: 0, why: "Insights, strategy, and growth, for four years now. The other three are not real jobs, or at least not his." },
+    { type: "choice", q: "Steven has been at Riot Games for four years. What does he do there?",
+      opts: ["Insights, strategy, and growth", "Game design on League of Legends", "Esports broadcast production", "Player support"],
+      a: 0, why: "Insights, strategy, and growth. So no, he can't get your account unbanned." },
     { type: "choice", q: "Steven's first video game was…",
-      opts: ["Pokémon Yellow", "RuneScape", "Halo", "Solitaire, on a work computer"],
-      a: 0, why: "Pokémon Yellow. RuneScape came a little later, and that one was less a game than an addiction." },
-    { type: "yesno", q: "At least one of Steven's houseplants is currently alive.",
-      a: false, why: "All dead. The cat, however, is thriving. Cranky, but thriving." },
-    { type: "number", q: "How many git commits have Steven's games taken so far?",
-      a: 750, near: 150, min: 0, max: 2000, step: 50, why: "Over 750 commits and 350 pull requests, for two small games. Small is doing a lot of work in that sentence." },
-    { type: "choice", q: "Steven's first concert was…",
-      opts: ["Warped Tour", "Taylor Swift", "A Hamilton matinee", "Coachella"],
-      a: 0, why: "Warped Tour, at about twelve years old. He passed out in a mosh pit, which is a kind of review." },
-    { type: "lie", q: "Two truths and a lie, food edition. Tap the lie.",
-      opts: ["Pineapple belongs on pizza.", "Steven is deathly allergic to eggs.", "Steven can't handle spicy food."],
-      a: 2, why: "He loves spicy food and has finished the One Chip Challenge. The pineapple and the egg allergy are both real. He'll also mix cheese and chocolate, on purpose." },
-    { type: "choice", q: "The highest mountain Steven has climbed is…",
-      opts: ["Quandary Peak, Colorado (14,272 ft)", "Everest", "Mount Bonnell, Austin (775 ft)", "The Riot parking garage"],
-      a: 0, why: "Quandary Peak, a real fourteener. Mount Bonnell is a lovely twenty-minute walk." },
-    { type: "number", q: "What's Steven's longest Wordle streak?",
-      a: 155, near: 20, min: 0, max: 300, step: 5, why: "155 days. It ended, and he would rather not discuss how." },
-    { type: "yesno", q: "Steven walked out of Hamilton at intermission.",
-      a: true, why: "He did. He couldn't follow what was happening, and he's upfront that auditory processing isn't his thing." },
-    { type: "lie", q: "Two truths and a lie, outdoors edition. Tap the lie.",
-      opts: ["Steven canoed 125 miles through the Boundary Waters over ten days, living on fish, berries, and what the group could carry.", "Steven has summited a mountain in Nepal.", "Steven sailed a 90-foot wooden sailboat around Washington for a week with friends."],
-      a: 1, why: "No Nepal. The canoe trip and the sailboat are both real, and both were with friends, which is the only way to do them." },
-    { type: "number", q: "How many countries has Steven been to?",
-      a: 10, near: 2, min: 0, max: 25, why: "Ten: Germany, Switzerland, Canada, the Netherlands, Mexico, Costa Rica, Italy, France, Spain, and China." },
-    { type: "choice", q: "Steven's peak rank in League of Legends is…",
-      opts: ["Gold 3", "Challenger", "Iron 4, and proud of it", "Unranked, he just watches"],
-      a: 0, why: "Gold 3. In Teamfight Tactics he's Emerald 4, which he will bring up unprompted." },
+      opts: ["Pokémon Yellow", "Super Mario 64", "Crash Bandicoot", "RuneScape"],
+      a: 0, why: "Pokémon Yellow. RuneScape came later, and became his first real video game addiction." },
+    { type: "lie", q: "Food edition. Tap the lie.",
+      opts: ["Steven is deathly allergic to eggs.", "Steven likes cheese and chocolate together, on purpose.", "Steven thinks pineapple on pizza is a crime."],
+      a: 2, why: "He's firmly pro-pineapple. The egg allergy is real, and so is the cheese-and-chocolate thing." },
+    { type: "choice", ordered: true, q: "In 2009, Steven ran a Call of Duty Zombies commentary channel on YouTube. How many subscribers did it have?",
+      opts: ["About 50", "About 1,000", "About 10,000", "About 250,000"],
+      a: 2, why: "About 10,000, back when that was a lot of YouTube." },
+    { type: "choice", q: "Steven's first concert was Warped Tour, at about age 12. What happened?",
+      opts: ["He passed out in a mosh pit", "He got pulled up on stage", "He lost both shoes", "He caught a drumstick"],
+      a: 0, why: "He passed out in a mosh pit. Twelve-year-olds probably shouldn't be in the pit." },
+    { type: "yesno", q: "Steven has seen all of Hamilton.",
+      a: false, why: "He walked out at intermission. It's a lot of fast, sung dialogue, and he couldn't follow what was going on." },
+    { type: "lie", q: "Outdoors edition. Tap the lie.",
+      opts: ["Steven canoed 125 miles through the Boundary Waters over ten days, living on fish, berries, and whatever the group could carry.", "Steven has summited a mountain in Nepal.", "Steven spent a week sailing a 90-foot wooden sailboat around Washington with friends."],
+      a: 1, why: "No Nepal. The canoe trip and the week on the sailboat are both real." },
+    { type: "choice", ordered: true, q: "The tallest mountain Steven has climbed is about how high?",
+      opts: ["3,000 ft", "8,000 ft", "14,000 ft", "20,000 ft"],
+      a: 2, why: "About 14,000 feet: Quandary Peak, one of Colorado's fourteeners." },
+    { type: "choice", q: "Steven has been to ten countries. Which of these isn't one of them?",
+      opts: ["Japan", "China", "Costa Rica", "Switzerland"],
+      a: 0, why: "Japan. The ten are Germany, Switzerland, Canada, the Netherlands, Mexico, Costa Rica, Italy, France, Spain, and China." },
+    { type: "choice", ordered: true, q: "Steven's peak League of Legends rank is…",
+      opts: ["Silver 1", "Gold 3", "Platinum 2", "Diamond 4"],
+      a: 1, why: "Gold 3. In Teamfight Tactics he's reached Emerald 4." },
+    { type: "yesno", q: "Steven has published a scientific paper about craters on the Moon.",
+      a: true, why: "He has. It's about lunar crater impact chains, and what their length and direction can tell you about the impact that made them." },
     { type: "choice", q: "Steven's first job was…",
-      opts: ["Teaching kids to mod Minecraft at a summer camp", "Lifeguard", "Selling cannabis, legally", "Riot Games, straight out of the womb"],
-      a: 0, why: "Camp counselor, teaching Minecraft modding. The cannabis one isn't wrong, it just wasn't first." },
-    { type: "lie", q: "Two truths and a lie, the ones that sound fake. Tap the lie.",
-      opts: ["Steven published a paper on lunar crater impact chains and what their length and direction say about the impact.", "Steven was a child actor in a regional furniture commercial.", "At a previous job, Steven legally sold over half a billion dollars of cannabis."],
-      a: 1, why: "No furniture commercial. The crater paper is real and so is the half-billion, which was legal, and which he would like you to note was legal." },
+      opts: ["Teaching kids to mod Minecraft at a summer camp", "Lifeguard", "Movie theater concessions", "Bagging groceries"],
+      a: 0, why: "Camp counselor, teaching kids to mod Minecraft." },
+    { type: "lie", q: "One more round. Tap the lie.",
+      opts: ["At a previous job, Steven legally sold over half a billion dollars of cannabis.", "Steven has finished the One Chip Challenge.", "Steven was a child actor in a regional furniture commercial."],
+      a: 2, why: "No furniture commercial. He's done the One Chip Challenge, and the half-billion in cannabis sales was real, and legal." },
     { type: "choice", q: "Last one. How did Steven meet his wife?",
-      opts: ["Invited himself into her first date with another guy and took it over", "A dating app", "Through MusicGrid", "In a mosh pit at Warped Tour"],
-      a: 0, why: "He crashed her first date with someone else and simply took it over. The other guy did not get a second date." },
+      opts: ["She was on a first date with another guy. He invited himself along and took it over.", "They matched on a dating app, then both went to the wrong restaurant.", "They were lab partners in college.", "They kept getting put in the same League games."],
+      a: 0, why: "He crashed her first date with someone else and took it over. It worked." },
   ];
 
   const TIERS = [
@@ -835,7 +835,7 @@
     i = 0; score = 0; results = [];
     renderPips(); renderScore();
     stage.innerHTML = `
-      <p class="kind">Yes-or-no, multiple choice, two truths and a lie, and a couple of numbers. All about one guy.</p>
+      <p class="kind">Multiple choice, yes-or-no, and two truths and a lie. All about one guy.</p>
       <p class="q">Ready?</p>
       <div class="actions"><button class="btn" type="button" id="go">Start the quiz</button></div>`;
     document.getElementById("go").addEventListener("click", ask);
@@ -853,7 +853,9 @@
     if (qd.type === "yesno") {
       body = `<ul class="opts two"><li><button class="opt" data-v="true">Yes</button></li><li><button class="opt" data-v="false">No</button></li></ul>`;
     } else if (qd.type === "choice" || qd.type === "lie") {
-      body = `<ul class="opts">${qd.opts.map((o, k) => `<li><button class="opt" data-v="${k}">${o}</button></li>`).join("")}</ul>`;
+      const idx = qd.opts.map((_, k) => k);
+      if (!qd.ordered) for (let n = idx.length - 1; n > 0; n--) { const r = Math.floor(Math.random() * (n + 1)); [idx[n], idx[r]] = [idx[r], idx[n]]; }
+      body = `<ul class="opts">${idx.map(k => `<li><button class="opt" data-v="${k}">${qd.opts[k]}</button></li>`).join("")}</ul>`;
     } else if (qd.type === "number") {
       const mid = qd.min; /* start at the bottom so a lazy lock-in earns nothing */
       body = qd.max - qd.min > 30
@@ -926,9 +928,9 @@
     stage.innerHTML = `
       <div class="end">
         <p class="big">${score} of ${QUESTIONS.length}</p>
-        <p class="tier">${tier[1]}. ${tier[2]}</p>
+        <p class="tier">${tier[1]}${/[.?!]$/.test(tier[1]) ? "" : "."} ${tier[2]}</p>
         <p class="emoji" aria-label="Your results as colored squares">${emoji}</p>
-        <p class="note">Yellow is right, blue is close, white is a learning opportunity.</p>
+        <p class="note">${results.includes(0.5) ? "Yellow is right, blue is close, white is a learning opportunity." : "Yellow is right, white is a learning opportunity."}</p>
         <div class="actions">
           <button class="btn sun" type="button" id="copy">Copy my result</button>
           <button class="btn ghost" type="button" id="again">Play again</button>
