@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erin Cullison</title>
+  <meta name="description" content="Erin Cullison is a software developer, analytical thinker and scientist. She writes code at Grant Street Group, by way of a microbiology degree and three years in a chemistry lab.">
+  <meta property="og:title" content="Erin Cullison">
+  <meta property="og:description" content="Software developer, analytical thinker, scientist.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://erincullison.com/">
+  <meta name="theme-color" content="#F7EFDF">
+  <link rel="icon" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 32"%3E%3Cg fill="none" stroke="%23D8432F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"%3E%3Crect x="4" y="8" width="22" height="16" rx="7"/%3E%3Crect x="38" y="8" width="22" height="16" rx="7"/%3E%3Cpath d="M26 14q6-5 12 0"/%3E%3C/g%3E%3C/svg%3E'>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #F7EFDF;
+      --forest: #1E4D3A;
+      --tomato: #D8432F;
+      --mustard: #E3A82B;
+      --ink: #22302A;
+      --ink-soft: #4C5A52;
+
+      --display: "Fraunces", "Iowan Old Style", Georgia, serif;
+      --body: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
+
+      --measure: 60ch;
+      --gutter: clamp(1.25rem, 5vw, 4rem);
+      --radius: 28px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+    html, body { overflow-x: clip; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: var(--body);
+      font-size: 1.125rem;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--display);
+      font-variation-settings: "SOFT" 100, "WONK" 1;
+      font-weight: 600;
+      color: inherit;
+      margin: 0;
+    }
+
+    a { color: var(--forest); }
+    a:focus-visible {
+      outline: 3px solid var(--tomato);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+
+    .wrap {
+      width: min(100% - 2 * var(--gutter), 72rem);
+      margin-inline: auto;
+    }
+
+    /* ---------- top bar ---------- */
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-block: 1.25rem;
+    }
+    .mark { display: inline-flex; align-items: center; line-height: 0; }
+    .mark svg { width: 44px; height: 22px; }
+    .top nav { display: flex; gap: clamp(.9rem, 3vw, 1.75rem); }
+    .top nav a {
+      font-weight: 700;
+      text-decoration: underline;
+      text-decoration-color: transparent;
+      text-decoration-thickness: 2px;
+      text-underline-offset: .25em;
+      transition: text-decoration-color .15s ease;
+    }
+    .top nav a:hover { text-decoration-color: var(--tomato); }
+
+    /* ---------- hero ---------- */
+    .hero {
+      position: relative;
+      padding-block: clamp(3rem, 9vw, 7rem) clamp(4rem, 10vw, 8rem);
+      isolation: isolate;
+    }
+    .hero h1 {
+      position: relative;
+      font-size: clamp(3.75rem, 14vw, 10.5rem);
+      line-height: .9;
+      letter-spacing: -.025em;
+      font-weight: 700;
+      font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+      color: var(--forest);
+      max-width: 8ch;
+    }
+    .tagline {
+      font-family: var(--display);
+      font-style: italic;
+      font-weight: 400;
+      font-variation-settings: "SOFT" 100, "WONK" 1;
+      font-size: clamp(1.5rem, 3.2vw, 2.25rem);
+      line-height: 1.2;
+      color: var(--forest);
+      max-width: 22ch;
+      margin: clamp(1.25rem, 3vw, 2rem) 0 0;
+    }
+    .lede {
+      max-width: 40ch;
+      font-size: clamp(1.1rem, 1.8vw, 1.25rem);
+      line-height: 1.5;
+      margin: 1rem 0 0;
+    }
+    .actions {
+      position: relative;
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      margin: 2rem 0 0;
+    }
+    .pill {
+      display: inline-block;
+      padding: .75em 1.4em;
+      border-radius: 999px;
+      font-weight: 700;
+      text-decoration: none;
+      background: var(--forest);
+      color: var(--cream);
+      border: 2px solid var(--forest);
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .pill:hover { background: var(--tomato); border-color: var(--tomato); }
+    .pill.ghost { background: transparent; color: var(--forest); }
+    .pill.ghost:hover { color: var(--tomato); border-color: var(--tomato); }
+
+    /* hand-drawn curls, a nod to her hair */
+    .curl {
+      position: absolute;
+      z-index: -1;
+      pointer-events: none;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .curl path {
+      stroke-dasharray: 900;
+      stroke-dashoffset: 900;
+      animation: draw 1.3s cubic-bezier(.4, 0, .2, 1) forwards;
+    }
+    /* flicks off the end of "Erin"; sized in em so it scales with the name */
+    .curl-big {
+      stroke: var(--forest);
+      stroke-width: 7;
+      left: 2.1em;
+      top: -.32em;
+      width: 3.6em;
+    }
+    /* a tight spiral tucked after the buttons */
+    .curl-small {
+      stroke: var(--mustard);
+      stroke-width: 10;
+      width: 5.25rem;
+      left: calc(100% + .5rem);
+      top: 50%;
+      transform: translateY(-52%) rotate(12deg);
+    }
+    .curl-small path { animation-delay: .55s; animation-duration: .9s; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .curl path { animation: none; stroke-dashoffset: 0; }
+    }
+    @media (max-width: 520px) {
+      .curl-small { left: auto; right: -1rem; top: auto; bottom: -4.25rem; transform: rotate(12deg); width: 4.5rem; }
+    }
+
+    /* ---------- about (green panel) ---------- */
+    .about {
+      background: var(--forest);
+      color: var(--cream);
+      border-radius: var(--radius);
+      padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 5vw, 4rem) clamp(1.25rem, 3vw, 2rem);
+      overflow: hidden;
+    }
+    .about h2 {
+      font-size: clamp(2rem, 4.5vw, 3.25rem);
+      line-height: 1.05;
+      letter-spacing: -.01em;
+      margin-bottom: 1.25rem;
+    }
+    .about p {
+      max-width: var(--measure);
+      margin: 0 0 1.1em;
+    }
+    /* a chromatogram trace, from her years running HPLC in the lab */
+    .trace {
+      display: block;
+      width: 100%;
+      height: clamp(48px, 7vw, 72px);
+      margin-top: clamp(1.5rem, 4vw, 2.5rem);
+      fill: none;
+      stroke: var(--mustard);
+      stroke-width: 2.5;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+
+    /* ---------- path (timeline) ---------- */
+    .work { padding-block: clamp(3.5rem, 8vw, 6rem); }
+    .work h2 {
+      font-size: clamp(2rem, 4.5vw, 3.25rem);
+      line-height: 1.05;
+      letter-spacing: -.01em;
+      color: var(--forest);
+      margin-bottom: 2rem;
+    }
+    .timeline {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 0 1.75rem;
+      border-left: 3px solid var(--forest);
+      max-width: var(--measure);
+    }
+    .timeline li {
+      position: relative;
+      padding-bottom: 2.25rem;
+    }
+    .timeline li:last-child { padding-bottom: 0; }
+    .timeline li::before {
+      content: "";
+      position: absolute;
+      left: calc(-1.75rem - 9px);
+      top: .45em;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--tomato);
+      border: 3px solid var(--cream);
+      box-shadow: 0 0 0 3px var(--forest);
+    }
+    .timeline h3 {
+      font-size: 1.55rem;
+      line-height: 1.15;
+      color: var(--forest);
+    }
+    .timeline .meta {
+      margin: .25rem 0 .5rem;
+      color: var(--ink-soft);
+      font-weight: 700;
+    }
+    .timeline p { margin: 0; max-width: 52ch; }
+
+    /* ---------- say hello ---------- */
+    .hello {
+      border-top: 3px solid var(--forest);
+      padding-block: clamp(3rem, 7vw, 5rem) 2.5rem;
+    }
+    .hello h2 {
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      line-height: 1;
+      letter-spacing: -.02em;
+      color: var(--forest);
+    }
+    .hello .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem 2rem;
+      margin: 1.5rem 0 3rem;
+      font-size: clamp(1.15rem, 2vw, 1.35rem);
+      font-weight: 700;
+    }
+    .hello .links a {
+      text-decoration-color: var(--tomato);
+      text-decoration-thickness: 2px;
+      text-underline-offset: .25em;
+    }
+    .hello .links a:hover { color: var(--tomato); }
+    .fine {
+      font-size: .95rem;
+      color: var(--ink-soft);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: .5rem 1.5rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <a id="top"></a>
+  <header class="wrap top">
+    <a class="mark" href="#top" aria-label="Erin Cullison, back to top">
+      <svg viewBox="0 0 64 32" aria-hidden="true">
+        <g fill="none" stroke="#D8432F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="8" width="22" height="16" rx="7"/>
+          <rect x="38" y="8" width="22" height="16" rx="7"/>
+          <path d="M26 14q6-5 12 0"/>
+          <path d="M4 13l-3-2M60 13l3-2"/>
+        </g>
+      </svg>
+    </a>
+    <nav aria-label="Sections">
+      <a href="#about">About</a>
+      <a href="#path">Path</a>
+      <a href="#hello">Say hello</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="wrap hero">
+      <h1>Erin Cullison
+        <svg class="curl curl-big" viewBox="0 0 240 80" aria-hidden="true">
+          <path d="M 8 55 C 15 15, 60 5, 72 35 C 82 60, 45 75, 40 50 C 36 28, 70 22, 100 38 C 130 54, 150 62, 180 42 C 200 28, 215 30, 232 15"/>
+        </svg>
+      </h1>
+      <p class="tagline">Software developer, analytical thinker, scientist.</p>
+      <p class="lede">Writing code at Grant Street Group, by way of a microbiology degree and three years in a chemistry lab. Based in Austin, Texas.</p>
+      <p class="actions">
+        <a class="pill" href="https://www.linkedin.com/in/erin-cullison/">LinkedIn</a>
+        <a class="pill ghost" href="#path">How she got here</a>
+        <svg class="curl curl-small" viewBox="0 0 120 120" aria-hidden="true">
+          <path d="M 12 80 C 12 28, 88 18, 96 64 C 102 100, 50 114, 44 76 C 39 46, 84 38, 86 66 C 87 84, 62 88, 61 70 C 60 58, 76 56, 76 66"/>
+        </svg>
+      </p>
+    </section>
+
+    <section class="wrap about" id="about">
+      <h2>A bit about Erin</h2>
+      <p>Erin is a software developer who started out as a scientist. At Grant Street Group she writes the code that moves government tax offices onto Grant Street's tax software, a job that's equal parts programming and careful detective work on messy data.</p>
+      <p>She earned a B.S. in microbiology at UT Austin, then spent three years in a San Francisco lab testing cannabis products for potency. She started as a technician preparing samples and finished as supervisor, leading a team of four analysts, running HPLC instruments, and developing and validating new test methods.</p>
+      <p>In 2022 she took time off to change careers, worked through Tech Elevator's full-stack Java bootcamp, and has been writing software professionally since 2023. The lab habits came with her.</p>
+      <svg class="trace" viewBox="0 0 600 72" preserveAspectRatio="none" aria-hidden="true">
+        <path vector-effect="non-scaling-stroke" d="M0 66 L48 66 C56 66 58 50 62 50 C66 50 68 66 76 66 L118 66 C128 66 131 14 136 14 C141 14 144 66 154 66 L168 66 C174 66 176 44 180 44 C184 44 186 66 192 66 L250 66 C258 66 260 58 263 58 C266 58 268 66 276 66 L318 66 C328 66 332 4 338 4 C344 4 348 66 358 66 L372 66 C378 66 380 34 384 34 C388 34 391 66 398 66 L452 66 C460 66 463 52 467 52 C471 52 474 66 482 66 L520 66 C528 66 531 26 536 26 C541 26 544 66 552 66 L600 66"/>
+      </svg>
+    </section>
+
+    <section class="wrap work" id="path">
+      <h2>How she got here</h2>
+      <ol class="timeline">
+        <li>
+          <h3>Data Conversion Developer</h3>
+          <p class="meta">Grant Street Group, 2023–now</p>
+          <p>Writes the code that moves government tax offices' records onto Grant Street's software, and tracks down whatever in the old data doesn't want to move.</p>
+        </li>
+        <li>
+          <h3>Career change</h3>
+          <p class="meta">Tech Elevator, 2022–2023</p>
+          <p>Took a year to switch fields, including an 800-hour full-stack bootcamp: Java, Spring Boot, Vue.js and PostgreSQL.</p>
+        </li>
+        <li>
+          <h3>Potency Supervisor</h3>
+          <p class="meta">Anresco Laboratories, San Francisco, 2019–2022</p>
+          <p>Worked up from lab technician to analyst to leading a team of four on cannabinoid potency testing for major brands, running HPLC instruments and developing and validating test methods.</p>
+        </li>
+        <li>
+          <h3>Fleet Operations Specialist</h3>
+          <p class="meta">Waymo, via Adecco, Austin, 2018</p>
+          <p>Monitored Waymo's self-driving cars and turned what she saw into data and feedback for its software engineers.</p>
+        </li>
+        <li>
+          <h3>Restaurant Operations</h3>
+          <p class="meta">Uber Eats, Austin, 2017–2018</p>
+          <p>Onboarded major restaurant brands onto Uber Eats across the southern US.</p>
+        </li>
+        <li>
+          <h3>B.S. in Microbiology</h3>
+          <p class="meta">The University of Texas at Austin, 2012–2017</p>
+          <p>Member of the Gamma Beta Phi honor society.</p>
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="wrap hello" id="hello">
+    <h2>Say hello.</h2>
+    <p class="links">
+      <a href="https://www.linkedin.com/in/erin-cullison/">Find her on LinkedIn</a>
+    </p>
+    <p class="fine">
+      <span>© 2026 Erin Cullison</span>
+      <span>erincullison.com</span>
+    </p>
+  </footer>
+</body>
+</html>
