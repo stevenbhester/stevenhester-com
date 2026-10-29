@@ -155,8 +155,8 @@
   .tile:hover { transform: translateY(-4px) rotate(-3deg); }
   .tile:active { transform: translateY(2px) scale(0.96); }
   .tile.sun { background: var(--sun); color: var(--sun-ink); box-shadow: 0 calc(var(--t) * 0.07) 0 var(--sun-deep); }
-  .tile.spin { animation: spin 0.6s cubic-bezier(0.3, 0.8, 0.3, 1.2) both; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .tile.stamp { animation: stamp 0.28s cubic-bezier(0.3, 0.8, 0.3, 1.4) both; }
+  @keyframes stamp { 40% { transform: translateY(3px) scale(0.92); } }
 
   .hero-row {
     display: flex;
@@ -175,7 +175,7 @@
     color: var(--on-cobalt-soft);
   }
   .hero-links { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 24px; }
-  .hero-links .hero-link { line-height: 44px; }
+  .intro .hero-link { margin-top: 18px; }
   .hero-link {
     display: inline-block;
     font-size: 18px;
@@ -202,9 +202,17 @@
   .shuffle:hover { transform: translateY(2px); box-shadow: 0 2px 0 var(--sun-deep); }
   .shuffle:active { transform: translateY(4px); box-shadow: 0 0 0 var(--sun-deep); }
 
-  .shuffle-wrap { display: grid; gap: 10px; justify-items: start; }
+  .shuffle-wrap { display: grid; gap: 10px; justify-items: start; max-width: 34ch; }
+  .shuffle-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+  .reset {
+    min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
+    color: var(--on-cobalt); font-weight: 600;
+    text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px;
+    text-decoration-color: var(--on-cobalt-soft);
+  }
+  .reset:hover { text-decoration-color: var(--sun); }
+  .hint, .tally { margin: 0; font-size: 14px; line-height: 1.45; color: var(--on-cobalt-soft); }
   .tally b { font-weight: 750; color: var(--on-cobalt); font-variant-numeric: tabular-nums; display: inline-block; }
-  .tally.small { font-size: 14px; color: var(--on-cobalt-soft); }
   @media (prefers-reduced-motion: no-preference) {
     .tally b.bump { animation: bump 0.25s cubic-bezier(0.3, 0.8, 0.3, 1.6); }
     @keyframes bump { 50% { transform: scale(1.25); color: var(--sun); } }
@@ -375,7 +383,7 @@
     box-shadow: 0 10px 0 var(--sun-deep), inset 0 0 0 10px rgba(255,255,255,0.35), inset 0 0 0 12px var(--sun-deep);
   }
   .face.front {
-    background: conic-gradient(var(--cobalt) 0 40%, var(--up) 40% 75%, var(--sun) 75% 100%);
+    background: conic-gradient(var(--up) 0 40%, var(--down) 40% 75%, var(--tile) 75% 100%);
   }
   .face.back {
     background: var(--sun);
@@ -383,8 +391,11 @@
     transform: rotateY(180deg);
   }
   .face .label {
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
     width: 46%; height: 46%;
     border-radius: 50%;
     background: var(--tile);
@@ -405,15 +416,10 @@
     font-weight: 700;
     box-shadow: 0 3px 0 var(--line);
   }
-  .army {
-    display: grid;
-    grid-template-columns: repeat(4, auto);
-    gap: 6px 8px;
-    font-size: clamp(22px, 3.4vw, 34px);
-    line-height: 1;
-    text-align: center;
-  }
-  .army span:last-child { position: relative; overflow: hidden; width: 0.55em; text-align: left; }
+  .town { display: grid; justify-items: center; gap: 10px; text-align: center; line-height: 1; }
+  .town-name { font-size: clamp(20px, 2.8vw, 28px); font-weight: 850; font-stretch: 112%; color: var(--cobalt); }
+  .town-row { font-size: clamp(20px, 3vw, 30px); letter-spacing: 2px; white-space: nowrap; }
+  .town .half { display: inline-block; clip-path: inset(0 0 50% 0); }
 
   .later {
     margin: clamp(56px, 7vw, 88px) 0 0;
@@ -576,13 +582,19 @@
       </span>
     </h1>
     <div class="hero-row">
-      <p class="role">I work on insights, strategy, and growth at Riot&nbsp;Games. On the side, I build small games. The letters up there are clickable, for no reason.<span class="tally" id="letterTally" hidden> People have clicked them <b id="letterCount">0</b> times.</span></p>
+      <div class="intro">
+        <p class="role">I work on insights, strategy, and growth at Riot&nbsp;Games. On the side, I build small games.</p>
+        <a class="hero-link" href="https://www.linkedin.com/in/stevenbradyhester" data-track="linkedin">Find me on LinkedIn</a>
+      </div>
       <div class="hero-links">
         <div class="shuffle-wrap">
-          <button class="shuffle" type="button" id="shuffle">Shuffle my name</button>
-          <span class="tally small" id="shuffleTally" hidden>Shuffled <b id="shuffleCount">0</b> times so far</span>
+          <div class="shuffle-row">
+            <button class="shuffle" type="button" id="shuffle">Shuffle my name</button>
+            <button class="reset" type="button" id="reset" hidden>Put it back</button>
+          </div>
+          <p class="hint" id="hint" aria-live="polite">Click a letter to lock it in place before you shuffle.</p>
+          <p class="tally" id="tally" hidden>Lifetime totals: <b id="letterCount">0</b> letter clicks, <b id="shuffleCount">0</b> shuffles.</p>
         </div>
-        <a class="hero-link" href="https://www.linkedin.com/in/stevenbradyhester" data-track="linkedin">Find me on LinkedIn</a>
       </div>
     </div>
   </div>
@@ -636,34 +648,33 @@
       <article class="feature flip">
         <div>
           <h3>Trickle Down <span class="sticker">in beta</span></h3>
-          <p>A daily trading game that is also a joke about trading. Every day you get $100 of fake money to put into real stocks and crypto. Returns are amplified ten times, because this is a game and not advice. Profits get taxed, the taxes hire lobbyists for charities, and the site's real ad money follows the lobbyists. It's in beta, which means some things are broken on purpose and some by accident.</p>
+          <p>A daily trading game: $100K of fake money, real stocks, ten times the drama. Hold a position for 24 hours and its move is multiplied by ten. A quarter of your gains goes to taxes, which hire lobbyists for a charity you pick. The lobbyists live in TrickleTown, on the back of your coin, and you run the town. Every quarter, the site's real ad money goes to the charities with the most lobbyists.</p>
           <div class="actions">
             <a class="btn sun" href="https://trickledown.stevenhester.com/" data-track="trickledown-beta">Try the beta</a>
           </div>
         </div>
 
         <figure class="coin-fig">
-          <button class="coin-scene" type="button" id="coin" aria-label="Today's coin in Trickle Down: $100 split into three slices. Press to flip it over and see the lobbyist army.">
+          <button class="coin-scene" type="button" id="coin" aria-label="A Trickle Down coin. The front shows two positions, NVDA at $40K and up, BTC at $35K and down, with $25K left to spend. Press to flip it to TrickleTown on the back.">
             <div class="coin">
               <div class="face front">
-                <span class="slice-tag" style="top:14%; right:4%">BTC $40</span>
-                <span class="slice-tag" style="bottom:10%; left:2%">NVDA $35</span>
-                <span class="slice-tag" style="top:22%; left:0">Cash $25</span>
-                <div class="label"><b>$100</b><small>today's coin</small></div>
+                <span class="slice-tag" style="top:12%; right:2%">NVDA $40K</span>
+                <span class="slice-tag" style="bottom:8%; left:4%">BTC $35K</span>
+                <div class="label"><b>$25K</b><small>to spend</small></div>
               </div>
               <div class="face back">
-                <div class="army" aria-hidden="true">
-                  <span>🧍</span><span>🧍</span><span>🧍</span><span>🧍</span>
-                  <span>🧍</span><span>🧍</span><span>🧍</span><span>🧍</span>
+                <div class="town" aria-hidden="true">
+                  <span class="town-name">TrickleTown</span>
+                  <span class="town-row">🏛️ 🏥 🎰</span>
+                  <span class="town-row">🧍🧍🧍🧍🧍<span class="half">🧍</span></span>
                 </div>
               </div>
             </div>
           </button>
-          <figcaption>Today's $100, carved into slices. Flip it to count your lobbyists. Seven and a half of them.</figcaption>
+          <figcaption>The front is your portfolio. The back is the town your lobbyists live in.</figcaption>
         </figure>
       </article>
 
-      <p class="later">Those two have taken over 750 commits and 350 pull requests so far. More small things are on the way, and some of them are even finished.</p>
     </div>
   </section>
 
@@ -685,7 +696,7 @@
 
 <footer>
   <div class="wrap">
-    &copy; <span id="year">2026</span> Steven Hester. Made in Texas, with boba.
+    &copy; <span id="year">2026</span> Steven Hester
   </div>
 </footer>
 
@@ -704,9 +715,6 @@
     ['HOUSEPLANTS', '▼ 0 ALIVE', 'down'],
     ['CRANKY CATS', '◆ 1', 'beta'],
     ['WORDLE STREAK', '▲ 155', 'up'],
-    ['COMMITS', '▲ 750+', 'up'],
-    ['PULL REQUESTS', '▲ 350+', 'up'],
-    ['LOBBYISTS', '▲ $1.00 EA', 'up'],
     ['TEEMO', '▼ BANNED', 'down'],
   ];
   const tape = document.getElementById("tape");
@@ -773,7 +781,7 @@
   function paint(name, bump) {
     const el = document.getElementById(name === "letters" ? "letterCount" : "shuffleCount");
     el.textContent = fmt(shown[name]);
-    document.getElementById(name === "letters" ? "letterTally" : "shuffleTally").hidden = false;
+    document.getElementById("tally").hidden = false;
     tape.querySelectorAll(`[data-live="${name}"]`).forEach(x => x.textContent = "▲ " + fmt(shown[name]));
     if (bump) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
   }
@@ -808,7 +816,7 @@
     if (a) { track("link", a.dataset.track); flush(true); }
   });
 
-  /* ---------- Hero tiles: click to spin and spray, shuffle to scramble ---------- */
+  /* ---------- Hero tiles: click to lock, shuffle the rest ---------- */
   const nameBoard = document.getElementById("name");
   const tiles = [...nameBoard.querySelectorAll(".tile")];
   const colors = ["#ffcf3f", "#f4f5fa", "#35d07f", "#ff6b6b"];
@@ -830,40 +838,87 @@
     }
   }
 
-  tiles.forEach(t => {
-    t.addEventListener("animationend", () => t.classList.remove("drop", "spin"));
-    t.addEventListener("click", e => {
-      t.classList.toggle("sun");
-      t.classList.remove("spin"); void t.offsetWidth; t.classList.add("spin");
-      spray(e.clientX, e.clientY);
-      track("letter", t.textContent);
-      countLocally("letters");
-    });
-  });
-
-  let shuffled = false;
+  /* Click a letter to lock it; shuffling only moves the unlocked ones.
+     slot[k] is where tile k currently sits (0-11). */
+  const NAME = tiles.map(t => t.textContent).join("");
+  const slot = tiles.map((_, k) => k);
   const shuffleBtn = document.getElementById("shuffle");
-  shuffleBtn.addEventListener("click", () => {
+  const resetBtn = document.getElementById("reset");
+  const hint = document.getElementById("hint");
+  const HINT = hint.textContent;
+  let shufflesSinceScramble = 0;
+
+  const spelled = () => tiles.map((t, k) => [slot[k], t.textContent]).sort((a, b) => a[0] - b[0]).map(x => x[1]).join("");
+  const isLocked = t => t.classList.contains("sun");
+
+  function move(update) {
     const before = tiles.map(t => t.getBoundingClientRect());
-    if (shuffled) {
-      tiles.forEach(t => t.style.order = "");
-    } else {
-      const order = tiles.map((_, i) => i).sort(() => Math.random() - 0.5);
-      tiles.forEach((t, i) => t.style.order = order[i]);
-    }
-    shuffled = !shuffled;
-    shuffleBtn.textContent = shuffled ? "Put it back" : "Shuffle my name";
-    track(shuffled ? "shuffle" : "unshuffle");
-    if (shuffled) countLocally("shuffles");
+    update();
+    tiles.forEach((t, k) => t.style.order = slot[k]);
     if (reduceMotion) return;
-    tiles.forEach((t, i) => {
+    tiles.forEach((t, k) => {
       const after = t.getBoundingClientRect();
-      const dx = before[i].left - after.left, dy = before[i].top - after.top;
+      const dx = before[k].left - after.left, dy = before[k].top - after.top;
+      if (!dx && !dy) return;
       t.animate(
-        [{ transform: `translate(${dx}px, ${dy}px) rotate(${dx ? 8 : 0}deg)` }, { transform: "none" }],
+        [{ transform: `translate(${dx}px, ${dy}px) rotate(8deg)` }, { transform: "none" }],
         { duration: 480, easing: "cubic-bezier(0.2, 0.9, 0.3, 1.2)" }
       );
     });
+  }
+
+  function syncControls() {
+    const changed = spelled() !== NAME || tiles.some(isLocked);
+    resetBtn.hidden = !changed;
+    shuffleBtn.textContent = spelled() === NAME ? "Shuffle my name" : "Shuffle again";
+  }
+
+  tiles.forEach(t => {
+    t.addEventListener("animationend", () => t.classList.remove("drop", "stamp"));
+    t.addEventListener("click", e => {
+      t.classList.toggle("sun");
+      t.classList.remove("stamp"); void t.offsetWidth; t.classList.add("stamp");
+      if (isLocked(t)) spray(e.clientX, e.clientY, 8);
+      track("letter", t.textContent);
+      countLocally("letters");
+      hint.textContent = HINT;
+      syncControls();
+    });
+  });
+
+  shuffleBtn.addEventListener("click", () => {
+    const free = tiles.map((_, k) => k).filter(k => !isLocked(tiles[k]));
+    if (free.length < 2) { hint.textContent = "Everything's locked. Unlock a letter or two first."; return; }
+    const wasInOrder = spelled() === NAME;
+    const was = spelled();
+    move(() => {
+      const spots = free.map(k => slot[k]);
+      for (let tries = 0; tries < 30; tries++) {
+        for (let n = spots.length - 1; n > 0; n--) { const r = Math.floor(Math.random() * (n + 1)); [spots[n], spots[r]] = [spots[r], spots[n]]; }
+        free.forEach((k, j) => slot[k] = spots[j]);
+        if (spelled() !== was) break; /* duplicate letters can make a shuffle look like nothing happened */
+      }
+    });
+    track("shuffle");
+    countLocally("shuffles");
+    shufflesSinceScramble = wasInOrder ? 1 : shufflesSinceScramble + 1;
+    if (!wasInOrder && spelled() === NAME) {
+      hint.textContent = `Back in order after ${shufflesSinceScramble} ${shufflesSinceScramble === 1 ? "shuffle" : "shuffles"}.`;
+      track("unscramble", null, shufflesSinceScramble);
+      const r = nameBoard.getBoundingClientRect();
+      spray(r.left + r.width / 2, r.top + r.height / 2, 40);
+    } else {
+      hint.textContent = HINT;
+    }
+    syncControls();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    move(() => tiles.forEach((t, k) => { slot[k] = k; t.classList.remove("sun"); }));
+    track("unshuffle");
+    hint.textContent = HINT;
+    syncControls();
+    shuffleBtn.focus();
   });
 
   /* ---------- Coin flip on tap (hover handles mouse) ---------- */
