@@ -1,4 +1,10 @@
 <!doctype html>
+<!--
+     .-"""-.     .-"""-.
+    /       \___/       \      You're reading the source.
+    \       /   \       /      Check the console as well.
+     '-...-'     '-...-'
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -18,8 +24,10 @@
     :root {
       --cream: #F7EFDF;
       --forest: #1E4D3A;
+      --forest-deep: #163B2C;
       --tomato: #D8432F;
       --mustard: #E3A82B;
+      --teal: #2E8A86;
       --ink: #22302A;
       --ink-soft: #4C5A52;
 
@@ -31,6 +39,7 @@
       --radius: 28px;
     }
 
+    [hidden] { display: none !important; }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
@@ -55,7 +64,7 @@
     }
 
     a { color: var(--forest); }
-    a:focus-visible {
+    a:focus-visible, button:focus-visible {
       outline: 3px solid var(--tomato);
       outline-offset: 4px;
       border-radius: 4px;
@@ -123,6 +132,7 @@
       position: relative;
       display: inline-flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: .75rem;
       margin: 2rem 0 0;
     }
@@ -155,7 +165,6 @@
       stroke-dashoffset: 900;
       animation: draw 1.3s cubic-bezier(.4, 0, .2, 1) forwards;
     }
-    /* flicks off the end of "Erin"; sized in em so it scales with the name */
     .curl-big {
       stroke: var(--forest);
       stroke-width: 7;
@@ -163,22 +172,54 @@
       top: -.32em;
       width: 3.6em;
     }
-    /* a tight spiral tucked after the buttons */
-    .curl-small {
-      stroke: var(--mustard);
-      stroke-width: 10;
-      width: 5.25rem;
-      left: calc(100% + .5rem);
-      top: 50%;
-      transform: translateY(-52%) rotate(12deg);
-    }
-    .curl-small path { animation-delay: .55s; animation-duration: .9s; }
     @keyframes draw { to { stroke-dashoffset: 0; } }
-    @media (prefers-reduced-motion: reduce) {
-      .curl path { animation: none; stroke-dashoffset: 0; }
+
+    /* the water slide: tap once to run the water, again to open the pool */
+    .slide-toy {
+      flex: none;
+      width: 6rem;
+      aspect-ratio: 1;
+      margin-left: auto;
+      padding: 0;
+      border: 0;
+      background: none;
+      cursor: pointer;
+      transition: transform .2s ease;
     }
-    @media (max-width: 520px) {
-      .curl-small { left: auto; right: -1rem; top: auto; bottom: -4.25rem; transform: rotate(12deg); width: 4.5rem; }
+    .slide-toy:hover { transform: translateY(-2px); }
+    .slide-toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .slide-toy .track path {
+      stroke-dasharray: 400;
+      stroke-dashoffset: 400;
+      animation: draw 1s cubic-bezier(.4, 0, .2, 1) .5s forwards;
+    }
+    .slide-toy .track.b path { animation-delay: 1.3s; animation-duration: .35s; }
+    .slide-toy .rush {
+      stroke: #6CC0BA;
+      stroke-width: 4.5;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+    }
+    .slide-toy .flow {
+      stroke: #fff;
+      stroke-opacity: .9;
+      stroke-width: 2.2;
+      stroke-dasharray: 6 12;
+      opacity: 0;
+    }
+    .slide-toy .ripple { opacity: 0; transform-box: fill-box; transform-origin: center; }
+    .slide-toy.wet .rush { animation: draw .6s ease-in forwards; }
+    .slide-toy.wet .water.b .rush { animation-delay: .55s; animation-duration: .4s; }
+    .slide-toy.wet .flow {
+      opacity: 1;
+      transition: opacity .3s ease 1s;
+      animation: flow .45s linear infinite;
+    }
+    .slide-toy.wet .ripple { animation: ripple-ring 1.3s ease-out 1s infinite; }
+    @keyframes flow { to { stroke-dashoffset: -18; } }
+    @keyframes ripple-ring {
+      from { transform: scale(.5); opacity: .9; }
+      to { transform: scale(1.4); opacity: 0; }
     }
 
     /* ---------- about (green panel) ---------- */
@@ -186,7 +227,7 @@
       background: var(--forest);
       color: var(--cream);
       border-radius: var(--radius);
-      padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 5vw, 4rem) clamp(1.25rem, 3vw, 2rem);
+      padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 5vw, 4rem) clamp(1.5rem, 3.5vw, 2.5rem);
       overflow: hidden;
     }
     .about h2 {
@@ -199,18 +240,57 @@
       max-width: var(--measure);
       margin: 0 0 1.1em;
     }
-    /* a chromatogram trace, from her years running HPLC in the lab */
+
+    /* the chromatogram: a "sample analysis" of Erin, one peak per thing she loves */
+    .trace-wrap {
+      position: relative;
+      margin-top: clamp(1.5rem, 4vw, 2.5rem);
+    }
     .trace {
       display: block;
       width: 100%;
-      height: clamp(48px, 7vw, 72px);
-      margin-top: clamp(1.5rem, 4vw, 2.5rem);
+      height: clamp(64px, 9vw, 88px);
       fill: none;
       stroke: var(--mustard);
       stroke-width: 2.5;
       stroke-linejoin: round;
       stroke-linecap: round;
     }
+    .peak {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: clamp(26px, 6%, 44px);
+      transform: translateX(-50%);
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: crosshair;
+    }
+    .peak::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: var(--apex, 50%);
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--cream);
+      transform: translate(-50%, -50%) scale(0);
+      transition: transform .2s ease, background .2s ease;
+    }
+    .peak:hover::after { transform: translate(-50%, -50%) scale(.75); }
+    .peak.found::after { transform: translate(-50%, -50%) scale(1); background: var(--mustard); }
+    .peak.current::after { transform: translate(-50%, -50%) scale(1.3); background: var(--cream); }
+    .peak:focus-visible { outline: 2px solid var(--mustard); outline-offset: 2px; }
+    .about .trace-caption {
+      margin: .85rem 0 0;
+      min-height: 3em;
+      font-size: .98rem;
+      line-height: 1.45;
+      color: rgba(247, 239, 223, .85);
+    }
+    .trace-caption .count { color: var(--mustard); white-space: nowrap; }
 
     /* ---------- path (timeline) ---------- */
     .work { padding-block: clamp(3.5rem, 8vw, 6rem); }
@@ -258,15 +338,37 @@
     .timeline p { margin: 0; max-width: 52ch; }
 
     /* ---------- say hello ---------- */
-    .hello {
-      border-top: 3px solid var(--forest);
-      padding-block: clamp(3rem, 7vw, 5rem) 2.5rem;
+    .hello { padding-block: 0 2.5rem; }
+    .waves {
+      height: 12px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12' viewBox='0 0 40 12'%3E%3Cpath d='M0 6 Q10 0 20 6 T40 6' fill='none' stroke='%232E8A86' stroke-width='3'/%3E%3C/svg%3E") 0 50% / 40px 12px repeat-x;
+      margin-bottom: clamp(3rem, 7vw, 5rem);
     }
     .hello h2 {
       font-size: clamp(2.5rem, 7vw, 5rem);
       line-height: 1;
       letter-spacing: -.02em;
       color: var(--forest);
+    }
+    .asl {
+      display: inline-block;
+      font: inherit;
+      letter-spacing: inherit;
+      color: inherit;
+      background: none;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      text-align: left;
+      transition: color .15s ease;
+    }
+    .asl:hover { color: var(--tomato); }
+    .asl.salute { animation: salute .7s ease; transform-origin: 8% 85%; }
+    @keyframes salute {
+      0%, 100% { transform: rotate(0); }
+      30% { transform: rotate(-5deg) translateY(-3px); }
+      60% { transform: rotate(2deg); }
     }
     .hello .links {
       display: flex;
@@ -287,9 +389,191 @@
       color: var(--ink-soft);
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       justify-content: space-between;
-      gap: .5rem 1.5rem;
+      gap: .75rem 1.5rem;
       margin: 0;
+    }
+    .secrets-btn {
+      font: inherit;
+      font-weight: 700;
+      font-size: .9rem;
+      color: var(--forest);
+      background: none;
+      border: 2px solid var(--forest);
+      border-radius: 999px;
+      padding: .3em .95em;
+      cursor: pointer;
+      transition: color .15s ease, border-color .15s ease;
+    }
+    .secrets-btn:hover { color: var(--tomato); border-color: var(--tomato); }
+    .toys { display: flex; gap: .35rem; margin-left: auto; }
+    .toy {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: none;
+      color: var(--forest);
+      cursor: pointer;
+      transition: color .15s ease, transform .15s ease;
+    }
+    .toy:hover { color: var(--tomato); transform: translateY(-2px); }
+    .toy svg { width: 34px; height: 34px; overflow: visible; }
+    .die.rolling svg { animation: roll .65s cubic-bezier(.2, .7, .2, 1); }
+    @keyframes roll { to { transform: rotate(720deg); } }
+
+    /* ---------- dialogs: petri dish, achievements ---------- */
+    dialog {
+      border: 0;
+      border-radius: 24px;
+      padding: clamp(1.25rem, 4vw, 2rem);
+      width: min(100% - 2rem, 27rem);
+      background: var(--cream);
+      color: var(--ink);
+      box-shadow: 0 24px 60px rgba(22, 59, 44, .35);
+    }
+    dialog::backdrop { background: rgba(22, 59, 44, .5); }
+    dialog h2 {
+      font-size: 2rem;
+      line-height: 1.1;
+      color: var(--forest);
+      margin-bottom: .4rem;
+    }
+    dialog p { margin: 0; }
+    .dish-canvas {
+      display: block;
+      width: min(100%, 300px);
+      aspect-ratio: 1;
+      margin: 1.1rem auto;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .fineprint { font-size: .9rem; color: var(--ink-soft); }
+    .dlg-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.1rem; }
+    .btn {
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: .5em 1.1em;
+      border-radius: 999px;
+      border: 2px solid var(--forest);
+      background: transparent;
+      color: var(--forest);
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .btn:hover { color: var(--tomato); border-color: var(--tomato); }
+    .btn.solid { background: var(--forest); color: var(--cream); }
+    .btn.solid:hover { background: var(--tomato); border-color: var(--tomato); color: var(--cream); }
+    .trophies {
+      list-style: none;
+      margin: 1.1rem 0 0;
+      padding: 0;
+      display: grid;
+      gap: .8rem;
+    }
+    .trophies li { display: flex; gap: .8rem; align-items: flex-start; }
+    .trophies .medal { flex: none; width: 34px; height: 34px; }
+    .trophies strong { display: block; font-family: var(--display); font-size: 1.15rem; line-height: 1.2; color: var(--forest); }
+    .trophies span { display: block; font-size: .95rem; line-height: 1.4; }
+    .trophies li.locked strong { color: var(--ink-soft); }
+    .trophies li.locked span { color: var(--ink-soft); font-style: italic; }
+
+    /* ---------- toasts ---------- */
+    .toasts {
+      position: fixed;
+      left: 1rem;
+      bottom: 1rem;
+      z-index: 60;
+      display: grid;
+      gap: .5rem;
+      width: min(23rem, calc(100vw - 2rem));
+      pointer-events: none;
+      transition: bottom .3s ease;
+    }
+    body.pool-on .toasts { bottom: 112px; }
+    .toast {
+      display: flex;
+      gap: .8rem;
+      align-items: center;
+      padding: .8rem 1rem;
+      border-radius: 18px;
+      background: var(--forest);
+      color: var(--cream);
+      box-shadow: 0 12px 32px rgba(22, 59, 44, .3);
+      animation: toast-in .4s cubic-bezier(.2, .8, .2, 1);
+    }
+    .toast.out { animation: toast-out .3s ease forwards; }
+    .toast .medal { flex: none; width: 42px; height: 42px; }
+    .toast p { margin: 0; }
+    .toast .kicker { font-size: .82rem; font-weight: 700; color: var(--mustard); }
+    .toast .t { font-family: var(--display); font-weight: 600; font-size: 1.2rem; line-height: 1.15; }
+    .toast .d { font-size: .92rem; line-height: 1.35; opacity: .9; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(.96); } }
+    @keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
+
+    /* ---------- the pool: a float drifting by ---------- */
+    .pool {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 100px;
+      z-index: 55;
+      pointer-events: none;
+      overflow: hidden;
+      animation: pool-in .4s ease both;
+    }
+    .pool::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 58px;
+      height: 12px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12' viewBox='0 0 40 12'%3E%3Cpath d='M0 6 Q10 0 20 6 T40 6 V12 H0 Z' fill='%233A9E99'/%3E%3C/svg%3E") 0 0 / 40px 12px repeat-x;
+      animation: ripple 2.4s linear infinite;
+    }
+    .pool::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 69px;
+      bottom: 0;
+      background: linear-gradient(#3A9E99, var(--teal) 45%, #23706C);
+    }
+    .pool.out { animation: pool-out .45s ease forwards; }
+    @keyframes pool-in { from { transform: translateY(100%); } }
+    @keyframes pool-out { to { transform: translateY(100%); } }
+    @keyframes ripple { to { background-position: 40px 0; } }
+    .floater {
+      position: absolute;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 128px;
+      height: 76px;
+      shape-rendering: crispEdges;
+      animation: drift 9s linear forwards;
+    }
+    @keyframes drift {
+      from { transform: translateX(-140px); }
+      to { transform: translateX(100vw); }
+    }
+    .bob { animation: bob 1.4s steps(1) infinite; }
+    @keyframes bob { 50% { transform: translateY(1px); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .curl path { animation: none; stroke-dashoffset: 0; }
+      .asl.salute, .die.rolling svg, .toast, .toast.out { animation: none; }
+      .bob, .pool::before, .slide-toy.wet .flow, .slide-toy.wet .ripple { animation: none; }
+      .slide-toy .track path, .slide-toy.wet .rush { animation: none; stroke-dashoffset: 0; }
     }
   </style>
 </head>
@@ -325,20 +609,50 @@
       <p class="actions">
         <a class="pill" href="https://www.linkedin.com/in/erin-cullison/">LinkedIn</a>
         <a class="pill ghost" href="#path">How she got here</a>
-        <svg class="curl curl-small" viewBox="0 0 120 120" aria-hidden="true">
-          <path d="M 12 80 C 12 28, 88 18, 96 64 C 102 100, 50 114, 44 76 C 39 46, 84 38, 86 66 C 87 84, 62 88, 61 70 C 60 58, 76 56, 76 66"/>
-        </svg>
+        <button class="slide-toy" type="button" aria-label="Water slide" title="Water slide">
+          <svg viewBox="0 0 140 140" aria-hidden="true">
+            <g fill="none" stroke="#1E4D3A" stroke-linecap="round">
+              <path d="M19 30V130M33 30V130" stroke-width="3"/>
+              <path d="M19 46h14M19 62h14M19 78h14M19 94h14M19 110h14" stroke-width="2.5"/>
+              <path d="M12 29h32" stroke-width="4.5"/>
+            </g>
+            <ellipse cx="116" cy="127" rx="21" ry="7" fill="#2E8A86"/>
+            <ellipse class="ripple" cx="116" cy="127" rx="21" ry="7" fill="none" stroke="#6CC0BA" stroke-width="2"/>
+            <g class="track" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M44 29 C86 16 124 40 112 74 C102 100 54 104 48 80 C43 60 76 50 88 66" stroke="#F7EFDF" stroke-width="19"/>
+              <path d="M44 29 C86 16 124 40 112 74 C102 100 54 104 48 80 C43 60 76 50 88 66" stroke="#E3A82B" stroke-width="12"/>
+              <path d="M44 29 C86 16 124 40 112 74 C102 100 54 104 48 80 C43 60 76 50 88 66" stroke="#F5D58A" stroke-width="3"/>
+            </g>
+            <g class="water" fill="none" stroke-linecap="round">
+              <path class="rush" d="M44 29 C86 16 124 40 112 74 C102 100 54 104 48 80 C43 60 76 50 88 66" pathLength="100"/>
+              <path class="flow" d="M44 29 C86 16 124 40 112 74 C102 100 54 104 48 80 C43 60 76 50 88 66"/>
+            </g>
+            <g class="track b" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M88 66 C98 80 100 104 112 121" stroke="#F7EFDF" stroke-width="19"/>
+              <path d="M88 66 C98 80 100 104 112 121" stroke="#E3A82B" stroke-width="12"/>
+              <path d="M88 66 C98 80 100 104 112 121" stroke="#F5D58A" stroke-width="3"/>
+            </g>
+            <g class="water b" fill="none" stroke-linecap="round">
+              <path class="rush" d="M88 66 C98 80 100 104 112 121" pathLength="100"/>
+              <path class="flow" d="M88 66 C98 80 100 104 112 121"/>
+            </g>
+          </svg>
+        </button>
       </p>
     </section>
 
     <section class="wrap about" id="about">
       <h2>A bit about Erin</h2>
-      <p>Erin is a software developer who started out as a scientist. At Grant Street Group she writes the code that moves government tax offices onto Grant Street's tax software, a job that's equal parts programming and careful detective work on messy data.</p>
+      <p>Erin is a software developer who started out as a scientist. At Grant Street Group she writes the code that moves government tax offices onto Grant Street's tax software, a job that is roughly equal parts programming and data forensics.</p>
       <p>She earned a B.S. in microbiology at UT Austin, then spent three years in a San Francisco lab testing cannabis products for potency. She started as a technician preparing samples and finished as supervisor, leading a team of four analysts, running HPLC instruments, and developing and validating new test methods.</p>
-      <p>In 2022 she took time off to change careers, worked through Tech Elevator's full-stack Java bootcamp, and has been writing software professionally since 2023. The lab habits came with her.</p>
-      <svg class="trace" viewBox="0 0 600 72" preserveAspectRatio="none" aria-hidden="true">
-        <path vector-effect="non-scaling-stroke" d="M0 66 L48 66 C56 66 58 50 62 50 C66 50 68 66 76 66 L118 66 C128 66 131 14 136 14 C141 14 144 66 154 66 L168 66 C174 66 176 44 180 44 C184 44 186 66 192 66 L250 66 C258 66 260 58 263 58 C266 58 268 66 276 66 L318 66 C328 66 332 4 338 4 C344 4 348 66 358 66 L372 66 C378 66 380 34 384 34 C388 34 391 66 398 66 L452 66 C460 66 463 52 467 52 C471 52 474 66 482 66 L520 66 C528 66 531 26 536 26 C541 26 544 66 552 66 L600 66"/>
-      </svg>
+      <p>In 2022 she changed careers, completed Tech Elevator's full-stack Java bootcamp, and has been writing software professionally since 2023. She kept the lab habits.</p>
+      <p>Outside work, she's mom to one beautiful daughter. She swims for fun, never laps; reads hard-magic fantasy, biographies and biomedical stories; and plays video games.</p>
+      <div class="trace-wrap">
+        <svg class="trace" viewBox="0 0 600 72" preserveAspectRatio="none" aria-hidden="true">
+          <path vector-effect="non-scaling-stroke" d="M0 66 L600 66"/>
+        </svg>
+      </div>
+      <p class="trace-caption" aria-live="polite">Sample EC-01: Erin. Tap a peak to identify it.</p>
     </section>
 
     <section class="wrap work" id="path">
@@ -351,8 +665,7 @@
         </li>
         <li>
           <h3>Career change</h3>
-          <p class="meta">Tech Elevator, 2022–2023</p>
-          <p>Took a year to switch fields, including an 800-hour full-stack bootcamp: Java, Spring Boot, Vue.js and PostgreSQL.</p>
+          <p class="meta">Tech Elevator, 2022</p>
         </li>
         <li>
           <h3>Potency Supervisor</h3>
@@ -379,14 +692,437 @@
   </main>
 
   <footer class="wrap hello" id="hello">
-    <h2>Say hello.</h2>
+    <div class="waves" aria-hidden="true"></div>
+    <h2><button class="asl" type="button">Say hello.</button></h2>
     <p class="links">
       <a href="https://www.linkedin.com/in/erin-cullison/">Find her on LinkedIn</a>
     </p>
-    <p class="fine">
+    <div class="fine">
       <span>© 2026 Erin Cullison</span>
-      <span>erincullison.com</span>
-    </p>
+      <button class="secrets-btn" type="button" hidden></button>
+      <span class="toys">
+        <button class="toy dish" type="button" aria-label="Open the petri dish" title="Petri dish">
+          <svg viewBox="0 0 34 34" aria-hidden="true">
+            <circle cx="17" cy="17" r="14.5" fill="#F1DFAE" stroke="currentColor" stroke-width="2"/>
+            <circle cx="17" cy="17" r="11" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.2"/>
+            <circle cx="12" cy="13" r="2.4" fill="#D8432F"/>
+            <circle cx="20.5" cy="20" r="3" fill="#D8432F"/>
+            <circle cx="21" cy="11.5" r="1.4" fill="#D8432F"/>
+            <circle cx="12.5" cy="21.5" r="1.2" fill="#D8432F"/>
+          </svg>
+        </button>
+        <button class="toy die" type="button" aria-label="Roll a d20" title="Roll a d20">
+          <svg viewBox="0 0 34 34" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+              <path d="M17 2 30 9.5v15L17 32 4 24.5v-15Z"/>
+              <path d="M17 9.5 25.5 23.5h-17Z"/>
+              <path d="M17 2v7.5M30 9.5l-13 0M30 9.5l-4.5 14M30 24.5l-4.5-1M17 32l-8.5-8.5M17 32l8.5-8.5M4 24.5l4.5-1M4 9.5l4.5 14M4 9.5h13" stroke-width="1.1" stroke-opacity=".6"/>
+            </g>
+            <text class="die-num" x="17" y="20.6" text-anchor="middle" font-size="7.2" font-weight="700" fill="currentColor" font-family="Atkinson Hyperlegible, Arial, sans-serif">20</text>
+          </svg>
+        </button>
+      </span>
+    </div>
   </footer>
+
+  <dialog id="dish" aria-labelledby="dish-title">
+    <h2 id="dish-title">Petri dish</h2>
+    <p>Tap or drag across the agar to add cells. The colonies grow by the rules of Conway's Game of Life.</p>
+    <canvas class="dish-canvas" width="300" height="300" aria-label="Petri dish with growing colonies"></canvas>
+    <p class="fineprint">Grown in red, like <i>Serratia marcescens</i>.</p>
+    <div class="dlg-actions">
+      <button class="btn solid" type="button" data-act="drop">Add a drop</button>
+      <button class="btn" type="button" data-act="pause">Pause</button>
+      <button class="btn" type="button" data-act="wash">Wash the dish</button>
+      <button class="btn" type="button" data-act="close">Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="trophy-case" aria-labelledby="trophy-title">
+    <h2 id="trophy-title">Secrets</h2>
+    <p class="trophy-summary"></p>
+    <ul class="trophies"></ul>
+    <div class="dlg-actions">
+      <button class="btn solid" type="button" data-act="close">Close</button>
+    </div>
+  </dialog>
+
+  <div class="toasts" role="status" aria-live="polite"></div>
+
+  <script>
+  (() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const $ = (s, el = document) => el.querySelector(s);
+
+    /* ---------------- achievements ---------------- */
+    const ACHIEVEMENTS = [
+      { id: 'daughter', title: 'Off the charts', desc: 'The largest peak, by a wide margin.', hint: 'Examine the lab trace.' },
+      { id: 'peaks', title: 'Fully characterized', desc: 'All eight peaks identified.', hint: 'Identify every peak in the lab trace.' },
+      { id: 'culture', title: 'Inoculated', desc: 'Colony established.', hint: 'Every lab has a petri dish. Check the footer.' },
+      { id: 'nat20', title: 'Natural 20', desc: 'Statistically unlikely. Well done.', hint: 'Roll until statistics cooperate.' },
+      { id: 'deep', title: 'Deep end', desc: 'Touched the bottom of the page and resurfaced.', hint: 'Touch the bottom, then resurface.' },
+      { id: 'water', title: 'Pool day', desc: 'Water on, pool open. Float accordingly.', hint: 'The slide is functional. Tap it twice.' },
+      { id: 'asl', title: 'Hello, in ASL', desc: 'Flat hand at the temple, moving outward. Like a small salute.', hint: 'Say hello properly.' },
+      { id: 'logs', title: 'Read the logs', desc: 'You checked the console. Correct instinct.', hint: 'Check the console.' }
+    ];
+    const TOTAL = ACHIEVEMENTS.length;
+    const STORE = 'ec-secrets';
+    let found = new Set();
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE) || '[]');
+      found = new Set(saved.filter(id => ACHIEVEMENTS.some(a => a.id === id)));
+    } catch (e) {}
+    const save = () => { try { localStorage.setItem(STORE, JSON.stringify([...found])); } catch (e) {} };
+
+    const medal = (on = true) => on
+      ? '<svg class="medal" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="20" fill="#E3A82B"/><path d="M21 9.5l3.4 7 7.6 1-5.5 5.3 1.3 7.6L21 26.8l-6.8 3.6 1.3-7.6L10 17.5l7.6-1z" fill="#163B2C"/></svg>'
+      : '<svg class="medal" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="none" stroke="#4C5A52" stroke-width="2" stroke-dasharray="4 4"/><text x="21" y="27" text-anchor="middle" font-size="17" font-weight="700" fill="#4C5A52" font-family="Georgia, serif">?</text></svg>';
+
+    const toastBox = $('.toasts');
+    function toast({ kicker, title, desc, withMedal }) {
+      // keep toasts above an open dialog's backdrop
+      const host = document.querySelector('dialog[open]') || document.body;
+      if (toastBox.parentNode !== host) host.appendChild(toastBox);
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.innerHTML = (withMedal ? medal(true) : '') +
+        '<div>' + (kicker ? '<p class="kicker">' + kicker + '</p>' : '') +
+        '<p class="t">' + title + '</p>' + (desc ? '<p class="d">' + desc + '</p>' : '') + '</div>';
+      toastBox.appendChild(el);
+      while (toastBox.children.length > 3) toastBox.firstElementChild.remove();
+      setTimeout(() => {
+        el.classList.add('out');
+        setTimeout(() => el.remove(), reduceMotion ? 0 : 300);
+      }, 5200);
+    }
+
+    const secretsBtn = $('.secrets-btn');
+    function updateCounter() {
+      if (!found.size) return;
+      secretsBtn.hidden = false;
+      secretsBtn.textContent = found.size === TOTAL ? 'All ' + TOTAL + ' secrets found' : 'Secrets found: ' + found.size + ' of ' + TOTAL;
+    }
+
+    function unlock(id) {
+      if (found.has(id)) return false;
+      const a = ACHIEVEMENTS.find(x => x.id === id);
+      found.add(id);
+      save();
+      toast({ kicker: 'Achievement unlocked', title: a.title, desc: a.desc, withMedal: true });
+      updateCounter();
+      if (found.size === TOTAL) {
+        setTimeout(() => toast({ title: '100% complete', desc: 'All secrets found. Impressive.' }), 1400);
+      }
+      return true;
+    }
+    updateCounter();
+
+    /* trophy case */
+    const trophyCase = $('#trophy-case');
+    secretsBtn.addEventListener('click', () => {
+      $('.trophy-summary', trophyCase).textContent = found.size === TOTAL
+        ? 'All ' + TOTAL + ' found. Thorough.'
+        : found.size + ' of ' + TOTAL + ' found. Hints for the rest:';
+      $('.trophies', trophyCase).innerHTML = ACHIEVEMENTS.map(a => found.has(a.id)
+        ? '<li>' + medal(true) + '<div><strong>' + a.title + '</strong><span>' + a.desc + '</span></div></li>'
+        : '<li class="locked">' + medal(false) + '<div><strong>Locked</strong><span>' + a.hint + '</span></div></li>'
+      ).join('');
+      trophyCase.showModal();
+    });
+    $('[data-act="close"]', trophyCase).addEventListener('click', () => trophyCase.close());
+
+    /* ---------------- the chromatogram ---------------- */
+    // x = position on a 600-unit run (15 minutes), h = peak height, s = width
+    const PEAKS = [
+      { x: 60,  h: 30,  s: 5,   name: 'Code', note: 'Current day job. Newest peak on the chart.' },
+      { x: 125, h: 46,  s: 5,   name: 'Lab science', note: 'Three years running HPLC. Real data is never this clean.' },
+      { x: 185, h: 40,  s: 4.5, name: 'Pool days', note: 'Strictly recreational. No laps.' },
+      { x: 250, h: 52,  s: 5,   name: 'Hard magic fantasy', note: 'Rules, costs, consistency. Like a well-documented API.' },
+      { x: 305, h: 24,  s: 4,   name: 'Biographies', note: 'Real lives, read closely.' },
+      { x: 370, h: 150, s: 7,   name: 'My daughter', note: 'Off the charts. Detector saturated.', key: 'daughter' },
+      { x: 440, h: 34,  s: 4.5, name: 'Biomedical stories', note: 'The microbiology degree persists. As do the petri dishes.' },
+      { x: 520, h: 44,  s: 5,   name: 'Video games', note: 'Thus, this page\'s achievements.' }
+    ];
+    const yAt = x => {
+      let sum = 0;
+      for (const p of PEAKS) sum += p.h * Math.exp(-((x - p.x) ** 2) / (2 * p.s * p.s));
+      return Math.max(66 - sum, 2); // flat top where the detector saturates
+    };
+    const traceWrap = $('.trace-wrap');
+    const pts = [];
+    for (let x = 0; x <= 600; x += 2) pts.push((x ? 'L' : 'M') + x + ' ' + yAt(x).toFixed(1));
+    $('path', traceWrap).setAttribute('d', pts.join(' '));
+
+    const caption = $('.trace-caption');
+    const identified = new Set();
+    const peakBtns = PEAKS.map((p, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'peak';
+      b.style.left = (p.x / 6) + '%';
+      b.style.setProperty('--apex', (yAt(p.x) / 72 * 100).toFixed(2) + '%');
+      b.setAttribute('aria-label', 'Identify peak ' + (i + 1) + ' of ' + PEAKS.length);
+      const go = () => identify(i);
+      b.addEventListener('click', go);
+      b.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') go(); });
+      traceWrap.appendChild(b);
+      return b;
+    });
+    function identify(i) {
+      const p = PEAKS[i];
+      identified.add(i);
+      peakBtns.forEach((b, j) => {
+        b.classList.toggle('current', j === i);
+        if (identified.has(j)) b.classList.add('found');
+      });
+      caption.innerHTML = (p.x / 40).toFixed(1) + ' min: <strong>' + p.name + '.</strong> ' + p.note +
+        ' <span class="count">' + identified.size + ' of ' + PEAKS.length + ' identified</span>';
+      if (p.key) unlock(p.key);
+      if (identified.size === PEAKS.length) unlock('peaks');
+    }
+
+    /* ---------------- petri dish: Conway's Game of Life ---------------- */
+    const dish = $('#dish');
+    const canvas = $('.dish-canvas', dish);
+    const ctx = canvas.getContext('2d');
+    const N = 64;
+    let grid = new Uint8Array(N * N), next = new Uint8Array(N * N);
+    const mask = new Uint8Array(N * N);
+    const R = N / 2 - 1.5;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const dx = x + .5 - N / 2, dy = y + .5 - N / 2;
+      mask[y * N + x] = dx * dx + dy * dy <= R * R ? 1 : 0;
+    }
+    let timer = null, playing = true, seeded = false, painting = false;
+
+    function drop(cx, cy, r) {
+      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        const x = cx + dx, y = cy + dy;
+        if (x < 0 || y < 0 || x >= N || y >= N || dx * dx + dy * dy > r * r) continue;
+        if (mask[y * N + x] && Math.random() < .55) grid[y * N + x] = 1;
+      }
+    }
+    function randomDrop() {
+      let x, y;
+      do { x = 8 + Math.floor(Math.random() * (N - 16)); y = 8 + Math.floor(Math.random() * (N - 16)); } while (!mask[y * N + x]);
+      drop(x, y, 4);
+    }
+    function step() {
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        const i = y * N + x;
+        if (!mask[i]) { next[i] = 0; continue; }
+        let n = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const xx = x + dx, yy = y + dy;
+          if (xx >= 0 && yy >= 0 && xx < N && yy < N) n += grid[yy * N + xx];
+        }
+        next[i] = n === 3 || (n === 2 && grid[i]) ? 1 : 0;
+      }
+      [grid, next] = [next, grid];
+    }
+    function draw() {
+      const W = canvas.width, c = W / N, mid = W / 2;
+      ctx.clearRect(0, 0, W, W);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(mid, mid, mid - 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#F1DFAE';
+      ctx.fill();
+      ctx.clip();
+      ctx.beginPath();
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        if (!grid[y * N + x]) continue;
+        const cx = (x + .5) * c, cy = (y + .5) * c;
+        ctx.moveTo(cx + c * .5, cy);
+        ctx.arc(cx, cy, c * .5, 0, Math.PI * 2);
+      }
+      ctx.fillStyle = '#D8432F';
+      ctx.fill();
+      ctx.restore();
+      ctx.lineWidth = Math.max(2, W / 110);
+      ctx.strokeStyle = '#1E4D3A';
+      ctx.beginPath(); ctx.arc(mid, mid, mid - ctx.lineWidth / 2, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.6)';
+      ctx.lineWidth = Math.max(1, W / 220);
+      ctx.beginPath(); ctx.arc(mid, mid, mid * .9, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke();
+    }
+    const tick = () => { step(); draw(); };
+    function setPlaying(on) {
+      playing = on;
+      clearInterval(timer);
+      timer = on ? setInterval(tick, reduceMotion ? 380 : 110) : null;
+      $('[data-act="pause"]', dish).textContent = on ? 'Pause' : 'Play';
+    }
+    function cellFromEvent(e) {
+      const r = canvas.getBoundingClientRect();
+      return [Math.floor((e.clientX - r.left) / r.width * N), Math.floor((e.clientY - r.top) / r.height * N)];
+    }
+    canvas.addEventListener('pointerdown', e => {
+      painting = true;
+      canvas.setPointerCapture(e.pointerId);
+      const [x, y] = cellFromEvent(e);
+      drop(x, y, 2); draw();
+      unlock('culture');
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!painting) return;
+      const [x, y] = cellFromEvent(e);
+      drop(x, y, 1); draw();
+    });
+    canvas.addEventListener('pointerup', () => { painting = false; });
+    canvas.addEventListener('pointercancel', () => { painting = false; });
+
+    $('.dish').addEventListener('click', () => {
+      dish.showModal();
+      const size = Math.round(canvas.getBoundingClientRect().width * (window.devicePixelRatio || 1));
+      if (size && canvas.width !== size) { canvas.width = size; canvas.height = size; }
+      if (!seeded) { randomDrop(); randomDrop(); randomDrop(); seeded = true; }
+      draw();
+      setPlaying(true);
+    });
+    dish.addEventListener('close', () => setPlaying(false));
+    dish.addEventListener('click', e => {
+      const act = e.target.closest('[data-act]');
+      if (!act) return;
+      const a = act.dataset.act;
+      if (a === 'drop') { randomDrop(); draw(); unlock('culture'); }
+      if (a === 'pause') setPlaying(!playing);
+      if (a === 'wash') { grid.fill(0); draw(); }
+      if (a === 'close') dish.close();
+    });
+
+    /* ---------------- d20 ---------------- */
+    const die = $('.die');
+    const dieNum = $('.die-num', die);
+    let rolling = false;
+    die.addEventListener('click', () => {
+      if (rolling) return;
+      rolling = true;
+      die.classList.add('rolling');
+      const final = 1 + Math.floor(Math.random() * 20);
+      const spin = setInterval(() => { dieNum.textContent = 1 + Math.floor(Math.random() * 20); }, 55);
+      setTimeout(() => {
+        clearInterval(spin);
+        dieNum.textContent = final;
+        die.classList.remove('rolling');
+        die.setAttribute('aria-label', 'Roll a d20. Last roll: ' + final);
+        rolling = false;
+        if (final === 20 && !unlock('nat20')) toast({ title: 'Natural 20, again', desc: 'Suspicious.' });
+        if (final === 1) toast({ title: 'Natural 1', desc: 'Critical fail. Reroll recommended.' });
+      }, reduceMotion ? 120 : 650);
+    });
+
+    /* ---------------- deep end: scroll to the bottom, resurface at the top ---------------- */
+    let atBottom = false, rides = 0;
+    window.addEventListener('scroll', () => {
+      const doc = document.documentElement;
+      if (window.innerHeight + window.scrollY >= doc.scrollHeight - 40) atBottom = true;
+      else if (atBottom && window.scrollY < 40) {
+        atBottom = false;
+        rides++;
+        if (rides === 1) { if (!unlock('deep')) toast({ title: 'Deep end', desc: 'Again, naturally.' }); }
+        else if (rides === 10) toast({ title: 'Adult swim', desc: 'Ten dives. Everyone out of the pool.' });
+        else if (rides < 10) toast({ title: 'Dive ' + rides, desc: 'Again, naturally.' });
+      }
+    }, { passive: true });
+
+    /* ---------------- pool day: tap the slide to run the water, tap again to open the pool ---------------- */
+    const slideToy = $('.slide-toy');
+    const wetSlide = () => {
+      if (slideToy.classList.contains('wet')) return false;
+      slideToy.classList.add('wet');
+      slideToy.setAttribute('aria-label', 'Water slide, water running');
+      return true;
+    };
+    slideToy.addEventListener('click', () => { if (!wetSlide()) poolOpen(false); });
+    // keyboard bonus: type "marco"
+    let typed = '';
+    window.addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.key.length !== 1) return;
+      typed = (typed + e.key.toLowerCase()).slice(-5);
+      if (typed === 'marco') { typed = ''; wetSlide(); poolOpen(true); }
+    });
+
+    // pixel-art me in red glasses, lounging in a striped float
+    const PIX = { h: '#7A5230', s: '#F4C7A1', g: '#D8432F', w: '#FFFFFF', p: '#22302A', m: '#9C4A3A', n: '#2B3A67', r: '#D8432F', c: '#FFF7E6' };
+    const FLOATER = [
+      '................................',
+      '.............hhhhhh.............',
+      '...........hhhhhhhhhh...........',
+      '..........hhhhhhhhhhhh..........',
+      '.........hhhsssssssshhh.........',
+      '.........hhsssssssssshh.........',
+      '.........hhggggssgggghh.........',
+      '.........hggwpggggwpggh.........',
+      '.........hhggggssgggghh.........',
+      '.........hhssmssssmsshh.........',
+      '.........hhsssmmmmssshh.........',
+      '.........hh..ssssss..hh.........',
+      '.........h..snssssns..h.........',
+      '.........sssnnnnnnnnsss.........',
+      '.......ssccccrrrrrrccccss.......',
+      '.....rrrrccccrrrrrrccccrrrr.....',
+      '.....rrrrccccrrrrrrccccrrrr.....',
+      '.......rrccccrrrrrrccccrr.......'
+    ];
+    function pixelArt(rows) {
+      let out = '';
+      rows.forEach((row, y) => {
+        for (let x = 0; x < row.length;) {
+          const ch = row[x];
+          if (!PIX[ch]) { x++; continue; }
+          let w = 1;
+          while (row[x + w] === ch) w++;
+          out += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="1" fill="' + PIX[ch] + '"/>';
+          x += w;
+        }
+      });
+      return out;
+    }
+
+    let poolIsOpen = false;
+    function poolOpen(viaMarco) {
+      if (viaMarco) toast({ title: 'Polo.' });
+      if (!unlock('water') && !viaMarco) toast({ title: 'Splash', desc: 'Pool\'s still open.' });
+      if (poolIsOpen) return;
+      poolIsOpen = true;
+      const pool = document.createElement('div');
+      pool.className = 'pool';
+      pool.setAttribute('aria-hidden', 'true');
+      pool.innerHTML =
+        '<svg class="floater" viewBox="0 0 32 19">' +
+          '<g class="bob">' + pixelArt(FLOATER) + '</g>' +
+          '<g fill="#6CC0BA"><rect x="1" y="18" width="4" height="1"/><rect x="13" y="18" width="5" height="1"/><rect x="27" y="18" width="4" height="1"/></g>' +
+        '</svg>';
+      document.body.appendChild(pool);
+      document.body.classList.add('pool-on');
+      setTimeout(() => {
+        pool.classList.add('out');
+        document.body.classList.remove('pool-on');
+        setTimeout(() => { pool.remove(); poolIsOpen = false; }, 450);
+      }, 9300);
+    }
+
+    /* ---------------- say hello, in ASL ---------------- */
+    const asl = $('.asl');
+    asl.addEventListener('click', () => {
+      asl.classList.remove('salute');
+      void asl.offsetWidth;
+      asl.classList.add('salute');
+      if (!unlock('asl')) toast({ title: 'Hello again', desc: 'Still a small salute.' });
+    });
+
+    /* ---------------- the console ---------------- */
+    console.log('%c  .-"""-.     .-"""-.\n /       \\___/       \\\n \\       /   \\       /\n  \'-...-\'     \'-...-\'', 'color:#D8432F;font-weight:bold');
+    console.log('%cHello, developer.', 'font: 600 16px Georgia, serif; color:#1E4D3A');
+    console.log('Migrating secrets: 90% complete. As with any data conversion, the last 10% is the interesting part.\nRun secrets() for hints.');
+    window.secrets = () => {
+      unlock('logs');
+      ACHIEVEMENTS.forEach(a => console.log((found.has(a.id) ? '✔ ' + a.title : '○ ' + a.hint)));
+      return found.size + ' of ' + TOTAL + ' found.';
+    };
+  })();
+  </script>
 </body>
 </html>
