@@ -14,12 +14,11 @@
   :root {
     --cobalt: #1f35c7;
     --cobalt-deep: #13219a;
-    --paper: #f4f5fa;
     --tile: #f4f5fa;
-    --ink: #12152b;
     --sun: #ffcf3f;
-    --sun-deep: #d9a400;
-    --sun-ink: #2b2200;
+    --parch: #d9c69c;
+    --parch-edge: #b49c6c;
+    --map-ink: #3b3024;
     --on-cobalt-soft: rgba(255, 255, 255, 0.82);
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     color-scheme: light dark;
@@ -38,44 +37,59 @@
     background-size: 22px 22px;
   }
   :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; border-radius: 8px; }
-  main { max-width: 640px; margin: 0 auto; padding: clamp(40px, 8vw, 88px) 16px 56px; }
-  h1 {
-    display: flex; gap: 10px; margin: 0;
-  }
+  main { max-width: 560px; margin: 0 auto; padding: clamp(36px, 7vw, 72px) 16px 56px; }
+  h1 { display: flex; gap: 10px; margin: 0; }
   h1 span {
     display: grid; place-items: center;
-    width: clamp(64px, 16vw, 96px); aspect-ratio: 1;
+    width: clamp(60px, 15vw, 88px); aspect-ratio: 1;
     border-radius: 14px;
     background: var(--tile); color: var(--cobalt);
     box-shadow: 0 7px 0 var(--cobalt-deep);
-    font-size: clamp(40px, 10vw, 60px); font-weight: 850; font-stretch: 112%; line-height: 1;
+    font-size: clamp(38px, 9vw, 56px); font-weight: 850; font-stretch: 112%; line-height: 1;
   }
-  .lede { margin: 28px 0 0; font-size: clamp(20px, 3vw, 26px); color: var(--on-cobalt-soft); }
+  .lede { margin: 26px 0 22px; font-size: clamp(20px, 3vw, 26px); color: var(--on-cobalt-soft); }
 
-  /* The map: read bottom to top, like you're climbing it */
-  .map { position: relative; margin: 36px 0 0; height: 440px; }
-  .map svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .map path { fill: none; stroke: rgba(255, 255, 255, 0.55); stroke-width: 3; stroke-dasharray: 2 9; stroke-linecap: round; }
-  .node {
-    position: absolute; transform: translate(-50%, -50%);
-    display: grid; justify-items: center; gap: 6px;
-    width: 150px; text-align: center; text-decoration: none; color: #fff;
+  /* The map */
+  .map {
+    position: relative;
+    border-radius: 6px;
+    background-color: var(--parch);
+    background-image:
+      radial-gradient(ellipse at center, transparent 55%, rgba(110, 82, 40, 0.28) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .24 0 0 0 0 .12 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    box-shadow: 0 0 0 3px var(--parch-edge), 0 14px 0 rgba(0, 0, 0, 0.18);
   }
-  .node .icon {
-    display: grid; place-items: center;
-    width: 54px; height: 54px; border-radius: 50%;
-    background: var(--tile); box-shadow: 0 5px 0 var(--cobalt-deep);
-    font-size: 26px; line-height: 1;
-    transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  .map svg { display: block; width: 100%; height: auto; }
+  .dot { fill: var(--map-ink); opacity: 0.78; }
+  .node { color: var(--map-ink); cursor: pointer; outline: none; }
+  .node .halo { fill: none; stroke: var(--map-ink); stroke-width: 2; stroke-dasharray: 3 4; opacity: 0; }
+  .node .icon { transform-box: fill-box; transform-origin: center; transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+  .node:hover .icon, .node:focus-visible .icon, .node.active .icon { transform: scale(1.22); }
+  .node:hover .halo, .node:focus-visible .halo, .node.active .halo { opacity: 0.55; }
+  .node.you { color: var(--cobalt); cursor: default; }
+  .node.fight .icon { opacity: 0.85; }
+  .node.nope .icon { animation: nope 0.35s ease; }
+  @keyframes nope { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  @media (prefers-reduced-motion: no-preference) {
+    .node.you .icon { animation: bob 2.4s ease-in-out infinite; }
+    @keyframes bob { 50% { transform: translateY(-3px); } }
   }
-  a.node:hover .icon, a.node:focus-visible .icon { transform: translateY(-3px) scale(1.06); }
-  .node b { font-weight: 750; font-size: 15px; }
-  .node small { display: block; font-size: 13px; color: var(--on-cobalt-soft); line-height: 1.3; }
-  .node.you .icon { background: var(--sun); box-shadow: 0 5px 0 var(--sun-deep); }
-  .node.boss .icon { width: 68px; height: 68px; font-size: 32px; }
+
+  .tip {
+    position: absolute; z-index: 2; pointer-events: none;
+    width: max-content; max-width: 220px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #f1e6c8; color: var(--map-ink);
+    box-shadow: 0 0 0 2px var(--map-ink), 0 6px 14px rgba(0, 0, 0, 0.25);
+    font-size: 14px; line-height: 1.35;
+    transform: translate(-50%, calc(-100% - 34px));
+  }
+  .tip[hidden] { display: none; }
+  .tip b { display: block; font-size: 15px; font-weight: 800; font-stretch: 108%; }
 
   .notice {
-    margin: 32px 0 0; padding: 12px 14px; max-width: 380px;
+    margin: 30px 0 0; padding: 12px 14px; max-width: 380px;
     border: 2px solid #8fb0ff; border-radius: 10px;
     background: rgba(19, 33, 154, 0.96);
     box-shadow: 0 0 0 4px rgba(143, 176, 255, 0.22);
@@ -91,48 +105,175 @@
   <h1 aria-label="404"><span aria-hidden="true">4</span><span aria-hidden="true">0</span><span aria-hidden="true">4</span></h1>
   <p class="lede">This room is empty. Pick a path.</p>
 
-  <nav class="map" aria-label="Ways out">
-    <svg viewBox="0 0 100 440" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M50 400 C 40 360, 25 340, 22 300" vector-effect="non-scaling-stroke"/>
-      <path d="M50 400 C 60 360, 75 340, 78 300" vector-effect="non-scaling-stroke"/>
-      <path d="M22 300 C 22 250, 22 220, 22 180" vector-effect="non-scaling-stroke"/>
-      <path d="M78 300 C 78 250, 78 220, 78 180" vector-effect="non-scaling-stroke"/>
-      <path d="M22 300 C 40 250, 60 230, 78 180" vector-effect="non-scaling-stroke"/>
-      <path d="M22 180 C 30 120, 42 90, 50 60" vector-effect="non-scaling-stroke"/>
-      <path d="M78 180 C 70 120, 58 90, 50 60" vector-effect="non-scaling-stroke"/>
+  <nav class="map" id="map" aria-label="Ways out">
+    <svg id="mapSvg" viewBox="0 0 400 640" role="presentation">
+      <defs>
+        <!-- Icons are drawn on a 40 × 40 grid. Ink is currentColor; cut-outs are parchment. -->
+        <symbol id="i-fight" viewBox="0 0 40 40">
+          <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="4">
+            <path d="M8 8 27 27M32 8 13 27"/>
+            <path d="M22 31 31 22M18 31 9 22" stroke-width="3.4"/>
+            <path d="M29 29 34 34M11 29 6 34" stroke-width="4.6"/>
+          </g>
+        </symbol>
+        <symbol id="i-rest" viewBox="0 0 40 40">
+          <path fill="currentColor" d="M20 3c5 7 10 11 9 18-.6 5-4.5 8-9 8s-8.6-3-9-7.6c-.4-5 3-7.6 4.6-11.4 1.6 3 2 5 4 6.2C20.8 12.6 21.4 8.6 20 3Z"/>
+          <path fill="#d9c69c" d="M20 18c2.4 3 4 5 3.4 7.6-.4 1.8-1.8 2.8-3.4 2.8s-3.2-1-3.4-2.8c-.3-2.4 1.6-4 3.4-7.6Z"/>
+          <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="4.2" d="M6 37 34 30M6 30 34 37"/>
+        </symbol>
+        <symbol id="i-door" viewBox="0 0 40 40">
+          <path fill="currentColor" d="M9 37V13a11 11 0 0 1 22 0v24Z"/>
+          <path fill="none" stroke="#d9c69c" stroke-width="1.6" d="M16 8.4V37M24 8.4V37"/>
+          <circle cx="27" cy="24" r="2" fill="#d9c69c"/>
+          <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="3" d="M5 38h30"/>
+        </symbol>
+        <symbol id="i-music" viewBox="0 0 40 40">
+          <ellipse cx="11.6" cy="30" rx="5.6" ry="4.2" transform="rotate(-22 11.6 30)" fill="currentColor"/>
+          <ellipse cx="29" cy="25.6" rx="5.6" ry="4.2" transform="rotate(-22 29 25.6)" fill="currentColor"/>
+          <path fill="currentColor" d="M14.4 30V10.4L34 5v20.4h-2.8V10.2l-14 3.8V30Z"/>
+        </symbol>
+        <symbol id="i-d20" viewBox="0 0 40 40">
+          <path fill="currentColor" d="M20 2.5 35.5 11.5v17L20 37.5 4.5 28.5v-17Z"/>
+          <path fill="none" stroke="#d9c69c" stroke-width="1.8" stroke-linejoin="round" d="M20 9.5 30.5 27h-21Zm0 0V2.8M30.5 27l5 1.5M9.5 27l-5 1.5M20 37.2 30.5 27M20 37.2 9.5 27"/>
+        </symbol>
+        <symbol id="i-chest" viewBox="0 0 40 40">
+          <path fill="currentColor" d="M5 15.5a9 9 0 0 1 9-9h12a9 9 0 0 1 9 9V18H5Z"/>
+          <path fill="currentColor" d="M5 20h30v13.5a2.5 2.5 0 0 1-2.5 2.5h-25A2.5 2.5 0 0 1 5 33.5Z"/>
+          <rect x="16.5" y="15" width="7" height="9" rx="1.4" fill="#d9c69c"/>
+          <rect x="18.8" y="18" width="2.4" height="3.6" rx="1" fill="currentColor"/>
+        </symbol>
+        <symbol id="i-case" viewBox="0 0 40 40">
+          <path fill="none" stroke="currentColor" stroke-width="3.2" d="M14.5 12.5V9a2.5 2.5 0 0 1 2.5-2.5h6A2.5 2.5 0 0 1 25.5 9v3.5"/>
+          <rect x="4" y="12" width="32" height="23" rx="3.4" fill="currentColor"/>
+          <path fill="#d9c69c" d="M4 21.5h32v2H4z"/>
+          <rect x="17" y="19.5" width="6" height="6" rx="1.2" fill="#d9c69c"/>
+        </symbol>
+        <symbol id="i-boss" viewBox="0 0 40 40">
+          <path fill="currentColor" d="M3 38V17h4.4v3.6h3.4V17h4.4v3.6h3.4V17h2.8v3.6h3.4V17h4.4v3.6h3.4V17H37v21H24.5v-7.5a4.5 4.5 0 0 0-9 0V38Z"/>
+          <path fill="none" stroke="currentColor" stroke-width="2" d="M20 17V3.5"/>
+          <path fill="currentColor" d="M21 3.5 29 6.5 21 9.5Z"/>
+          <rect x="9" y="25" width="3" height="5" rx="1.5" fill="#d9c69c"/>
+          <rect x="28" y="25" width="3" height="5" rx="1.5" fill="#d9c69c"/>
+        </symbol>
+        <symbol id="i-you" viewBox="0 0 40 40">
+          <path fill="currentColor" d="M20 3a6.4 6.4 0 0 1 6.4 6.4c0 2-.8 3.4-1.8 4.6l9.4 3.2c2.2.8 2.2 3.8 0 4.4l-7.4 1.4 6.2 12.6c.7 1.5-.3 2.7-2 2.7h-5.6L20 31.4l-5.2 6.9H9.2c-1.7 0-2.7-1.2-2-2.7L13.4 23 6 21.6c-2.2-.6-2.2-3.6 0-4.4l9.4-3.2c-1-1.2-1.8-2.6-1.8-4.6A6.4 6.4 0 0 1 20 3Z"/>
+        </symbol>
+      </defs>
+      <g id="paths"></g>
+      <g id="nodes"></g>
     </svg>
-
-    <a class="node boss" href="/" style="left:50%; top:60px">
-      <span class="icon" aria-hidden="true">💀</span>
-      <span><b>Boss</b><small>The homepage</small></span>
-    </a>
-    <a class="node" href="/#quiz" style="left:22%; top:180px">
-      <span class="icon" aria-hidden="true">❔</span>
-      <span><b>Unknown</b><small>A quiz about me</small></span>
-    </a>
-    <a class="node" href="https://trickledown.stevenhester.com/" style="left:78%; top:180px">
-      <span class="icon" aria-hidden="true">🧰</span>
-      <span><b>Treasure</b><small>$100K, fake</small></span>
-    </a>
-    <a class="node" href="/" style="left:22%; top:300px">
-      <span class="icon" aria-hidden="true">🔥</span>
-      <span><b>Rest site</b><small>Also the homepage</small></span>
-    </a>
-    <a class="node" href="https://musicgrid.stevenhester.com/" style="left:78%; top:300px">
-      <span class="icon" aria-hidden="true">🛒</span>
-      <span><b>Merchant</b><small>MusicGrid</small></span>
-    </a>
-    <div class="node you" style="left:50%; top:400px">
-      <span class="icon" aria-hidden="true">🧍</span>
-      <span><b>You</b><small>Lost</small></span>
-    </div>
+    <div class="tip" id="tip" role="status" hidden></div>
   </nav>
 
   <div class="notice" id="notice" role="status" hidden></div>
 </main>
 
 <script>
-  /* Getting here is one of the easter eggs. The homepage announces it on your next visit. */
+  /* ---------- The map ---------- */
+  const NOWHERE = ["nowhere", "the-void", "lost-and-found", "here-be-dragons", "another-empty-room", "the-back-rooms"];
+  const nodes = {
+    you:   { x: 200, y: 592, icon: "you", title: "You", desc: "Lost." },
+    f1:    { x: 98,  y: 500, icon: "fight", title: "Fight", desc: "Nothing behind it." },
+    rest:  { x: 206, y: 506, icon: "rest", title: "Rest site", desc: "Go back the way you came.", href: "/" },
+    f2:    { x: 306, y: 496, icon: "fight", title: "Fight", desc: "Not worth it." },
+    door:  { x: 58,  y: 404, icon: "door", title: "Unknown", desc: "Probably another empty room.", href: "nowhere" },
+    f3:    { x: 152, y: 414, icon: "fight", title: "Fight", desc: "Nothing behind it." },
+    music: { x: 256, y: 400, icon: "music", title: "Merchant", desc: "MusicGrid, the daily music trivia game.", href: "https://musicgrid.stevenhester.com/" },
+    f4:    { x: 346, y: 410, icon: "fight", title: "Fight", desc: "Still not worth it." },
+    quiz:  { x: 108, y: 310, icon: "d20", title: "Event", desc: "A quiz about me.", href: "/#quiz" },
+    chest: { x: 222, y: 318, icon: "chest", title: "Treasure", desc: "Trickle Down. $100K of fake money.", href: "https://trickledown.stevenhester.com/" },
+    f5:    { x: 326, y: 304, icon: "fight", title: "Fight", desc: "Nothing behind it." },
+    case:  { x: 158, y: 214, icon: "case", title: "Elite", desc: "LinkedIn. Proceed with caution.", href: "https://www.linkedin.com/in/stevenbradyhester" },
+    f6:    { x: 282, y: 210, icon: "fight", title: "Fight", desc: "Nothing behind it." },
+    boss:  { x: 216, y: 92,  icon: "boss", title: "Boss", desc: "The homepage.", href: "/", size: 70 },
+  };
+  const edges = [
+    ["you", "f1"], ["you", "rest"], ["you", "f2"],
+    ["f1", "door"], ["f1", "f3"], ["rest", "f3"], ["rest", "music"], ["f2", "music"], ["f2", "f4"],
+    ["door", "quiz"], ["f3", "quiz"], ["f3", "chest"], ["music", "chest"], ["music", "f5"], ["f4", "f5"],
+    ["quiz", "case"], ["chest", "case"], ["chest", "f6"], ["f5", "f6"],
+    ["case", "boss"], ["f6", "boss"],
+  ];
+  const NS = "http://www.w3.org/2000/svg";
+  const make = (tag, attrs) => { const el = document.createElementNS(NS, tag); for (const k in attrs) el.setAttribute(k, attrs[k]); return el; };
+  const radius = n => (n.size || 42) / 2 + 9;
+
+  /* Dotted paths, the way they're drawn on an old map: evenly spaced, a little uneven. */
+  const pathLayer = document.getElementById("paths");
+  let seed = 7;
+  const wobble = () => { seed = (seed * 9301 + 49297) % 233280; return (seed / 233280 - 0.5) * 1.6; };
+  edges.forEach(([a, b]) => {
+    const A = nodes[a], B = nodes[b];
+    const dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy);
+    const start = radius(A), end = len - radius(B);
+    for (let d = start; d <= end; d += 11) {
+      const t = d / len;
+      pathLayer.appendChild(make("circle", { class: "dot", cx: A.x + dx * t + wobble(), cy: A.y + dy * t + wobble(), r: 2.5 }));
+    }
+  });
+
+  /* Nodes */
+  const nodeLayer = document.getElementById("nodes");
+  for (const [id, n] of Object.entries(nodes)) {
+    const size = n.size || 42;
+    const isLink = !!n.href;
+    const el = make(isLink ? "a" : "g", {
+      class: `node ${n.icon === "fight" ? "fight" : ""} ${id === "you" ? "you" : ""}`,
+      transform: `translate(${n.x} ${n.y})`,
+      tabindex: "0",
+      "aria-label": `${n.title}. ${n.desc}`,
+      "data-id": id,
+    });
+    if (isLink) el.setAttribute("href", n.href === "nowhere" ? "/" + NOWHERE[Math.floor(Math.random() * NOWHERE.length)] : n.href);
+    el.appendChild(make("circle", { class: "halo", r: size / 2 + 8 }));
+    el.appendChild(make("circle", { r: size / 2 + 8, fill: "transparent" })); /* a bigger target than the icon */
+    const g = make("g", { class: "icon" });
+    g.appendChild(make("use", { href: `#i-${n.icon}`, x: -size / 2, y: -size / 2, width: size, height: size }));
+    el.appendChild(g);
+    nodeLayer.appendChild(el);
+  }
+
+  /* Hover (or focus, or a first tap on a phone) shows where a node goes. */
+  const map = document.getElementById("map");
+  const svg = document.getElementById("mapSvg");
+  const tip = document.getElementById("tip");
+  let active = null, armed = null;
+  function show(el) {
+    const n = nodes[el.dataset.id];
+    if (active && active !== el) active.classList.remove("active");
+    active = el;
+    el.classList.add("active");
+    tip.innerHTML = `<b>${n.title}</b>${n.desc}`;
+    const box = map.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const scale = box.width / 400;
+    const half = (n.size || 42) / 2 * scale;
+    tip.style.left = `${Math.min(Math.max(r.left - box.left + r.width / 2, 100), box.width - 100)}px`;
+    tip.style.top = `${r.top - box.top + r.height / 2 - half + 26}px`;
+    tip.hidden = false;
+  }
+  function hide() { tip.hidden = true; if (active) active.classList.remove("active"); active = null; armed = null; }
+  nodeLayer.querySelectorAll(".node").forEach(el => {
+    /* Mouse: hover shows where a node goes. Touch: the first tap shows it, the second follows it. */
+    el.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") show(el); });
+    el.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") hide(); });
+    el.addEventListener("focus", () => show(el));
+    let touched = false;
+    el.addEventListener("pointerdown", e => { touched = e.pointerType !== "mouse"; });
+    el.addEventListener("click", e => {
+      const id = el.dataset.id, n = nodes[id];
+      if (touched && armed !== el) { e.preventDefault(); show(el); armed = el; return; }
+      if (!n.href) { el.classList.remove("nope"); void el.getBoundingClientRect(); el.classList.add("nope"); show(el); return; }
+      if (id === "rest") {
+        let fromHere = false;
+        try { fromHere = document.referrer && new URL(document.referrer).origin === location.origin; } catch {}
+        if (fromHere && history.length > 1) { e.preventDefault(); history.back(); }
+      }
+    });
+    el.addEventListener("animationend", () => el.classList.remove("nope"));
+  });
+  document.addEventListener("pointerdown", e => { if (!e.target.closest(".node")) hide(); });
+
+  /* ---------- Getting here is one of the easter eggs. The homepage announces it on your next visit. ---------- */
   (function () {
     const get = k => { try { return localStorage.getItem(k); } catch { return null; } };
     const set = (k, v) => { try { localStorage.setItem(k, v); } catch {} };

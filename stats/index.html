@@ -148,13 +148,13 @@
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const fmt = n => Number(n || 0).toLocaleString("en-US");
   const EVENT_NAMES = {
-    letter: "Locked or unlocked a letter", shuffle: "Shuffle my name", unshuffle: "Put my name back", unscramble: "Shuffled my name back into order", egg: "Found an easter egg", sql: "Ran a query",
+    letter: "Locked or unlocked a letter", shuffle: "Shuffle my name", unshuffle: "Put my name back", unscramble: "Shuffled my name back into order", egg: "Found an easter egg", egg_hint: "Opened a bigger hint", mine: "Broke a letter", sql: "Ran a query",
     coin: "Trickle Down coin", link: "Link", quiz_start: "Started the quiz", quiz_finish: "Finished the quiz",
     quiz_copy: "Copied a quiz result", quiz_again: "Played the quiz again",
   };
   const LINK_NAMES = {
     linkedin: "LinkedIn", "musicgrid-play": "MusicGrid: play today's grid",
-    "musicgrid-builder": "MusicGrid: build a grid", "trickledown-beta": "Trickle Down: try the beta",
+    "musicgrid-builder": "MusicGrid: build a grid", nowhere: "Link to nowhere", "trickledown-beta": "Trickle Down: try the beta",
   };
 
   function gate(message = "") {
@@ -279,6 +279,7 @@
         <div class="tile"><b>${fmt(v.all_time)}</b><span>people, all time</span></div>
         <div class="tile sun"><b>${fmt(d.counters.letters)}</b><span>letter clicks, public</span></div>
         <div class="tile sun"><b>${fmt(d.counters.shuffles)}</b><span>name shuffles, public</span></div>
+        <div class="tile sun"><b>${fmt(d.counters.broken || 0)}</b><span>letters broken, public</span></div>
       </div>
 
       <section class="panel">
