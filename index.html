@@ -270,7 +270,7 @@
 
   /* ---------- Projects ---------- */
   .projects { padding: clamp(56px, 9vw, 112px) var(--gutter) clamp(48px, 7vw, 88px); }
-  .projects h2, .quiz h2 {
+  .projects h2, .quiz h2, .sql h2 {
     margin: 0 0 clamp(28px, 4vw, 48px);
     font-size: clamp(24px, 2.6vw, 30px);
     font-weight: 700;
@@ -557,10 +557,140 @@
   .end .emoji { margin: 0 0 24px; font-size: 22px; letter-spacing: 2px; word-break: break-all; }
   .end .note { margin: 0 0 24px; color: var(--muted); max-width: 46ch; }
 
-  footer { padding: 40px var(--gutter); font-size: 14px; color: var(--muted); }
+  footer { position: relative; overflow: hidden; padding: 40px var(--gutter) 0; font-size: 14px; color: var(--muted); }
+  .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+  .copy-mark { padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: default; }
+  .eggs-btn {
+    padding: 0; border: 0; background: none; font: inherit; color: var(--muted); cursor: pointer;
+    text-decoration: underline dotted; text-underline-offset: 4px;
+  }
+  .eggs-panel { margin: 14px 0 0; padding: 14px 18px; max-width: 440px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+  .eggs-panel .rank { margin: 0 0 6px; font-weight: 700; color: var(--ink); }
+  .eggs-panel ul { margin: 0; padding-left: 18px; }
+  .eggs-panel li { margin: 2px 0; }
+  .eggs-panel li.got { color: var(--ink); font-weight: 600; }
+
+  /* Lazy river along the bottom of the page */
+  .water { position: relative; height: 46px; margin: 28px calc(-1 * var(--gutter)) 0; }
+  .water::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 24px; z-index: 1; pointer-events: none;
+    background: radial-gradient(14px 6px at 14px 0, transparent 98%, var(--water)) 0 0 / 28px 24px repeat-x;
+  }
+  .tube {
+    position: absolute; right: 14%; bottom: 12px; width: 52px; height: 22px; padding: 0; border: 0; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 45%, var(--night) 0 26%, var(--sun) 30% 100%);
+    box-shadow: inset 0 -4px 0 var(--sun-deep); cursor: pointer;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tube { animation: bob 3.4s ease-in-out infinite; }
+    @keyframes bob { 50% { transform: translateY(-3px) rotate(-3deg); } }
+  }
+
+  /* ---------- SQL minigame ---------- */
+  :root { --night: #12152b; --night-2: #1b1f3d; --night-line: #2f3459; --night-text: #eceef8; --night-muted: #a3a8c8; --water: rgba(31, 53, 199, 0.16); --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  @media (prefers-color-scheme: dark) { :root { --night: #05071a; --night-2: #10142c; --night-line: #262b4d; --water: rgba(111, 127, 245, 0.28); } }
+  .sql { --focus: var(--sun); background: var(--night); color: var(--night-text); padding: clamp(56px, 9vw, 112px) var(--gutter); }
+  .sql h2 { color: #fff; }
+  .sql-intro { max-width: 52ch; margin: -16px 0 32px; color: var(--night-muted); font-size: 18px; }
+  .sql-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (min-width: 920px) { .sql-grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
+  .editor { background: var(--night-2); border: 1px solid var(--night-line); border-radius: 18px; padding: clamp(16px, 2.6vw, 26px); }
+  .clause { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 12px; margin-bottom: 10px; }
+  .kw { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--sun); }
+  .qslot {
+    display: flex; align-items: center; min-height: 50px; padding: 5px;
+    border: 2px dashed var(--night-line); border-radius: 12px; transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .qslot:empty::before { content: attr(data-empty); padding-left: 8px; color: var(--night-muted); font-size: 14px; }
+  .qslot.over { border-color: var(--sun); background: rgba(255, 207, 63, 0.08); }
+  .qslot.nope { animation: shake 0.35s ease; }
+  .chip {
+    padding: 8px 12px; border: 0; border-radius: 9px;
+    font-family: var(--mono); font-size: 14px; font-weight: 650; line-height: 1.2;
+    cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+    box-shadow: 0 3px 0 var(--edge); transition: transform 0.12s ease, opacity 0.15s ease;
+  }
+  .chip:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
+  .chip.col { background: var(--tile); color: var(--cobalt); --edge: #8f98c4; }
+  .chip.tbl { background: var(--sun); color: var(--sun-ink); --edge: var(--sun-deep); }
+  .chip.flt { background: #35d07f; color: #062b17; --edge: #1f9a5a; }
+  .chip.used { opacity: 0.35; }
+  .qslot .chip { cursor: pointer; }
+  .chip.ghost { position: fixed; z-index: 80; pointer-events: none; transform: rotate(-4deg) scale(1.06); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35); }
+  .tray-label { margin: 0 0 8px; font-size: 14px; color: var(--night-muted); }
+  .tray { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .result { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--night-line); min-height: 120px; overflow-x: auto; }
+  .found-count { margin: 18px 0 0; color: var(--night-muted); }
+  .found-count b { color: #fff; font-variant-numeric: tabular-nums; }
+
+  /* Query results, shared by the game and the console */
+  .rs { font-family: var(--mono); font-size: 13.5px; }
+  .rs table { border-collapse: collapse; }
+  .rs th { padding: 3px 18px 5px 0; text-align: left; font-weight: 650; color: var(--sun); border-bottom: 1px solid var(--night-line); white-space: nowrap; }
+  .rs td { padding: 5px 18px 5px 0; color: var(--night-text); white-space: nowrap; }
+  .rs tr.new td { color: var(--sun); }
+  .rs td:last-child { white-space: normal; min-width: 16ch; }
+  .rs .meta { margin: 8px 0 0; color: var(--night-muted); }
+  .rs .err { margin: 0; color: #ff9b91; }
+  .rs .ok { margin: 8px 0 0; color: #9fe3bd; }
+  .rs .why { margin: 6px 0 0; font-family: "Archivo", system-ui, sans-serif; font-size: 14px; color: var(--night-muted); white-space: normal; }
+
+  /* The console */
+  .console {
+    position: fixed; right: 16px; bottom: 16px; z-index: 70;
+    display: flex; flex-direction: column; width: min(580px, calc(100vw - 32px)); max-height: min(62vh, 540px);
+    background: var(--night); color: var(--night-text); border: 2px solid var(--sun); border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35); font-family: var(--mono); font-size: 13.5px;
+  }
+  .console[hidden] { display: none; }
+  .console-bar { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--night-line); color: var(--night-muted); }
+  .console-bar button { width: 36px; height: 36px; border: 0; border-radius: 8px; background: none; color: var(--night-text); font-size: 20px; cursor: pointer; }
+  .console-out { flex: 1; overflow: auto; padding: 10px 14px; }
+  .console-out .line { margin: 0 0 4px; white-space: pre-wrap; }
+  .console-out .cmd { color: #fff; }
+  .console-out .cmd::before { content: "steven=# "; color: var(--sun); }
+  .console-out .dim { color: var(--night-muted); }
+  .console-out .good { color: #9fe3bd; }
+  .console-out .bad { color: #ff9b91; }
+  .console-in { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--night-line); }
+  .console-in .prompt { color: var(--sun); }
+  .console-in input { flex: 1; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; outline: none; }
+  @media (max-width: 600px) { .console { left: 0; right: 0; bottom: 0; width: auto; border-radius: 14px 14px 0 0; border-width: 2px 0 0; } }
+
+  /* System notices */
+  .notices { position: fixed; left: 16px; bottom: 16px; z-index: 75; display: grid; gap: 10px; width: min(380px, calc(100vw - 32px)); pointer-events: none; }
+  @media (max-width: 600px) { .notices { top: 12px; bottom: auto; } }
+  .notice {
+    padding: 12px 14px; border: 2px solid #8fb0ff; border-radius: 10px;
+    background: rgba(19, 33, 154, 0.96); color: #fff; font-size: 15px; line-height: 1.4;
+    box-shadow: 0 0 0 4px rgba(143, 176, 255, 0.22), 0 10px 24px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .notice p { margin: 0; }
+  .notice p + p { margin-top: 4px; }
+  .notice .sys { font-family: var(--mono); font-size: 13px; color: #cfe0ff; }
+  .notice b { color: var(--sun); }
+  .notice.out { opacity: 0; transform: translateY(6px); }
+  @media (prefers-reduced-motion: no-preference) {
+    .notice { animation: rise 0.3s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  }
+
+  /* Mining a letter */
+  .tile { position: relative; -webkit-touch-callout: none; -webkit-user-select: none; }
+  .tile.mining::after {
+    content: ""; position: absolute; inset: 10%; pointer-events: none; opacity: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%2313219a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M52 6 46 30 60 46 40 66 50 94M46 30 22 38M60 46 86 40M40 66 18 76M60 46 70 70'/%3E%3C/svg%3E") center / contain no-repeat;
+    animation: crack 0.9s steps(4, end) forwards;
+  }
+  @keyframes crack { to { opacity: 0.9; } }
+  .tile.broken { visibility: hidden; }
+  .bit.glyph { width: auto; height: auto; background: none; font-size: 26px; line-height: 1; }
+
 </style>
 </head>
 <body>
+<!-- There are twelve easter eggs on this site. -->
 
 <header class="hero">
   <div class="wrap">
@@ -692,13 +822,46 @@
       </div>
     </div>
   </section>
+  <section class="sql" id="sql">
+    <div class="wrap">
+      <h2>Prefer SQL?</h2>
+      <p class="sql-intro">Build a query. Drag a piece into each slot, or tap it. Every row that comes back is true.</p>
+      <div class="sql-grid">
+        <div class="editor">
+          <div class="clause"><span class="kw">SELECT</span><div class="qslot" data-slot="select" data-empty="pick a column"></div></div>
+          <div class="clause"><span class="kw">FROM</span><div class="qslot" data-slot="from" data-empty="pick a table"></div></div>
+          <div class="clause"><span class="kw">WHERE</span><div class="qslot" data-slot="where" data-empty="optional"></div></div>
+          <div class="result rs" id="sqlResult" aria-live="polite"></div>
+        </div>
+        <div class="pieces">
+          <p class="tray-label">Columns</p><div class="tray" data-tray="select"></div>
+          <p class="tray-label">Tables</p><div class="tray" data-tray="from"></div>
+          <p class="tray-label">Filters</p><div class="tray" data-tray="where"></div>
+        </div>
+      </div>
+      <p class="found-count" id="rowsFound"></p>
+    </div>
+  </section>
 </main>
 
 <footer>
   <div class="wrap">
-    &copy; <span id="year">2026</span> Steven Hester
+    <div class="foot">
+      <span><button class="copy-mark" type="button" id="conOpen" aria-label="Open a SQL console">&copy;</button> <span id="year">2026</span> Steven Hester</span>
+      <button class="eggs-btn" type="button" id="eggsBtn" aria-expanded="false" aria-controls="eggsPanel" hidden></button>
+    </div>
+    <div class="eggs-panel" id="eggsPanel" hidden></div>
   </div>
+  <div class="water"><button class="tube" type="button" id="tube" aria-label="Inner tube"></button></div>
 </footer>
+
+<div class="notices" id="notices" role="status" aria-live="polite"></div>
+
+<div class="console" id="console" role="dialog" aria-label="SQL console" hidden>
+  <div class="console-bar"><span>psql: steven</span><button type="button" id="conClose" aria-label="Close the console">&times;</button></div>
+  <div class="console-out" id="conOut"></div>
+  <label class="console-in"><span class="prompt">steven=#</span><input id="conIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="SQL command"></label>
+</div>
 
 <script>
   document.getElementById("year").textContent = new Date().getFullYear();
@@ -720,7 +883,7 @@
   const tape = document.getElementById("tape");
   function buildTape() {
     const html = tapeItems.map(([t, v, c, live]) =>
-      `<span>${t} <span class="${c}"${live ? ` data-live="${live}"` : ""}>${v}</span></span>`).join("");
+      `<span data-sym="${t}">${t} <span class="${c}"${live ? ` data-live="${live}"` : ""}>${v}</span></span>`).join("");
     tape.innerHTML = html + html; /* doubled so the loop is seamless */
   }
   buildTape();
@@ -876,6 +1039,7 @@
   tiles.forEach(t => {
     t.addEventListener("animationend", () => t.classList.remove("drop", "stamp"));
     t.addEventListener("click", e => {
+      if (t._mined) return;
       t.classList.toggle("sun");
       t.classList.remove("stamp"); void t.offsetWidth; t.classList.add("stamp");
       if (isLocked(t)) spray(e.clientX, e.clientY, 8);
@@ -903,7 +1067,10 @@
     countLocally("shuffles");
     shufflesSinceScramble = wasInOrder ? 1 : shufflesSinceScramble + 1;
     if (!wasInOrder && spelled() === NAME) {
-      hint.textContent = `Back in order after ${shufflesSinceScramble} ${shufflesSinceScramble === 1 ? "shuffle" : "shuffles"}.`;
+      const odds = arrangements(free.map(k => tiles[k].textContent)) - 1;
+      hint.textContent = `Back in order after ${shufflesSinceScramble} ${shufflesSinceScramble === 1 ? "shuffle" : "shuffles"}.`
+        + (odds >= 2 ? ` The odds on each shuffle were 1 in ${odds.toLocaleString("en-US")}.` : "");
+      if (odds >= 20) findEgg("odds");
       track("unscramble", null, shufflesSinceScramble);
       const r = nameBoard.getBoundingClientRect();
       spray(r.left + r.width / 2, r.top + r.height / 2, 40);
@@ -965,7 +1132,7 @@
     { type: "yesno", q: "Steven has published a scientific paper about craters on the Moon.",
       a: true, why: "He has. It's about lunar crater impact chains, and what their length and direction can tell you about the impact that made them." },
     { type: "choice", q: "Steven's first job was…",
-      opts: ["Teaching kids to mod Minecraft at a summer camp", "Lifeguard", "Movie theater concessions", "Bagging groceries"],
+      opts: ["Teaching kids to mod Minecraft", "Lifeguard", "Movie theater concessions", "Bagging groceries"],
       a: 0, why: "Camp counselor, teaching kids to mod Minecraft." },
     { type: "lie", q: "One more round. Tap the lie.",
       opts: ["At a previous job, Steven legally sold over half a billion dollars of cannabis.", "Steven has finished the One Chip Challenge.", "Steven was a child actor in a regional furniture commercial."],
@@ -1093,6 +1260,7 @@
     renderPips();
     const tier = [...TIERS].reverse().find(t => score / QUESTIONS.length >= t[0]);
     track("quiz_finish", null, score);
+    if (score === QUESTIONS.length) setTimeout(() => findEgg("perfect"), 600);
     const emoji = results.map(r => r === 1 ? "🟨" : r === 0.5 ? "🟦" : "⬜").join("");
     const shareText = `How well do I know Steven? ${score}/${QUESTIONS.length}\n${emoji}\nstevenhester.com`;
     stage.innerHTML = `
@@ -1122,6 +1290,596 @@
   const n = QUESTIONS.length;
   document.getElementById("count").textContent = (words[n] || String(n)).replace(/^./, c => c.toUpperCase());
   start();
+
+  /* =====================================================================
+     Easter eggs, the SQL game and the console.
+     Twelve eggs. Progress is kept in this browser only.
+     ===================================================================== */
+  const noticeBox = document.getElementById("notices");
+  function notify(html, ms = 4200) {
+    const el = document.createElement("div");
+    el.className = "notice";
+    el.innerHTML = html;
+    noticeBox.appendChild(el);
+    while (noticeBox.children.length > 3) noticeBox.firstElementChild.remove();
+    setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 320); }, ms);
+  }
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function burst(x, y, count, { colors: palette = colors, text = null, round = false, square = false, fall = false, spread = 160 } = {}) {
+    if (reduceMotion) return;
+    for (let k = 0; k < count; k++) {
+      const b = document.createElement("span");
+      b.className = "bit" + (text ? " glyph" : "");
+      if (text) b.textContent = text; else b.style.background = palette[k % palette.length];
+      if (round) { b.style.width = b.style.height = "12px"; b.style.borderRadius = "50%"; }
+      if (square) { b.style.width = b.style.height = 7 + Math.random() * 9 + "px"; b.style.borderRadius = "2px"; }
+      const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 90;
+      b.style.left = x + (fall ? (Math.random() - 0.5) * spread : 0) + "px";
+      b.style.top = y + "px";
+      b.style.setProperty("--dx", (fall ? (Math.random() - 0.5) * 40 : Math.cos(a) * d) + "px");
+      b.style.setProperty("--dy", (fall ? 180 + Math.random() * 160 : Math.sin(a) * d + 40) + "px");
+      b.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+      if (fall) b.style.animationDelay = Math.random() * 300 + "ms";
+      document.body.appendChild(b);
+      b.addEventListener("animationend", () => b.remove());
+    }
+  }
+
+  /* ---------- The egg list ---------- */
+  const EGGS = [
+    { id: "mine", name: "Mined a letter", hint: "Hold that thought." },
+    { id: "steelpush", name: "Steelpushed the coin", hint: "Coinshot." },
+    { id: "ticker", name: "Asked the market", hint: "The market takes questions." },
+    { id: "odds", name: "Beat the odds", hint: "Restore order the hard way." },
+    { id: "perfect", name: "Perfect quiz", hint: "Know him completely." },
+    { id: "tube", name: "Floated", hint: "Float." },
+    { id: "lost", name: "Got lost", hint: "Get lost." },
+    { id: "steven", name: "Queried steven", hint: "There's a table you can't see." },
+    { id: "drop", name: "Dropped the table", hint: "Little Bobby Tables." },
+    { id: "roll", name: "Rolled a d20", hint: "Roll for it." },
+    { id: "ff", name: "Surrendered", hint: "Give up." },
+    { id: "pineapple", name: "Added pineapple", hint: "It belongs on pizza." },
+  ];
+  const RANKS = [[1, "Iron"], [3, "Bronze"], [6, "Silver"], [9, "Gold"], [12, "Diamond"]];
+  const readSet = key => { try { return new Set(JSON.parse(store.get(key) || "[]")); } catch { return new Set(); } };
+  const eggFound = new Set([...readSet("sh:eggs")].filter(id => EGGS.some(e => e.id === id)));
+  const rankFor = count => ([...RANKS].reverse().find(r => count >= r[0]) || [0, null])[1];
+  const eggsBtn = document.getElementById("eggsBtn");
+  const eggsPanel = document.getElementById("eggsPanel");
+
+  function findEgg(id) {
+    if (eggFound.has(id)) return;
+    const before = rankFor(eggFound.size);
+    eggFound.add(id);
+    store.set("sh:eggs", JSON.stringify([...eggFound]));
+    track("egg", id);
+    const egg = EGGS.find(e => e.id === id);
+    const after = rankFor(eggFound.size);
+    let html = `<p class="sys">Secret found: ${esc(egg.name)}.</p><p>Easter eggs: <b>${eggFound.size} of ${EGGS.length}</b></p>`;
+    if (after !== before) html += `<p class="sys">[Easter Egg Hunter] has reached ${after} rank.${after === "Diamond" ? " Steven peaked at Gold 3." : ""}</p>`;
+    notify(html, 6500);
+    renderEggs();
+  }
+  function renderEggs() {
+    if (!eggFound.size) return;
+    eggsBtn.hidden = false;
+    eggsBtn.textContent = `Easter eggs: ${eggFound.size} of ${EGGS.length}`;
+    eggsPanel.innerHTML = `<p class="rank">Easter Egg Hunter, ${rankFor(eggFound.size)} rank</p>
+      <ul>${EGGS.map(e => eggFound.has(e.id) ? `<li class="got">${esc(e.name)}</li>` : `<li>“${esc(e.hint)}”</li>`).join("")}</ul>`;
+  }
+  eggsBtn.addEventListener("click", () => {
+    eggsPanel.hidden = !eggsPanel.hidden;
+    eggsBtn.setAttribute("aria-expanded", String(!eggsPanel.hidden));
+  });
+
+  /* ---------- Letters: hold one to mine it ---------- */
+  function arrangements(letters) {
+    const fact = m => { let f = 1; for (let k = 2; k <= m; k++) f *= k; return f; };
+    const counts = {};
+    letters.forEach(l => counts[l] = (counts[l] || 0) + 1);
+    return Object.values(counts).reduce((acc, c) => acc / fact(c), fact(letters.length));
+  }
+  tiles.forEach(t => {
+    let timer = null;
+    const stop = () => { clearTimeout(timer); timer = null; t.classList.remove("mining"); };
+    t.addEventListener("pointerdown", e => {
+      if (e.button !== 0 || t.classList.contains("broken")) return;
+      t.classList.add("mining");
+      timer = setTimeout(() => { stop(); mineTile(t); }, 900);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(type => t.addEventListener(type, stop));
+  });
+  nameBoard.addEventListener("contextmenu", e => { if (e.target.closest(".tile")) e.preventDefault(); });
+  function mineTile(t) {
+    t._mined = true;
+    const r = t.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height / 2, 16, { colors: ["#f4f5fa", "#1f35c7", "#13219a", "#dfe4ff"], square: true });
+    t.classList.add("broken");
+    findEgg("mine");
+    setTimeout(() => {
+      t.classList.remove("broken", "stamp"); void t.offsetWidth; t.classList.add("stamp");
+      t._mined = false;
+    }, 1600);
+  }
+
+  /* ---------- Coin: three quick taps ---------- */
+  let coinTaps = [];
+  coin.addEventListener("click", () => {
+    const now = Date.now();
+    coinTaps = coinTaps.filter(t => now - t < 700);
+    coinTaps.push(now);
+    if (coinTaps.length < 3) return;
+    coinTaps = [];
+    notify("<p>Steelpushed.</p>", 2400);
+    findEgg("steelpush");
+    if (reduceMotion) return;
+    coin.animate([
+      { transform: "none", easing: "cubic-bezier(0.2, 0.7, 0.4, 1)" },
+      { transform: "translateY(-85vh) rotate(540deg)", offset: 0.45, easing: "cubic-bezier(0.6, 0, 0.9, 0.5)" },
+      { transform: "none" },
+    ], { duration: 1500 });
+  });
+
+  /* ---------- Ticker: the market takes questions ---------- */
+  const TAPE_REPLIES = {
+    "STVN": "Not publicly traded.", "LETTERS CLICKED": "Up and to the right.", "NAME SHUFFLES": "Volatile.",
+    "BABIES": "Not for sale.", "NAPS": "Trading halted.", "BOBA": "Strong buy.", "MSGD": "Perfect board.",
+    "TRKL": "Still in beta.", "HOUSEPLANTS": "Delisted.", "CRANKY CATS": "Holding steady.",
+    "WORDLE STREAK": "All-time high.", "TEEMO": "Still banned.",
+  };
+  tape.addEventListener("click", e => {
+    const item = e.target.closest("[data-sym]");
+    if (!item) return;
+    const sym = item.dataset.sym;
+    notify(`<p>${esc(sym)}: ${esc(TAPE_REPLIES[sym] || "No comment.")}</p>`, 2600);
+    if (sym === "BOBA") {
+      const r = item.getBoundingClientRect();
+      burst(r.left + r.width / 2, r.bottom, 18, { colors: ["#3b2416", "#2a170d", "#4a2e1c"], round: true, fall: true, spread: 120 });
+    }
+    findEgg("ticker");
+  });
+
+  /* ---------- Footer: the inner tube ---------- */
+  const tube = document.getElementById("tube");
+  tube.addEventListener("click", () => {
+    notify("<p>No lifeguard on duty.</p>", 2800);
+    findEgg("tube");
+    if (reduceMotion) return;
+    tube.animate([
+      { transform: "none" },
+      { transform: "translateX(45vw) rotate(160deg)", offset: 0.48 },
+      { transform: "translateX(45vw) rotate(160deg)", opacity: 0, offset: 0.5 },
+      { transform: "translateX(-90vw)", opacity: 0, offset: 0.51 },
+      { transform: "none", opacity: 1 },
+    ], { duration: 5000, easing: "ease-in-out" });
+  });
+
+  /* ---------- The database ---------- */
+  const DB = {
+    household: { cols: ["name", "mood", "alive"], rows: [
+      ["cat", "cranky", true],
+      ["baby", "adorable", true],
+      ["houseplants", null, false],
+    ] },
+    games: { cols: ["name", "kind", "peak_rank", "note"], rows: [
+      ["League of Legends", "video game", "Gold 3", null],
+      ["Teamfight Tactics", "video game", "Emerald 4", null],
+      ["Baldur's Gate 3", "video game", null, null],
+      ["Stardew Valley", "video game", null, null],
+      ["Terraria", "video game", null, null],
+      ["Minecraft", "video game", null, "taught kids to mod it"],
+      ["Pokémon Yellow", "video game", null, "first video game"],
+      ["RuneScape", "video game", null, "first video game addiction"],
+      ["Wordle", "puzzle", null, "best streak: 155"],
+      ["Dungeons & Dragons", "board game", null, null],
+      ["Slay the Spire", "board game", null, null],
+    ] },
+    trips: { cols: ["name", "how", "distance", "note"], rows: [
+      ["Boundary Waters", "canoe", "125 mi", "10 days with friends, on fish, berries, and what we could carry"],
+      ["Washington", "sailboat", null, "a week on a 90-foot wooden sailboat"],
+      ["Quandary Peak", "on foot", "14,272 ft", "highest summit"],
+    ] },
+    kitchen: { cols: ["name", "verdict"], rows: [
+      ["pineapple on pizza", "correct"],
+      ["cheese and chocolate", "together, on purpose"],
+      ["spicy food", "yes. One Chip Challenge: done"],
+      ["boba", "over coffee"],
+      ["eggs", "deathly allergic"],
+    ] },
+    countries: { cols: ["name", "continent"], rows: [
+      ["Germany", "Europe"], ["Switzerland", "Europe"], ["Netherlands", "Europe"], ["Italy", "Europe"],
+      ["France", "Europe"], ["Spain", "Europe"], ["Canada", "North America"], ["Mexico", "North America"],
+      ["Costa Rica", "North America"], ["China", "Asia"],
+    ] },
+    likes: { cols: ["name", "category"], rows: [
+      ["swimming", "outdoors"], ["tubing", "outdoors"], ["cooking", "food"], ["SQL", "data"], ["stats", "data"],
+      ["the Cosmere", "books"], ["He Who Fights With Monsters", "books"],
+    ] },
+    steven: { hidden: true, cols: ["fact", "value"], rows: [
+      ["years_at_riot", 4], ["babies", 1], ["cats", 1], ["houseplants_alive", 0], ["countries_visited", 10],
+      ["highest_summit_ft", 14272], ["wordle_best_streak", 155], ["lol_peak_rank", "Gold 3"],
+      ["tft_peak_rank", "Emerald 4"], ["drink", "boba"], ["eggs_tolerated", 0],
+    ] },
+  };
+  const SQL_NOTICES = {
+    "household|alive = false": "That's every houseplant.",
+    "household|mood = 'cranky'": "Do not pet.",
+    "kitchen|verdict = 'correct'": "This is not up for debate.",
+    "kitchen|name = 'eggs'": "This includes easter eggs.",
+  };
+
+  /* A very small SQL: SELECT cols FROM table [WHERE a AND b] [ORDER BY col|random()] [LIMIT n] */
+  function splitAnd(text) {
+    const parts = []; let cur = "", quoted = false;
+    for (let k = 0; k < text.length; k++) {
+      const ch = text[k];
+      if (ch === "'") quoted = !quoted;
+      if (!quoted && /^\s+and\s+/i.test(text.slice(k)) && /\s/.test(ch)) {
+        parts.push(cur.trim()); cur = ""; k += text.slice(k).match(/^\s+and\s+/i)[0].length - 1; continue;
+      }
+      cur += ch;
+    }
+    parts.push(cur.trim());
+    return parts;
+  }
+  function literal(raw) {
+    const v = raw.trim();
+    let m;
+    if ((m = v.match(/^'(.*)'$/s))) return { ok: true, value: m[1].replace(/''/g, "'") };
+    if (/^(true|false)$/i.test(v)) return { ok: true, value: v.toLowerCase() === "true" };
+    if (/^null$/i.test(v)) return { ok: true, value: null };
+    if (/^-?\d+(\.\d+)?$/.test(v)) return { ok: true, value: Number(v) };
+    return { ok: false, word: v };
+  }
+  function runSQL(query) {
+    const q = query.trim().replace(/;+\s*$/, "").replace(/\s+/g, " ");
+    if (!/^select\b/i.test(q)) return { error: `syntax error at or near "${q.split(" ")[0]}"` };
+    if (!/\bfrom\b/i.test(q)) return { error: "syntax error at end of input" };
+    const m = q.match(/^select (.+?) from ([a-z_][a-z0-9_]*)(?: where (.+?))?(?: order by (.+?))?(?: limit (\d+))?$/i);
+    if (!m) return { error: `syntax error at or near "${q.split(" ").pop()}"` };
+    const tableName = m[2].toLowerCase();
+    const table = DB[tableName];
+    if (!table) return { error: `relation "${tableName}" does not exist` };
+    const has = col => table.cols.includes(col);
+    const missing = col => ({ error: `column "${col}" does not exist`, table: tableName });
+
+    let rows = table.rows.map((r, idx) => ({ r, idx }));
+    let where = "";
+    if (m[3]) {
+      where = m[3];
+      for (const part of splitAnd(m[3])) {
+        let c = part.match(/^([a-z_]+) is (not )?null$/i);
+        if (c) {
+          const col = c[1].toLowerCase();
+          if (!has(col)) return missing(col);
+          const at = table.cols.indexOf(col), not = !!c[2];
+          rows = rows.filter(({ r }) => (r[at] === null) !== not);
+          continue;
+        }
+        c = part.match(/^([a-z_]+) ?(=|!=|<>|>=|<=|>|<) ?(.+)$/i);
+        if (!c) return { error: `syntax error at or near "${part.split(" ").pop()}"` };
+        const col = c[1].toLowerCase();
+        if (!has(col)) return missing(col);
+        const lit = literal(c[3]);
+        if (!lit.ok) return has(lit.word.toLowerCase()) ? { error: "comparing two columns isn't supported here" } : missing(lit.word.toLowerCase());
+        const at = table.cols.indexOf(col), op = c[2], want = lit.value;
+        rows = rows.filter(({ r }) => {
+          let a = r[at], b = want;
+          if (a === null || b === null) return false;
+          if (typeof a === "string" && typeof b === "string") { a = a.toLowerCase(); b = b.toLowerCase(); }
+          switch (op) {
+            case "=": return a === b;
+            case "!=": case "<>": return a !== b;
+            case ">": return a > b; case "<": return a < b;
+            case ">=": return a >= b; case "<=": return a <= b;
+          }
+        });
+      }
+    }
+    if (m[4]) {
+      const o = m[4].trim().toLowerCase();
+      if (o === "random()") rows.sort(() => Math.random() - 0.5);
+      else {
+        const om = o.match(/^([a-z_]+)(?: (asc|desc))?$/);
+        if (!om) return { error: `syntax error at or near "${o}"` };
+        if (!has(om[1])) return missing(om[1]);
+        const at = table.cols.indexOf(om[1]), dir = om[2] === "desc" ? -1 : 1;
+        rows.sort((x, y) => (x.r[at] === y.r[at] ? 0 : x.r[at] === null ? 1 : y.r[at] === null ? -1 : x.r[at] > y.r[at] ? 1 : -1) * dir);
+      }
+    }
+    if (m[5]) rows = rows.slice(0, Number(m[5]));
+
+    const list = m[1].trim();
+    const notice = SQL_NOTICES[`${tableName}|${where.toLowerCase()}`] || null;
+    if (/^count\(\*\)$/i.test(list)) return { table: tableName, columns: ["count"], rows: [[rows.length]], counted: true, notice };
+    let cols;
+    if (list === "*") cols = table.cols;
+    else {
+      cols = list.split(",").map(c => c.trim().toLowerCase());
+      for (const c of cols) if (!has(c)) return missing(c);
+    }
+    const idx = cols.map(c => table.cols.indexOf(c));
+    return { table: tableName, columns: cols, rows: rows.map(({ r }) => idx.map(k => r[k])), seen: rows.map(x => x.idx), notice };
+  }
+
+  /* ---------- Rows found ---------- */
+  const VISIBLE = Object.keys(DB).filter(t => !DB[t].hidden);
+  const TOTAL_ROWS = VISIBLE.reduce((sum, t) => sum + DB[t].rows.length, 0);
+  const rowsSeen = readSet("sh:rows");
+  const rowsFoundEl = document.getElementById("rowsFound");
+  function renderRowsFound() {
+    rowsFoundEl.innerHTML = `Rows found: <b>${rowsSeen.size} of ${TOTAL_ROWS}</b>`;
+  }
+  function markSeen(res) {
+    if (!res.seen || DB[res.table].hidden) return [];
+    const fresh = [];
+    res.seen.forEach((idx, k) => {
+      const key = `${res.table}:${idx}`;
+      if (!rowsSeen.has(key)) { rowsSeen.add(key); fresh.push(k); }
+    });
+    if (fresh.length) {
+      store.set("sh:rows", JSON.stringify([...rowsSeen]));
+      renderRowsFound();
+      if (rowsSeen.size === TOTAL_ROWS) {
+        notify(`<p>All ${TOTAL_ROWS} rows found.</p>`, 4000);
+        const r = rowsFoundEl.getBoundingClientRect();
+        burst(r.left + 80, r.top, 30);
+      }
+    }
+    return fresh;
+  }
+  const show = v => v === null ? "" : typeof v === "boolean" ? String(v) : typeof v === "number" ? v.toLocaleString("en-US") : v;
+  function resultHTML(res, fresh = []) {
+    if (res.error) {
+      let html = `<p class="err">ERROR:&nbsp; ${esc(res.error)}</p>`;
+      const t = res.table && DB[res.table];
+      if (t && /^column/.test(res.error)) {
+        const cols = t.cols.map(c => `<b>${esc(c)}</b>`);
+        html += `<p class="why">${esc(res.table)} has ${cols.length > 1 ? cols.slice(0, -1).join(", ") + " and " + cols.slice(-1) : cols[0]}.</p>`;
+      }
+      return html;
+    }
+    const n = res.rows.length;
+    return `<table><thead><tr>${res.columns.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>
+      ${res.rows.map((r, k) => `<tr class="${fresh.includes(k) ? "new" : ""}">${r.map(v => `<td>${esc(show(v))}</td>`).join("")}</tr>`).join("")}
+      </tbody></table><p class="meta">(${n} ${n === 1 ? "row" : "rows"})</p>${res.notice ? `<p class="ok">NOTICE:&nbsp; ${esc(res.notice)}</p>` : ""}`;
+  }
+
+  /* ---------- The game ---------- */
+  const PIECES = {
+    select: ["*", "count(*)", "name", "note", "mood", "peak_rank", "verdict", "category"],
+    from: ["household", "games", "trips", "kitchen", "countries", "likes"],
+    where: ["alive = false", "mood = 'cranky'", "peak_rank IS NOT NULL", "kind = 'board game'", "how = 'canoe'",
+            "verdict = 'correct'", "name = 'eggs'", "continent = 'Europe'", "category = 'books'"],
+  };
+  const CHIP_CLASS = { select: "col", from: "tbl", where: "flt" };
+  const sqlSection = document.getElementById("sql");
+  const sqlSlots = [...sqlSection.querySelectorAll(".qslot")];
+  const sqlResult = document.getElementById("sqlResult");
+  const pick = { select: "*", from: "household", where: "" };
+  let lastQuery = "";
+
+  sqlSection.querySelectorAll(".tray").forEach(tray => {
+    const type = tray.dataset.tray;
+    tray.innerHTML = PIECES[type].map(v => `<button class="chip ${CHIP_CLASS[type]}" type="button" data-type="${type}" data-val="${esc(v)}">${esc(v)}</button>`).join("");
+  });
+
+  function renderGame() {
+    sqlSlots.forEach(slot => {
+      const type = slot.dataset.slot, v = pick[type];
+      slot.innerHTML = v ? `<button class="chip ${CHIP_CLASS[type]}" type="button" data-type="${type}" data-val="${esc(v)}" aria-label="Remove ${esc(v)}">${esc(v)}</button>` : "";
+    });
+    sqlSection.querySelectorAll(".tray .chip").forEach(c => c.classList.toggle("used", pick[c.dataset.type] === c.dataset.val));
+    if (!pick.select || !pick.from) {
+      sqlResult.innerHTML = `<p class="meta">Pick a column and a table.</p>`;
+      return;
+    }
+    const query = `SELECT ${pick.select} FROM ${pick.from}${pick.where ? ` WHERE ${pick.where}` : ""};`;
+    const res = runSQL(query);
+    const fresh = res.error ? [] : markSeen(res);
+    sqlResult.innerHTML = resultHTML(res, fresh);
+    if (query !== lastQuery && lastQuery) track("sql", query.slice(0, 150), res.error ? null : res.rows.length);
+    lastQuery = query;
+  }
+  function place(type, val) {
+    pick[type] = pick[type] === val ? "" : val;
+    renderGame();
+  }
+
+  let chipDrag = null;
+  const slotAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest(".qslot"); };
+  sqlSection.addEventListener("pointerdown", e => {
+    const chip = e.target.closest(".tray .chip");
+    if (!chip || e.button !== 0) return;
+    chipDrag = { chip, x: e.clientX, y: e.clientY, ghost: null };
+    chip.setPointerCapture(e.pointerId);
+  });
+  sqlSection.addEventListener("pointermove", e => {
+    if (!chipDrag) return;
+    if (!chipDrag.ghost) {
+      if (Math.hypot(e.clientX - chipDrag.x, e.clientY - chipDrag.y) < 6) return;
+      chipDrag.ghost = chipDrag.chip.cloneNode(true);
+      chipDrag.ghost.classList.remove("used");
+      chipDrag.ghost.classList.add("ghost");
+      document.body.appendChild(chipDrag.ghost);
+    }
+    const g = chipDrag.ghost;
+    g.style.left = e.clientX - g.offsetWidth / 2 + "px";
+    g.style.top = e.clientY - g.offsetHeight / 2 + "px";
+    const over = slotAt(e.clientX, e.clientY);
+    sqlSlots.forEach(s => s.classList.toggle("over", s === over && s.dataset.slot === chipDrag.chip.dataset.type));
+  });
+  function endDrag(e, cancelled) {
+    if (!chipDrag) return;
+    const d = chipDrag; chipDrag = null;
+    if (!d.ghost) return;
+    d.ghost.remove();
+    sqlSlots.forEach(s => s.classList.remove("over"));
+    d.chip._dragged = true;
+    setTimeout(() => d.chip._dragged = false, 0);
+    if (cancelled) return;
+    const over = slotAt(e.clientX, e.clientY);
+    if (!over) return;
+    if (over.dataset.slot === d.chip.dataset.type) { pick[d.chip.dataset.type] = d.chip.dataset.val; renderGame(); }
+    else { over.classList.remove("nope"); void over.offsetWidth; over.classList.add("nope"); }
+  }
+  sqlSection.addEventListener("pointerup", e => endDrag(e, false));
+  sqlSection.addEventListener("pointercancel", e => endDrag(e, true));
+  sqlSection.addEventListener("click", e => {
+    const chip = e.target.closest(".chip");
+    if (!chip || chip._dragged) return;
+    place(chip.dataset.type, chip.dataset.val);
+  });
+  sqlSlots.forEach(s => s.addEventListener("animationend", () => s.classList.remove("nope")));
+
+  /* ---------- The console: press ` or tap the © ---------- */
+  const conEl = document.getElementById("console");
+  const conOut = document.getElementById("conOut");
+  const conIn = document.getElementById("conIn");
+  const conHistory = [];
+  let conAt = 0, conGreeted = false;
+  function say(text, cls = "") {
+    const d = document.createElement("div");
+    d.className = "line " + cls;
+    d.textContent = text;
+    conOut.appendChild(d);
+    conOut.scrollTop = conOut.scrollHeight;
+  }
+  function sayHTML(html) {
+    const d = document.createElement("div");
+    d.className = "line rs";
+    d.innerHTML = html;
+    conOut.appendChild(d);
+    conOut.scrollTop = conOut.scrollHeight;
+  }
+  function openConsole() {
+    conEl.hidden = false;
+    if (!conGreeted) { conGreeted = true; say('psql (16.4)\nType "help" for help.', "dim"); }
+    conIn.focus();
+  }
+  function closeConsole() { conEl.hidden = true; }
+  document.getElementById("conOpen").addEventListener("click", () => conEl.hidden ? openConsole() : closeConsole());
+  document.getElementById("conClose").addEventListener("click", closeConsole);
+  conIn.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      const v = conIn.value; conIn.value = "";
+      if (v.trim()) { conHistory.push(v); conAt = conHistory.length; }
+      exec(v);
+    } else if (e.key === "ArrowUp") {
+      if (conAt > 0) conIn.value = conHistory[--conAt];
+      e.preventDefault();
+    } else if (e.key === "ArrowDown") {
+      conAt = Math.min(conHistory.length, conAt + 1);
+      conIn.value = conHistory[conAt] || "";
+    } else if (e.key === "Escape") closeConsole();
+  });
+
+  const CHECKS = [
+    ["Perception", 10, "You notice an easter egg. You were already looking at one.", "You notice nothing unusual."],
+    ["Athletics", 15, "You canoe 125 miles.", "You pass out in a mosh pit."],
+    ["Arcana", 14, "You understand the Cosmere.", "You've only read the first book."],
+    ["Persuasion", 12, "Steven agrees to one more game.", "Steven is not persuaded."],
+    ["Survival", 13, "You live off fish and berries.", "You forget the berries."],
+    ["Insight", 11, "He means it.", "You can't tell if he's joking."],
+  ];
+  function rollD20() {
+    const [skill, dc, win, lose] = CHECKS[Math.floor(Math.random() * CHECKS.length)];
+    const d = 1 + Math.floor(Math.random() * 20);
+    say(`${skill} check, DC ${dc}`, "dim");
+    if (d === 20) {
+      say("Rolled a natural 20. Critical success.", "good"); say(win);
+      const r = conEl.getBoundingClientRect(); burst(r.left + r.width / 2, r.top, 30);
+    } else if (d === 1) {
+      say("Rolled a natural 1.", "bad"); say(lose);
+      if (!reduceMotion) tiles.forEach((t, k) => t.animate([{ transform: "none" }, { transform: `rotate(${k % 2 ? 9 : -9}deg) translateY(8px)` }, { transform: "none" }], { duration: 700, delay: k * 35 }));
+    } else {
+      const ok = d >= dc;
+      say(`Rolled ${d}. ${ok ? "Success." : "Failure."}`, ok ? "good" : "bad");
+      say(ok ? win : lose);
+    }
+    findEgg("roll");
+  }
+  function dropTable(name) {
+    if (!DB[name]) return say(`ERROR:  table "${name}" does not exist`, "bad");
+    if (name !== "steven") return say(`ERROR:  must be owner of table ${name}`, "bad");
+    say("DROP TABLE");
+    findEgg("drop");
+    if (!reduceMotion) tiles.forEach((t, k) => t.animate(
+      [{ transform: "none" }, { transform: `translateY(110vh) rotate(${(k % 2 ? 1 : -1) * (20 + k * 6)}deg)` }],
+      { duration: 900, delay: k * 45, easing: "cubic-bezier(0.5, 0, 0.9, 0.5)", fill: "forwards" }));
+    setTimeout(() => {
+      say("ROLLBACK");
+      tiles.forEach(t => t.getAnimations().forEach(a => a.cancel()));
+      if (!reduceMotion) tiles.forEach((t, k) => t.animate(
+        [{ transform: "translateY(-30px)", opacity: 0 }, { transform: "none", opacity: 1 }],
+        { duration: 420, delay: k * 30, easing: "cubic-bezier(0.2, 0.9, 0.3, 1.3)", fill: "backwards" }));
+    }, 2300);
+  }
+  function exec(raw) {
+    const text = raw.trim();
+    say(text, "cmd");
+    if (!text) return;
+    const low = text.replace(/;+\s*$/, "").replace(/\s+/g, " ").toLowerCase();
+    track("sql", ("console: " + text).slice(0, 150));
+    let m;
+    if (["\\q", "exit", "quit"].includes(low)) return closeConsole();
+    if (["help", "\\?", "\\h", "?"].includes(low)) return say("Try a query, like SELECT * FROM games;\n\\dt lists the tables, \\d games shows a table's columns, \\q closes this.", "dim");
+    if (low === "\\dt") return sayHTML(resultHTML({ columns: ["name"], rows: Object.keys(DB).map(t => [t]) }));
+    if ((m = low.match(/^\\d ([a-z_]+)$/))) {
+      if (!DB[m[1]]) return say(`Did not find any relation named "${m[1]}".`, "bad");
+      return sayHTML(resultHTML({ columns: ["column"], rows: DB[m[1]].cols.map(c => [c]) }));
+    }
+    if (/^\/?roll( 1?d20)?$/.test(low) || low === "/r d20") return rollD20();
+    if (["/ff", "/ff15", "ff15", "/surrender"].includes(low)) { say("Surrender vote failed. 1 of 5 voted yes.", "bad"); return findEgg("ff"); }
+    if (low === "pineapple") {
+      say("Correct.", "good");
+      burst(innerWidth / 2, 40, 22, { text: "🍍", fall: true, spread: innerWidth * 0.8 });
+      return findEgg("pineapple");
+    }
+    if ((m = low.match(/^drop table (?:if exists )?([a-z_]+)$/))) return dropTable(m[1]);
+    if (/^select\b/.test(low)) {
+      const res = runSQL(text);
+      if (res.error) return sayHTML(resultHTML(res));
+      const fresh = markSeen(res);
+      sayHTML(resultHTML(res, fresh));
+      if (res.table === "steven") findEgg("steven");
+      return;
+    }
+    say(`ERROR:  syntax error at or near "${text.split(/\s+/)[0]}"`, "bad");
+  }
+
+  /* Typing anywhere on the page works too, for a few commands. */
+  const TYPED = { "select * from steven": "SELECT * FROM steven;", "drop table steven": "DROP TABLE steven;", "/roll": "/roll", "/ff": "/ff", "pineapple": "pineapple" };
+  let typed = "";
+  const midCommand = () => Object.keys(TYPED).some(c => {
+    for (let len = Math.min(c.length, typed.length); len >= 3; len--) if (c.startsWith(typed.slice(-len))) return true;
+    return false;
+  });
+  document.addEventListener("keydown", e => {
+    const el = document.activeElement;
+    if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "`" || e.key === "~") { e.preventDefault(); conEl.hidden ? openConsole() : closeConsole(); return; }
+    if (e.key.length !== 1) return;
+    if (e.key === " " && midCommand()) e.preventDefault();
+    typed = (typed + e.key.toLowerCase()).slice(-40);
+    const hit = Object.keys(TYPED).find(c => typed.endsWith(c));
+    if (hit) { typed = ""; openConsole(); exec(TYPED[hit]); }
+  });
+
+  /* ---------- Start up ---------- */
+  renderGame();
+  renderRowsFound();
+  renderEggs();
+  const pendingEgg = store.get("sh:eggPending");
+  if (pendingEgg) {
+    store.set("sh:eggPending", "");
+    eggFound.delete(pendingEgg);
+    setTimeout(() => findEgg(pendingEgg), 800);
+  }
+  console.log("%cHi.", "font: 800 20px Archivo, system-ui, sans-serif; color: #1f35c7");
+  console.log("There's a database on this page. Press ` to query it.");
 </script>
 </body>
 </html>

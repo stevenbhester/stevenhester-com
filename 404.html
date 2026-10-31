@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Not found · Steven Hester</title>
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cobalt: #1f35c7;
+    --cobalt-deep: #13219a;
+    --paper: #f4f5fa;
+    --tile: #f4f5fa;
+    --ink: #12152b;
+    --sun: #ffcf3f;
+    --sun-deep: #d9a400;
+    --sun-ink: #2b2200;
+    --on-cobalt-soft: rgba(255, 255, 255, 0.82);
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--cobalt);
+    color: #fff;
+    font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1.2px, transparent 1.3px);
+    background-size: 22px 22px;
+  }
+  :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; border-radius: 8px; }
+  main { max-width: 640px; margin: 0 auto; padding: clamp(40px, 8vw, 88px) 16px 56px; }
+  h1 {
+    display: flex; gap: 10px; margin: 0;
+  }
+  h1 span {
+    display: grid; place-items: center;
+    width: clamp(64px, 16vw, 96px); aspect-ratio: 1;
+    border-radius: 14px;
+    background: var(--tile); color: var(--cobalt);
+    box-shadow: 0 7px 0 var(--cobalt-deep);
+    font-size: clamp(40px, 10vw, 60px); font-weight: 850; font-stretch: 112%; line-height: 1;
+  }
+  .lede { margin: 28px 0 0; font-size: clamp(20px, 3vw, 26px); color: var(--on-cobalt-soft); }
+
+  /* The map: read bottom to top, like you're climbing it */
+  .map { position: relative; margin: 36px 0 0; height: 440px; }
+  .map svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .map path { fill: none; stroke: rgba(255, 255, 255, 0.55); stroke-width: 3; stroke-dasharray: 2 9; stroke-linecap: round; }
+  .node {
+    position: absolute; transform: translate(-50%, -50%);
+    display: grid; justify-items: center; gap: 6px;
+    width: 150px; text-align: center; text-decoration: none; color: #fff;
+  }
+  .node .icon {
+    display: grid; place-items: center;
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--tile); box-shadow: 0 5px 0 var(--cobalt-deep);
+    font-size: 26px; line-height: 1;
+    transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  }
+  a.node:hover .icon, a.node:focus-visible .icon { transform: translateY(-3px) scale(1.06); }
+  .node b { font-weight: 750; font-size: 15px; }
+  .node small { display: block; font-size: 13px; color: var(--on-cobalt-soft); line-height: 1.3; }
+  .node.you .icon { background: var(--sun); box-shadow: 0 5px 0 var(--sun-deep); }
+  .node.boss .icon { width: 68px; height: 68px; font-size: 32px; }
+
+  .notice {
+    margin: 32px 0 0; padding: 12px 14px; max-width: 380px;
+    border: 2px solid #8fb0ff; border-radius: 10px;
+    background: rgba(19, 33, 154, 0.96);
+    box-shadow: 0 0 0 4px rgba(143, 176, 255, 0.22);
+  }
+  .notice p { margin: 0; }
+  .notice p + p { margin-top: 4px; }
+  .notice .sys { font-family: var(--mono); font-size: 13px; color: #cfe0ff; }
+  .notice b { color: var(--sun); }
+</style>
+</head>
+<body>
+<main>
+  <h1 aria-label="404"><span aria-hidden="true">4</span><span aria-hidden="true">0</span><span aria-hidden="true">4</span></h1>
+  <p class="lede">This room is empty. Pick a path.</p>
+
+  <nav class="map" aria-label="Ways out">
+    <svg viewBox="0 0 100 440" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M50 400 C 40 360, 25 340, 22 300" vector-effect="non-scaling-stroke"/>
+      <path d="M50 400 C 60 360, 75 340, 78 300" vector-effect="non-scaling-stroke"/>
+      <path d="M22 300 C 22 250, 22 220, 22 180" vector-effect="non-scaling-stroke"/>
+      <path d="M78 300 C 78 250, 78 220, 78 180" vector-effect="non-scaling-stroke"/>
+      <path d="M22 300 C 40 250, 60 230, 78 180" vector-effect="non-scaling-stroke"/>
+      <path d="M22 180 C 30 120, 42 90, 50 60" vector-effect="non-scaling-stroke"/>
+      <path d="M78 180 C 70 120, 58 90, 50 60" vector-effect="non-scaling-stroke"/>
+    </svg>
+
+    <a class="node boss" href="/" style="left:50%; top:60px">
+      <span class="icon" aria-hidden="true">💀</span>
+      <span><b>Boss</b><small>The homepage</small></span>
+    </a>
+    <a class="node" href="/#quiz" style="left:22%; top:180px">
+      <span class="icon" aria-hidden="true">❔</span>
+      <span><b>Unknown</b><small>A quiz about me</small></span>
+    </a>
+    <a class="node" href="https://trickledown.stevenhester.com/" style="left:78%; top:180px">
+      <span class="icon" aria-hidden="true">🧰</span>
+      <span><b>Treasure</b><small>$100K, fake</small></span>
+    </a>
+    <a class="node" href="/" style="left:22%; top:300px">
+      <span class="icon" aria-hidden="true">🔥</span>
+      <span><b>Rest site</b><small>Also the homepage</small></span>
+    </a>
+    <a class="node" href="https://musicgrid.stevenhester.com/" style="left:78%; top:300px">
+      <span class="icon" aria-hidden="true">🛒</span>
+      <span><b>Merchant</b><small>MusicGrid</small></span>
+    </a>
+    <div class="node you" style="left:50%; top:400px">
+      <span class="icon" aria-hidden="true">🧍</span>
+      <span><b>You</b><small>Lost</small></span>
+    </div>
+  </nav>
+
+  <div class="notice" id="notice" role="status" hidden></div>
+</main>
+
+<script>
+  /* Getting here is one of the easter eggs. The homepage announces it on your next visit. */
+  (function () {
+    const get = k => { try { return localStorage.getItem(k); } catch { return null; } };
+    const set = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+    let found = [];
+    try { found = JSON.parse(get("sh:eggs") || "[]"); } catch {}
+    if (!Array.isArray(found)) found = [];
+    const already = found.includes("lost");
+    if (!already) {
+      found.push("lost");
+      set("sh:eggs", JSON.stringify(found));
+      set("sh:eggPending", "lost");
+    }
+    const box = document.getElementById("notice");
+    box.innerHTML = already
+      ? '<p class="sys">You have been lost here before.</p>'
+      : `<p class="sys">Secret found: Got lost.</p><p>Easter eggs: <b>${found.length} of 12</b></p>`;
+    box.hidden = false;
+  })();
+</script>
+</body>
+</html>
