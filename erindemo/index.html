@@ -454,6 +454,9 @@
       cursor: crosshair;
     }
     .fineprint { font-size: .9rem; color: var(--ink-soft); }
+    /* reserve two lines so a status message never changes the dialog's height */
+    .dlg-status { min-height: 2.9em; }
+    .dlg-status strong { color: var(--forest); }
     .dlg-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.1rem; }
     .btn {
       font: inherit;
@@ -729,7 +732,7 @@
     <h2 id="dish-title">Petri dish</h2>
     <p>Tap or drag across the agar to add cells. The colonies grow by the rules of Conway's Game of Life.</p>
     <canvas class="dish-canvas" width="300" height="300" aria-label="Petri dish with growing colonies"></canvas>
-    <p class="fineprint">Grown in red, like <i>Serratia marcescens</i>.</p>
+    <p class="fineprint dlg-status" aria-live="polite">Grown in red, like <i>Serratia marcescens</i>.</p>
     <div class="dlg-actions">
       <button class="btn solid" type="button" data-act="drop">Add a drop</button>
       <button class="btn" type="button" data-act="pause">Pause</button>
@@ -779,10 +782,29 @@
       : '<svg class="medal" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="none" stroke="#4C5A52" stroke-width="2" stroke-dasharray="4 4"/><text x="21" y="27" text-anchor="middle" font-size="17" font-weight="700" fill="#4C5A52" font-family="Georgia, serif">?</text></svg>';
 
     const toastBox = $('.toasts');
-    function toast({ kicker, title, desc, withMedal }) {
-      // keep toasts above an open dialog's backdrop
-      const host = document.querySelector('dialog[open]') || document.body;
-      if (toastBox.parentNode !== host) host.appendChild(toastBox);
+    // While a dialog is open, never touch the page around it: achievements show
+    // in the dialog's own status line, anything else waits until it closes.
+    const pending = [];
+    function toast(opts) {
+      const openDialog = document.querySelector('dialog[open]');
+      if (openDialog) {
+        const status = openDialog.querySelector('.dlg-status');
+        if (status && opts.kicker) {
+          if (!status.dataset.default) status.dataset.default = status.innerHTML;
+          status.innerHTML = '<strong>' + opts.kicker + ':</strong> ' + opts.title + '.';
+          clearTimeout(status._reset);
+          status._reset = setTimeout(() => { status.innerHTML = status.dataset.default; }, 5200);
+        } else {
+          pending.push(opts);
+        }
+        return;
+      }
+      showToast(opts);
+    }
+    document.querySelectorAll('dialog').forEach(d => d.addEventListener('close', () => {
+      pending.splice(0).forEach((o, i) => setTimeout(() => showToast(o), i * 250));
+    }));
+    function showToast({ kicker, title, desc, withMedal }) {
       const el = document.createElement('div');
       el.className = 'toast';
       el.innerHTML = (withMedal ? medal(true) : '') +
@@ -885,7 +907,7 @@
     const dish = $('#dish');
     const canvas = $('.dish-canvas', dish);
     const ctx = canvas.getContext('2d');
-    const N = 64;
+    const N = 48;
     let grid = new Uint8Array(N * N), next = new Uint8Array(N * N);
     const mask = new Uint8Array(N * N);
     const R = N / 2 - 1.5;
@@ -895,17 +917,31 @@
     }
     let timer = null, playing = true, seeded = false, painting = false;
 
-    function drop(cx, cy, r) {
+    const setCell = (x, y) => { if (x >= 0 && y >= 0 && x < N && y < N && mask[y * N + x]) grid[y * N + x] = 1; };
+    function drop(cx, cy, r, density = .55) {
       for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-        const x = cx + dx, y = cy + dy;
-        if (x < 0 || y < 0 || x >= N || y >= N || dx * dx + dy * dy > r * r) continue;
-        if (mask[y * N + x] && Math.random() < .55) grid[y * N + x] = 1;
+        if (dx * dx + dy * dy <= r * r && Math.random() < density) setCell(cx + dx, cy + dy);
       }
     }
+    // an R-pentomino: five cells that keep growing for over a thousand generations,
+    // so every drop takes off instead of fizzling out
+    function seedR(cx, cy) {
+      const rot = Math.floor(Math.random() * 4), flip = Math.random() < .5;
+      for (let [x, y] of [[0, -1], [1, -1], [-1, 0], [0, 0], [0, 1]]) {
+        if (flip) x = -x;
+        for (let r = 0; r < rot; r++) [x, y] = [-y, x];
+        setCell(cx + x, cy + y);
+      }
+    }
+    // land the drop away from the rim so the colony has room to grow
     function randomDrop() {
+      const LIM = 11;
       let x, y;
-      do { x = 8 + Math.floor(Math.random() * (N - 16)); y = 8 + Math.floor(Math.random() * (N - 16)); } while (!mask[y * N + x]);
-      drop(x, y, 4);
+      do {
+        x = Math.floor(N / 2 + (Math.random() * 2 - 1) * LIM);
+        y = Math.floor(N / 2 + (Math.random() * 2 - 1) * LIM);
+      } while ((x + .5 - N / 2) ** 2 + (y + .5 - N / 2) ** 2 > LIM * LIM);
+      seedR(x, y);
     }
     function step() {
       for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
