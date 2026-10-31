@@ -410,8 +410,8 @@
     .toys { display: flex; gap: .35rem; margin-left: auto; }
     .toy {
       position: relative;
-      width: 42px;
-      height: 42px;
+      width: 48px;
+      height: 48px;
       display: grid;
       place-items: center;
       padding: 0;
@@ -424,6 +424,7 @@
     }
     .toy:hover { color: var(--tomato); transform: translateY(-2px); }
     .toy svg { width: 34px; height: 34px; overflow: visible; }
+    .die svg { width: 44px; height: 44px; }
     .die.rolling svg { animation: roll .65s cubic-bezier(.2, .7, .2, 1); }
     @keyframes roll { to { transform: rotate(720deg); } }
 
@@ -486,6 +487,21 @@
     .trophies span { display: block; font-size: .95rem; line-height: 1.4; }
     .trophies li.locked strong { color: var(--ink-soft); }
     .trophies li.locked span { color: var(--ink-soft); font-style: italic; }
+    .log {
+      margin: .75rem 0 .6rem;
+      padding: 1rem;
+      max-height: 50vh;
+      overflow: auto;
+      border-radius: 14px;
+      background: var(--forest-deep);
+      color: var(--cream);
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .log .art { color: var(--tomato); font-weight: 700; white-space: pre; }
+    .log strong { font-family: var(--display); font-size: 1.05rem; }
+    .log .prompt { color: var(--mustard); }
 
     /* ---------- toasts ---------- */
     .toasts {
@@ -716,12 +732,12 @@
         </button>
         <button class="toy die" type="button" aria-label="Roll a d20" title="Roll a d20">
           <svg viewBox="0 0 34 34" aria-hidden="true">
-            <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
-              <path d="M17 2 30 9.5v15L17 32 4 24.5v-15Z"/>
-              <path d="M17 9.5 25.5 23.5h-17Z"/>
-              <path d="M17 2v7.5M30 9.5l-13 0M30 9.5l-4.5 14M30 24.5l-4.5-1M17 32l-8.5-8.5M17 32l8.5-8.5M4 24.5l4.5-1M4 9.5l4.5 14M4 9.5h13" stroke-width="1.1" stroke-opacity=".6"/>
+            <g fill="none" stroke="currentColor" stroke-linejoin="round">
+              <path d="M17 2 30 9.5v15L17 32 4 24.5v-15Z" stroke-width="1.8"/>
+              <path d="M17 2v6M30 9.5 17 8M30 9.5l-3.5 14.5M30 24.5l-3.5-.5M17 32l-9.5-8M17 32l9.5-8M4 24.5l3.5-.5M4 9.5l3.5 14.5M4 9.5 17 8" stroke-width="1" stroke-opacity=".5"/>
+              <path d="M17 8 26.5 24h-19Z" fill="#F7EFDF" stroke-width="1.6"/>
             </g>
-            <text class="die-num" x="17" y="20.6" text-anchor="middle" font-size="7.2" font-weight="700" fill="currentColor" font-family="Atkinson Hyperlegible, Arial, sans-serif">20</text>
+            <text class="die-num" x="17" y="21.4" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" stroke="#F7EFDF" stroke-width="2.4" stroke-linejoin="round" paint-order="stroke" font-family="Atkinson Hyperlegible, Arial, sans-serif">20</text>
           </svg>
         </button>
       </span>
@@ -750,6 +766,16 @@
     </div>
   </dialog>
 
+  <dialog id="console" aria-labelledby="console-title">
+    <h2 id="console-title">Console</h2>
+    <pre class="log"></pre>
+    <p class="fineprint dlg-status" aria-live="polite"></p>
+    <div class="dlg-actions">
+      <button class="btn solid" type="button" data-act="run">Run secrets()</button>
+      <button class="btn" type="button" data-act="close">Close</button>
+    </div>
+  </dialog>
+
   <div class="toasts" role="status" aria-live="polite"></div>
 
   <script>
@@ -766,7 +792,7 @@
       { id: 'deep', title: 'Deep end', desc: 'Touched the bottom of the page and resurfaced.', hint: 'Touch the bottom, then resurface.' },
       { id: 'water', title: 'Pool day', desc: 'Water on, pool open. Float accordingly.', hint: 'The slide is functional. Tap it twice.' },
       { id: 'asl', title: 'Hello, in ASL', desc: 'Flat hand at the temple, moving outward. Like a small salute.', hint: 'Say hello properly.' },
-      { id: 'logs', title: 'Read the logs', desc: 'You checked the console. Correct instinct.', hint: 'Check the console.' }
+      { id: 'logs', title: 'Read the logs', desc: 'You checked the console. Correct instinct.', hint: 'Check the console. No console? Tap the glasses five times.' }
     ];
     const TOTAL = ACHIEVEMENTS.length;
     const STORE = 'ec-secrets';
@@ -1149,15 +1175,45 @@
       if (!unlock('asl')) toast({ title: 'Hello again', desc: 'Still a small salute.' });
     });
 
-    /* ---------------- the console ---------------- */
-    console.log('%c  .-"""-.     .-"""-.\n /       \\___/       \\\n \\       /   \\       /\n  \'-...-\'     \'-...-\'', 'color:#D8432F;font-weight:bold');
-    console.log('%cHello, developer.', 'font: 600 16px Georgia, serif; color:#1E4D3A');
-    console.log('Migrating secrets: 90% complete. As with any data conversion, the last 10% is the interesting part.\nRun secrets() for hints.');
+    /* ---------------- the console (and an in-page one for phones) ---------------- */
+    const LOG_ART = '  .-"""-.     .-"""-.\n /       \\___/       \\\n \\       /   \\       /\n  \'-...-\'     \'-...-\'';
+    const LOG_HELLO = 'Hello, developer.';
+    const LOG_BODY = 'Migrating secrets: 90% complete. As with any data conversion, the last 10% is the interesting part.\nRun secrets() for hints.';
+    const checklist = () => ACHIEVEMENTS.map(a => found.has(a.id) ? '✔ ' + a.title : '○ ' + a.hint);
+    const summary = () => found.size + ' of ' + TOTAL + ' found.';
+
+    console.log('%c' + LOG_ART, 'color:#D8432F;font-weight:bold');
+    console.log('%c' + LOG_HELLO, 'font: 600 16px Georgia, serif; color:#1E4D3A');
+    console.log(LOG_BODY);
     window.secrets = () => {
       unlock('logs');
-      ACHIEVEMENTS.forEach(a => console.log((found.has(a.id) ? '✔ ' + a.title : '○ ' + a.hint)));
-      return found.size + ' of ' + TOTAL + ' found.';
+      checklist().forEach(line => console.log(line));
+      return summary();
     };
+
+    // five quick taps on the glasses logo opens the in-page console
+    const consoleDlg = $('#console');
+    const logEl = $('.log', consoleDlg);
+    const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let taps = [];
+    $('.mark').addEventListener('click', () => {
+      const now = Date.now();
+      taps = taps.filter(t => now - t < 2000).concat(now);
+      if (taps.length < 5) return;
+      taps = [];
+      logEl.innerHTML = '<span class="art">' + esc(LOG_ART) + '</span>\n\n<strong>' + LOG_HELLO + '</strong>\n' + esc(LOG_BODY);
+      consoleDlg.showModal();
+    });
+    consoleDlg.addEventListener('click', e => {
+      const act = e.target.closest('[data-act]');
+      if (!act) return;
+      if (act.dataset.act === 'close') consoleDlg.close();
+      if (act.dataset.act === 'run') {
+        unlock('logs');
+        logEl.innerHTML += '\n\n<span class="prompt">&gt; secrets()</span>\n' + checklist().map(esc).join('\n') + '\n<span class="prompt">' + summary() + '</span>';
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+    });
   })();
   </script>
 </body>
