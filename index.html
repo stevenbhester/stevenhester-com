@@ -369,15 +369,76 @@
   }
   .play svg { width: 10px; height: 10px; fill: currentColor; }
   .play.loading { opacity: 0.6; }
-  .mg-tray { display: flex; flex-wrap: wrap; gap: 8px; max-width: 540px; margin-top: 18px; }
-  .song {
-    padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 10px;
-    background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; font-weight: 650; line-height: 1.2;
-    cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
-    box-shadow: 0 3px 0 var(--line);
+  .sample .mg-how { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; max-width: 540px; margin: 0 0 16px; font-size: 15px; color: var(--muted); }
+  .mg-badge {
+    display: inline-block; padding: 4px 10px; border-radius: 8px;
+    background: var(--sun); color: var(--sun-ink); font-size: 13px; font-weight: 800; font-stretch: 110%;
+    box-shadow: 0 3px 0 var(--sun-deep); transform: rotate(-4deg);
   }
-  .song[aria-pressed="true"] { border-color: var(--cobalt); box-shadow: 0 3px 0 var(--cobalt); }
-  .song.ghost { position: fixed; z-index: 80; pointer-events: none; transform: rotate(-4deg) scale(1.05); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25); }
+
+  /* Feedback under the board */
+  .mg-msg {
+    display: flex; align-items: center; gap: 12px; max-width: 540px; min-height: 54px; margin: 16px 0 14px;
+    padding: 10px 14px; border: 2px solid var(--line); border-radius: 14px;
+    background: var(--surface); color: var(--muted); font-size: 15px; font-weight: 600; line-height: 1.35;
+  }
+  .mg-msg::before {
+    content: "♪"; flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--cobalt); color: #fff; font-size: 15px; font-weight: 800;
+  }
+  .mg-msg.good { background: #dcf7e8; border-color: #35d07f; color: #0d4d2b; }
+  .mg-msg.good::before { content: "✓"; background: #1f9a5a; }
+  .mg-msg.bad { background: #ffe3df; border-color: #ff6b6b; color: #7a1a12; }
+  .mg-msg.bad::before { content: "✕"; background: #e04a3f; }
+  .mg-msg.warn { background: #fff3c4; border-color: var(--sun-deep); color: var(--sun-ink); }
+  .mg-msg.warn::before { content: "!"; background: var(--sun-deep); color: var(--sun-ink); }
+  .mg-msg.win { background: var(--sun); border-color: var(--sun-deep); color: var(--sun-ink); box-shadow: 0 4px 0 var(--sun-deep); }
+  .mg-msg.win::before { content: "★"; background: var(--sun-ink); color: var(--sun); }
+  @media (prefers-color-scheme: dark) {
+    .mg-msg.good { background: #0f3a26; color: #bff0d6; }
+    .mg-msg.bad { background: #3d1714; color: #ffc9c2; }
+    .mg-msg.warn { background: #3a3008; color: #ffe58a; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .mg-msg.pop { animation: msg-pop 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+    .mg-msg.bad.pop, .mg-msg.warn.pop { animation: msg-pop 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.4), shake 0.4s ease 0.05s; }
+    @keyframes msg-pop { from { transform: scale(0.96); opacity: 0.4; } }
+  }
+
+  /* The crate of songs */
+  .crate { max-width: 540px; padding: 14px; border-radius: 16px; background: var(--cobalt-soft); }
+  .crate-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 2px 12px; font-size: 14px; font-weight: 650; color: var(--ink); }
+  .crate-head b { font-variant-numeric: tabular-nums; }
+  .mg-reset { padding: 0; border: 0; background: none; font: inherit; color: var(--cobalt); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  @media (prefers-color-scheme: dark) { .mg-reset { color: var(--sun); } }
+  .mg-tray { display: flex; flex-wrap: wrap; gap: 10px; min-height: 46px; }
+  .mg-tray:empty::before { content: "All placed."; align-self: center; margin-left: 2px; font-size: 14px; color: var(--muted); }
+  .song {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 7px 14px 7px 7px; border: 2px solid var(--cobalt); border-radius: 999px;
+    background: var(--surface); color: var(--cobalt); font: inherit; font-size: 14.5px; font-weight: 750; font-stretch: 106%; line-height: 1.2;
+    cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+    box-shadow: 0 4px 0 var(--cobalt-deep);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+  }
+  .song:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--cobalt-deep); }
+  .song:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--cobalt-deep); }
+  .song .disc {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    background:
+      radial-gradient(circle, var(--sun) 0 17%, #1b1e33 18% 30%, transparent 31%),
+      repeating-radial-gradient(circle, #1b1e33 0 2px, #2c3150 2px 3px);
+  }
+  .song[aria-pressed="true"] { background: var(--sun); border-color: var(--sun-deep); color: var(--sun-ink); box-shadow: 0 4px 0 var(--sun-deep); }
+  @media (prefers-color-scheme: dark) {
+    .song { color: #dfe4ff; border-color: #6f7ff5; box-shadow: 0 4px 0 #13219a; }
+    .song[aria-pressed="true"] { color: var(--sun-ink); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .song[aria-pressed="true"] .disc, .song.ghost .disc { animation: spin-disc 1.6s linear infinite; }
+    @keyframes spin-disc { to { transform: rotate(360deg); } }
+  }
+  .song.ghost { position: fixed; z-index: 80; pointer-events: none; transform: rotate(-4deg) scale(1.06); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28); }
   .sample .now-playing { max-width: none; margin: 6px 0 0; font-size: 14px; color: var(--muted); }
   .now-playing a { color: inherit; text-underline-offset: 3px; }
 
@@ -759,6 +820,7 @@
         </div>
 
         <figure class="sample" id="mg">
+          <p class="mg-how"><span class="mg-badge">Playable</span>Drag each song to the square that fits both its artist and its column.</p>
           <div class="grid" id="mgGrid">
             <div class="cell"></div>
             <div class="cell col">Came out in the 2010s</div>
@@ -771,8 +833,14 @@
             <div class="cell row">The Vaccines</div>
             <div class="cell slot" data-r="2" data-c="0"></div><div class="cell slot" data-r="2" data-c="1"></div><div class="cell slot" data-r="2" data-c="2"></div>
           </div>
-          <div class="mg-tray" id="mgTray" hidden></div>
-          <figcaption id="mgCaption" aria-live="polite">A sample board with three of nine squares solved.</figcaption>
+          <div class="mg-msg info" id="mgMsg" role="status" aria-live="polite"></div>
+          <div class="crate">
+            <div class="crate-head">
+              <span>Songs to place: <b id="mgLeft">9</b></span>
+              <button class="mg-reset" type="button" id="mgReset">Start over</button>
+            </div>
+            <div class="mg-tray" id="mgTray"></div>
+          </div>
           <p class="now-playing" id="nowPlaying" aria-live="polite" hidden></p>
         </figure>
       </article>
@@ -1362,7 +1430,7 @@
     { id: "roll", name: "Rolled a d20", hint: "Roll for it.", help: "In the console, type /roll." },
     { id: "ff", name: "Surrendered", hint: "Give up.", help: "In the console, type /ff." },
     { id: "pineapple", name: "Added pineapple", hint: "It belongs on pizza.", help: "In the console, type pineapple." },
-    { id: "grid", name: "Solved the sample grid", hint: "The sample board isn't just a sample.", help: "Click an empty square on the MusicGrid board, then put all nine songs where they belong." },
+    { id: "grid", name: "Solved the sample grid", hint: "Finish what MusicGrid started.", help: "Put all nine songs in their squares on the MusicGrid board." },
   ];
   const RANKS = [[1, "Iron"], [3, "Bronze"], [6, "Silver"], [9, "Gold"], [EGGS.length, "Diamond"]];
   const readSet = key => { try { return new Set(JSON.parse(store.get(key) || "[]")); } catch { return new Set(); } };
@@ -1830,13 +1898,22 @@
 
   const mgGrid = document.getElementById("mgGrid");
   const mgTray = document.getElementById("mgTray");
-  const mgCaption = document.getElementById("mgCaption");
+  const mgMsg = document.getElementById("mgMsg");
+  const mgLeft = document.getElementById("mgLeft");
   const mgSlots = [...mgGrid.querySelectorAll(".slot")];
   const slotEl = (r, c) => mgSlots[r * 3 + c];
-  const mgPlaced = [[2, null, null], [null, 4, null], [null, null, 8]]; /* the sample: one solved square per row */
-  let mgStarted = false, mgPicked = null;
+  const mgPlaced = [[null, null, null], [null, null, null], [null, null, null]];
+  let mgPicked = null, mgTrayOrder = [];
   const PLAY_ICON = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1 9 5 2 9Z"/></svg>';
   const PAUSE_ICON = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1h2.2v8H2zM5.8 1H8v8H5.8z"/></svg>';
+  const MG_START = "Pick a song from the crate below to start.";
+
+  function mgSay(kind, text) {
+    mgMsg.className = `mg-msg ${kind}`;
+    mgMsg.textContent = text;
+    void mgMsg.offsetWidth;
+    mgMsg.classList.add("pop");
+  }
 
   function renderBoard() {
     mgSlots.forEach(el => {
@@ -1854,44 +1931,43 @@
         el.innerHTML = `<span class="t">${esc(song.title)}</span><button class="play" type="button" data-song="${idx}" aria-label="Play a preview of ${esc(song.title)}">${idx === playingIdx ? PAUSE_ICON : PLAY_ICON}</button>`;
       }
     });
-    if (!mgStarted) return;
-    const left = MG_SONGS.map((_, k) => k).filter(k => !mgPlaced.flat().includes(k));
-    mgTray.hidden = left.length === 0;
-    mgTray.innerHTML = mgTrayOrder.filter(k => left.includes(k)).map(k =>
-      `<button class="song" type="button" data-song="${k}" aria-pressed="${mgPicked === k}">${esc(MG_SONGS[k].title)}</button>`).join("");
+    const left = mgTrayOrder.filter(k => !mgPlaced.flat().includes(k));
+    mgLeft.textContent = left.length;
+    mgTray.innerHTML = left.map(k =>
+      `<button class="song" type="button" data-song="${k}" aria-pressed="${mgPicked === k}"><span class="disc" aria-hidden="true"></span>${esc(MG_SONGS[k].title)}</button>`).join("");
   }
-  let mgTrayOrder = [];
-  function startGame() {
-    mgStarted = true;
+  function newGame() {
     for (const row of mgPlaced) row.fill(null);
+    mgPicked = null;
     mgTrayOrder = MG_SONGS.map((_, k) => k).sort(() => Math.random() - 0.5);
-    mgCaption.textContent = "Drag each song to its square, or tap a song and then a square.";
     renderBoard();
+    mgSay("info", MG_START);
   }
+  document.getElementById("mgReset").addEventListener("click", newGame);
+
   function place(idx, r, c) {
     const el = slotEl(r, c);
     if (mgPlaced[r][c] !== null) return;
-    const miss = text => {
-      mgCaption.textContent = text;
+    const miss = (kind, text) => {
+      mgSay(kind, text);
       el.classList.remove("miss"); void el.offsetWidth; el.classList.add("miss");
     };
     const why = whyNot(MG_SONGS[idx], r, c);
-    if (why) return miss(why);
+    if (why) return miss("bad", why);
     mgPlaced[r][c] = idx;
     if (!rowSolvable(r)) {
       mgPlaced[r][c] = null;
-      return miss("That's true, but leaves another cell with no valid answer!");
+      return miss("warn", "That's true, but leaves another cell with no valid answer!");
     }
     mgPicked = null;
     renderBoard();
-    const done = mgPlaced.flat().every(v => v !== null);
-    if (done) {
-      mgCaption.textContent = "Solved. Every song is in its square. Press play on any of them.";
+    if (mgPlaced.flat().every(v => v !== null)) {
+      mgSay("win", "Solved. Every song is in its square. Press play on any of them.");
       const b = mgGrid.getBoundingClientRect();
       burst(b.left + b.width / 2, b.top + b.height / 2, 36);
       findEgg("grid");
     } else {
-      mgCaption.textContent = `${MG_SONGS[idx].title}: correct. ${factFor(MG_SONGS[idx], c)}`;
+      mgSay("good", `${MG_SONGS[idx].title}: correct. ${factFor(MG_SONGS[idx], c)}`);
     }
   }
   mgSlots.forEach(el => el.addEventListener("animationend", () => el.classList.remove("miss")));
@@ -1900,10 +1976,9 @@
     if (e.target.closest(".play")) return;
     const el = e.target.closest(".slot");
     if (!el) return;
-    if (!mgStarted) { startGame(); return; }
     const r = +el.dataset.r, c = +el.dataset.c;
     if (mgPlaced[r][c] !== null) return;
-    if (mgPicked === null) { mgCaption.textContent = "Pick a song first, then its square."; return; }
+    if (mgPicked === null) { mgSay("info", "Pick a song from the crate first, then tap its square."); return; }
     place(mgPicked, r, c);
   });
   mgGrid.addEventListener("keydown", e => {
@@ -1951,9 +2026,12 @@
     if (!chip || chip._dragged) return;
     const idx = +chip.dataset.song;
     mgPicked = mgPicked === idx ? null : idx;
-    mgCaption.textContent = mgPicked === null ? "Drag each song to its square, or tap a song and then a square." : `Where does ${MG_SONGS[idx].title} go?`;
     renderBoard();
-    if (mgPicked !== null) mgTray.querySelector(`[data-song="${idx}"]`)?.focus();
+    if (mgPicked === null) mgSay("info", MG_START);
+    else {
+      mgSay("info", `Where does ${MG_SONGS[idx].title} go? Tap its square.`);
+      mgTray.querySelector(`[data-song="${idx}"]`)?.focus();
+    }
   });
 
   /* ---------- 30-second previews, looked up from Apple's catalog when someone presses play ---------- */
@@ -2021,7 +2099,7 @@
       nowPlaying.hidden = false;
     }
   });
-  renderBoard();
+  newGame();
 
   /* ---------- Start up ---------- */
   if (store.get("sh:broke") === "1") document.getElementById("brokenTally").classList.add("seen");
