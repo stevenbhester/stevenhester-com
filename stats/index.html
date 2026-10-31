@@ -148,7 +148,7 @@
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const fmt = n => Number(n || 0).toLocaleString("en-US");
   const EVENT_NAMES = {
-    letter: "Locked or unlocked a letter", shuffle: "Shuffle my name", unshuffle: "Put my name back", unscramble: "Shuffled my name back into order",
+    letter: "Locked or unlocked a letter", shuffle: "Shuffle my name", unshuffle: "Put my name back", unscramble: "Shuffled my name back into order", egg: "Found an easter egg", sql: "Ran a query",
     coin: "Trickle Down coin", link: "Link", quiz_start: "Started the quiz", quiz_finish: "Finished the quiz",
     quiz_copy: "Copied a quiz result", quiz_again: "Played the quiz again",
   };
@@ -250,7 +250,7 @@
     const rows = fillDays(d.daily);
     const since = v.first_seen ? new Date(v.first_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
     const clickRows = d.clicks.map(c => [
-      esc(EVENT_NAMES[c.event] || c.event) + (c.event === "link" ? `: ${esc(LINK_NAMES[c.target] || c.target)}` : c.event === "letter" ? ` (${esc(c.target)})` : ""),
+      esc(EVENT_NAMES[c.event] || c.event) + (c.event === "link" ? `: ${esc(LINK_NAMES[c.target] || c.target)}` : c.event === "letter" ? ` (${esc(c.target)})` : c.target ? `: ${esc(c.target)}` : ""),
       fmt(c.clicks), fmt(c.people)]);
     const sourceRows = d.sources.map(s => [s.source === "direct" ? "Typed in, or no referrer" : esc(s.source), fmt(s.visits), fmt(s.people)]);
     const questionRows = q.questions.map(x => [esc(x.question), fmt(x.answers),
