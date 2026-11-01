@@ -546,22 +546,57 @@
   .friends { padding: 0 var(--gutter) clamp(56px, 8vw, 96px); }
   .friends > .wrap { padding-top: clamp(48px, 7vw, 88px); border-top: 1px solid var(--line); }
   .friends-intro { max-width: 46ch; margin: -16px 0 32px; color: var(--muted); font-size: 18px; }
-  .friend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap: 22px; max-width: 900px; }
+  .friend-grid { display: grid; gap: 12px; max-width: 780px; }
   .friend {
-    display: grid; align-content: start; gap: 10px;
-    padding: 22px 22px 24px; border: 1.5px solid var(--line); border-radius: 18px;
-    background: var(--surface); box-shadow: 0 5px 0 var(--line);
+    padding: 14px 18px; border: 1.5px solid var(--line); border-radius: 16px;
+    background: var(--surface); box-shadow: 0 4px 0 var(--line);
+    transition: border-color 0.15s ease;
+  }
+  .friend.open { border-color: var(--accent-deep); }
+  @media (hover: hover) { .friend:hover { border-color: var(--accent-deep); } }
+  /* Collapsed: one row per friend. The whole row opens it, except the call to action. */
+  .friend-top {
+    position: relative; display: grid; align-items: center; gap: 10px 14px;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "init name cta chev";
   }
   .friend .initial {
-    display: grid; place-items: center; width: 54px; height: 54px; border-radius: 13px;
-    background: var(--accent); color: var(--accent-ink); box-shadow: 0 5px 0 var(--accent-deep);
-    font-size: 32px; font-weight: 850; font-stretch: 112%; line-height: 1;
+    grid-area: init; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 11px;
+    background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 0 var(--accent-deep);
+    font-size: 26px; font-weight: 850; font-stretch: 112%; line-height: 1;
   }
-  .friend h3 { margin: 8px 0 0; font-size: clamp(26px, 3vw, 32px); font-weight: 850; font-stretch: 112%; letter-spacing: -0.02em; line-height: 1.05; }
-  .friend .what { margin: 0; font-size: 14px; font-weight: 650; color: var(--muted); }
-  .friend .blurb { margin: 0; max-width: 40ch; }
-  .friend .links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 6px; }
-  .clips { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; padding: 0; list-style: none; }
+  .friend h3 { grid-area: name; margin: 0; font-size: inherit; }
+  .friend-toggle {
+    display: grid; gap: 3px; padding: 0; border: 0; background: none; color: var(--ink); text-align: left; cursor: pointer;
+    font: inherit; font-size: clamp(20px, 2.4vw, 24px); font-weight: 850; font-stretch: 112%; letter-spacing: -0.02em; line-height: 1.1;
+  }
+  .friend-toggle::after { content: ""; position: absolute; inset: -14px -18px -6px; border-radius: 15px; }
+  .friend-toggle:focus-visible { outline: none; }
+  .friend-toggle:focus-visible::after { outline: 3px solid var(--cobalt); outline-offset: 2px; }
+  .friend .what { font-size: 14px; font-weight: 650; font-stretch: 100%; letter-spacing: 0; color: var(--muted); }
+  .friend .cta { grid-area: cta; position: relative; z-index: 1; }
+  .friend .chev {
+    grid-area: chev; width: 10px; height: 10px; margin: 0 4px 4px;
+    border-right: 2.5px solid var(--muted); border-bottom: 2.5px solid var(--muted);
+    transform: rotate(45deg); transition: transform 0.2s ease; pointer-events: none;
+  }
+  .friend.open .chev { transform: translateY(5px) rotate(225deg); }
+  .friend .clip-status { margin-top: 10px; padding-left: 58px; }
+  .friend-more { display: grid; gap: 12px; padding: 14px 0 6px 58px; }
+  .friend-more[hidden] { display: none; }
+  .friend.open .friend-more { animation: friend-open 0.22s ease; }
+  @keyframes friend-open { from { opacity: 0; transform: translateY(-4px); } }
+  .friend .blurb { margin: 0; max-width: 56ch; }
+  .friend .links { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+  @media (max-width: 600px) {
+    .friend-top { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "init name chev" ". cta cta"; }
+    .friend .cta { justify-self: start; }
+    .friend .clip-status, .friend-more { padding-left: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .friend.open .friend-more { animation: none; } }
+  .clips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  a.clip { text-decoration: none; }
+  .clip .ic.go svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .clip {
     display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 14px 4px 5px;
     border: 1.5px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink);
@@ -980,48 +1015,62 @@
       <h2>Friends who make things</h2>
       <p class="friends-intro">Talented people I know. Go look at their stuff.</p>
       <div class="friend-grid">
-        <article class="friend" style="--accent: var(--cobalt); --accent-ink: #fff; --accent-deep: var(--cobalt-deep)">
-          <span class="initial" aria-hidden="true">D</span>
-          <h3>Duncan Fellows</h3>
-          <p class="what">Band, Austin</p>
-          <p class="blurb">Indie rock with big harmonies. They've played ACL and SXSW, and the band is named after a house on Duncan Lane.</p>
-          <ul class="clips" aria-label="Song previews" data-artist="Duncan Fellows">
-            <li><button class="clip" type="button" data-title="Fresh Squeezed" aria-pressed="false"><span class="ic"></span>Fresh Squeezed</button></li>
-            <li><button class="clip" type="button" data-title="Coffins" aria-pressed="false"><span class="ic"></span>Coffins</button></li>
-            <li><button class="clip" type="button" data-title="Two Stamps" aria-pressed="false"><span class="ic"></span>Two Stamps</button></li>
-          </ul>
+        <article class="friend" data-artist="Duncan Fellows" style="--accent: var(--cobalt); --accent-ink: #fff; --accent-deep: var(--cobalt-deep)">
+          <div class="friend-top">
+            <span class="initial" aria-hidden="true">D</span>
+            <h3><button class="friend-toggle" type="button" aria-expanded="false" aria-controls="fr-duncan" data-slug="duncan-fellows">Duncan Fellows<span class="what">Band, Austin</span></button></h3>
+            <div class="cta"><button class="clip" type="button" data-title="Fresh Squeezed" aria-pressed="false"><span class="ic"></span>Fresh Squeezed</button></div>
+            <span class="chev" aria-hidden="true"></span>
+          </div>
           <p class="clip-status" aria-live="polite" hidden></p>
-          <div class="links"><a class="link" href="https://duncanfellows.com" data-track="friend-duncan-fellows">Website</a></div>
+          <div class="friend-more" id="fr-duncan" hidden>
+            <p class="blurb">Indie rock with big harmonies. They've played ACL and SXSW, and the band is named after a house on Duncan Lane.</p>
+            <ul class="clips" aria-label="More song previews">
+              <li><button class="clip" type="button" data-title="Coffins" aria-pressed="false"><span class="ic"></span>Coffins</button></li>
+              <li><button class="clip" type="button" data-title="See You Soon" aria-pressed="false"><span class="ic"></span>See You Soon</button></li>
+            </ul>
+            <div class="links"><a class="link" href="https://duncanfellows.com" data-track="friend-duncan-fellows">Website</a></div>
+          </div>
         </article>
         <article class="friend" style="--accent: #ff6b6b; --accent-ink: #2b0f0d; --accent-deep: #c94a42">
-          <span class="initial" aria-hidden="true">C</span>
-          <h3>Cocolarry</h3>
-          <p class="what">Clothes and accoutrements</p>
-          <p class="blurb">Awesome custom clothes and illustration, made for the love of art and the love of being cozy.</p>
-          <div class="links">
-            <a class="link" href="https://cocolarry.com" data-track="friend-cocolarry">Shop</a>
-            <a class="link" href="https://instagram.com/__cocolarry" data-track="friend-cocolarry-instagram">Instagram</a>
+          <div class="friend-top">
+            <span class="initial" aria-hidden="true">C</span>
+            <h3><button class="friend-toggle" type="button" aria-expanded="false" aria-controls="fr-cocolarry" data-slug="cocolarry">Cocolarry<span class="what">Clothes and accoutrements</span></button></h3>
+            <div class="cta"><a class="clip" href="https://instagram.com/__cocolarry" data-track="friend-cocolarry-instagram"><span class="ic go"></span>Check out her insta</a></div>
+            <span class="chev" aria-hidden="true"></span>
+          </div>
+          <div class="friend-more" id="fr-cocolarry" hidden>
+            <p class="blurb">Awesome custom clothes and illustration, made for the love of art and the love of being cozy.</p>
+            <div class="links"><a class="link" href="https://cocolarry.com" data-track="friend-cocolarry">Shop</a></div>
           </div>
         </article>
         <article class="friend" style="--accent: #35d07f; --accent-ink: #062b17; --accent-deep: #1f9a5a">
-          <span class="initial" aria-hidden="true">L</span>
-          <h3>Lindsey Serata</h3>
-          <p class="what">Artist</p>
-          <p class="blurb">Tons of cool planty art, including a whole series of Plant Girl prints. She also makes stickers and teaches drawing classes.</p>
-          <div class="links"><a class="link" href="https://www.lindseyserata.com/store" data-track="friend-lindsey-serata">Shop prints</a></div>
+          <div class="friend-top">
+            <span class="initial" aria-hidden="true">L</span>
+            <h3><button class="friend-toggle" type="button" aria-expanded="false" aria-controls="fr-lindsey" data-slug="lindsey-serata">Lindsey Serata<span class="what">Artist</span></button></h3>
+            <div class="cta"><a class="clip" href="https://www.lindseyserata.com/store" data-track="friend-lindsey-serata"><span class="ic go"></span>Shop her prints</a></div>
+            <span class="chev" aria-hidden="true"></span>
+          </div>
+          <div class="friend-more" id="fr-lindsey" hidden>
+            <p class="blurb">Tons of cool planty art, including a whole series of Plant Girl prints. She also makes stickers and teaches drawing classes.</p>
+          </div>
         </article>
-        <article class="friend" style="--accent: var(--sun); --accent-ink: var(--sun-ink); --accent-deep: var(--sun-deep)">
-          <span class="initial" aria-hidden="true">S</span>
-          <h3>Slaptop</h3>
-          <p class="what">Electronic, San Francisco</p>
-          <p class="blurb">Sunny, danceable electronic pop that's played Outside Lands and Lollapalooza. My friend Evan Baker was in Slaptop in the early days, on songs like “With You” and “Panama.”</p>
-          <ul class="clips" aria-label="Song previews" data-artist="Slaptop">
-            <li><button class="clip" type="button" data-title="Sunrise" aria-pressed="false"><span class="ic"></span>Sunrise</button></li>
-            <li><button class="clip" type="button" data-title="Walls" aria-pressed="false"><span class="ic"></span>Walls</button></li>
-            <li><button class="clip" type="button" data-title="Panama" aria-pressed="false"><span class="ic"></span>Panama</button></li>
-          </ul>
+        <article class="friend" data-artist="Slaptop" style="--accent: var(--sun); --accent-ink: var(--sun-ink); --accent-deep: var(--sun-deep)">
+          <div class="friend-top">
+            <span class="initial" aria-hidden="true">S</span>
+            <h3><button class="friend-toggle" type="button" aria-expanded="false" aria-controls="fr-slaptop" data-slug="slaptop">Slaptop<span class="what">Electronic, San Francisco</span></button></h3>
+            <div class="cta"><button class="clip" type="button" data-title="Sunrise" aria-pressed="false"><span class="ic"></span>Sunrise</button></div>
+            <span class="chev" aria-hidden="true"></span>
+          </div>
           <p class="clip-status" aria-live="polite" hidden></p>
-          <div class="links"><a class="link" href="https://music.apple.com/us/artist/slaptop/893741928" data-track="friend-slaptop">Listen on Apple Music</a></div>
+          <div class="friend-more" id="fr-slaptop" hidden>
+            <p class="blurb">Sunny, danceable electronic pop that's played Outside Lands and Lollapalooza. My friend Evan Baker was in Slaptop in the early days, on songs like “With You” and “Panama.”</p>
+            <ul class="clips" aria-label="More song previews">
+              <li><button class="clip" type="button" data-title="Walls" aria-pressed="false"><span class="ic"></span>Walls</button></li>
+              <li><button class="clip" type="button" data-title="Panama" aria-pressed="false"><span class="ic"></span>Panama</button></li>
+            </ul>
+            <div class="links"><a class="link" href="https://music.apple.com/us/artist/slaptop/893741928" data-track="friend-slaptop">Listen on Apple Music</a></div>
+          </div>
         </article>
       </div>
     </div>
@@ -2270,7 +2319,15 @@
   /* ---------- Friends' songs: same preview lookup, same single player ---------- */
   const clips = {};
   let clipBtn = null, clipTry = 0;
-  for (const b of document.querySelectorAll(".clip .ic")) b.innerHTML = PLAY_ICON;
+  const GO_ICON = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2h4.5v4.5M8 2 2 8"/></svg>';
+  for (const b of document.querySelectorAll(".clip .ic")) b.innerHTML = b.classList.contains("go") ? GO_ICON : PLAY_ICON;
+  for (const t of document.querySelectorAll(".friend-toggle")) t.addEventListener("click", () => {
+    const open = t.getAttribute("aria-expanded") !== "true";
+    t.setAttribute("aria-expanded", String(open));
+    document.getElementById(t.getAttribute("aria-controls")).hidden = !open;
+    t.closest(".friend").classList.toggle("open", open);
+    if (open) track("link", "friend-open-" + t.dataset.slug);
+  });
   function clipStatus(btn) { return btn.closest(".friend").querySelector(".clip-status"); }
   function stopClip() {
     if (!clipBtn) return;
@@ -2293,9 +2350,9 @@
     return clips[key] = { url: candidates[0].previewUrl, page: candidates[0].trackViewUrl };
   }
   document.getElementById("friends").addEventListener("click", async e => {
-    const btn = e.target.closest(".clip");
+    const btn = e.target.closest("button.clip");
     if (!btn) return;
-    const title = btn.dataset.title, artist = btn.closest(".clips").dataset.artist;
+    const title = btn.dataset.title, artist = btn.closest(".friend").dataset.artist;
     const status = clipStatus(btn);
     if (clipBtn === btn) { audio.pause(); stopClip(); return; }
     if (audio) audio.pause();

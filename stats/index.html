@@ -75,7 +75,7 @@
     width: 100%; min-height: 48px; padding: 0 14px; margin-bottom: 14px;
     border: 2px solid var(--line); border-radius: 10px; background: var(--surface);
   }
-  .check { display: flex; gap: 10px; align-items: center; margin: 0 0 18px; }
+  .check { display: flex; gap: 10px; align-items: center; min-height: 44px; margin: 0 0 10px; cursor: pointer; }
   .check input { width: 18px; height: 18px; accent-color: var(--cobalt); }
   .error { color: var(--bad); font-weight: 600; min-height: 1.5em; margin: 12px 0 0; }
 
@@ -154,7 +154,7 @@
   };
   const LINK_NAMES = {
     linkedin: "LinkedIn", "musicgrid-play": "MusicGrid: play today's grid",
-    "musicgrid-builder": "MusicGrid: build a grid", nowhere: "Link to nowhere", "trickledown-beta": "Trickle Down: try the beta",
+    "musicgrid-builder": "MusicGrid: build a grid", nowhere: "Link to nowhere", "friend-duncan-fellows": "Friends: Duncan Fellows", "friend-slaptop": "Friends: Slaptop", "friend-cocolarry": "Friends: Cocolarry", "friend-cocolarry-instagram": "Friends: Cocolarry on Instagram", "friend-lindsey-serata": "Friends: Lindsey Serata", "friend-open-duncan-fellows": "Friends: opened Duncan Fellows", "friend-open-cocolarry": "Friends: opened Cocolarry", "friend-open-lindsey-serata": "Friends: opened Lindsey Serata", "friend-open-slaptop": "Friends: opened Slaptop", "trickledown-beta": "Trickle Down: try the beta",
   };
 
   function gate(message = "") {
