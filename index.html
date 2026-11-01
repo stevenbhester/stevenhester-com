@@ -50,7 +50,8 @@
   }
 
   *, *::before, *::after { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; touch-action: manipulation; }
+  button, a, .slot, .coin-scene { -webkit-tap-highlight-color: transparent; }
   body {
     margin: 0;
     background: var(--paper);
@@ -87,19 +88,20 @@
     box-shadow: 0 5px 0 var(--cobalt-deep);
     transition: transform 0.12s ease, box-shadow 0.12s ease;
   }
-  .btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--cobalt-deep); }
+  @media (hover: hover) { .btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--cobalt-deep); } }
   .btn:active { transform: translateY(5px); box-shadow: 0 0 0 var(--cobalt-deep); }
   .btn.sun { background: var(--sun); color: var(--sun-ink); box-shadow: 0 5px 0 var(--sun-deep); }
-  .btn.sun:hover { box-shadow: 0 3px 0 var(--sun-deep); }
+  @media (hover: hover) { .btn.sun:hover { box-shadow: 0 3px 0 var(--sun-deep); } }
   .btn.sun:active { box-shadow: 0 0 0 var(--sun-deep); }
   .btn.ghost {
     background: transparent;
     color: inherit;
     box-shadow: inset 0 0 0 2px var(--line);
   }
-  .btn.ghost:hover { transform: none; box-shadow: inset 0 0 0 2px var(--muted); }
+  @media (hover: hover) { .btn.ghost:hover { transform: none; box-shadow: inset 0 0 0 2px var(--muted); } }
   .btn.ghost:active { transform: translateY(2px); }
   .link {
+    display: inline-block; padding: 9px 0; margin: -9px 0;
     font-weight: 600;
     text-decoration: underline;
     text-decoration-thickness: 3px;
@@ -152,7 +154,7 @@
     cursor: pointer;
     transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4), background 0.15s ease;
   }
-  .tile:hover { transform: translateY(-4px) rotate(-3deg); }
+  @media (hover: hover) { .tile:hover { transform: translateY(-4px) rotate(-3deg); } }
   .tile:active { transform: translateY(2px) scale(0.96); }
   .tile.sun { background: var(--sun); color: var(--sun-ink); box-shadow: 0 calc(var(--t) * 0.07) 0 var(--sun-deep); }
   .tile.stamp { animation: stamp 0.28s cubic-bezier(0.3, 0.8, 0.3, 1.4) both; }
@@ -178,6 +180,7 @@
   .intro .hero-link { margin-top: 18px; }
   .hero-link {
     display: inline-block;
+    padding: 8px 0; margin: -8px 0;
     font-size: 18px;
     font-weight: 600;
     color: var(--on-cobalt);
@@ -199,7 +202,7 @@
     box-shadow: 0 4px 0 var(--sun-deep);
     transition: transform 0.12s ease, box-shadow 0.12s ease;
   }
-  .shuffle:hover { transform: translateY(2px); box-shadow: 0 2px 0 var(--sun-deep); }
+  @media (hover: hover) { .shuffle:hover { transform: translateY(2px); box-shadow: 0 2px 0 var(--sun-deep); } }
   .shuffle:active { transform: translateY(4px); box-shadow: 0 0 0 var(--sun-deep); }
 
   .shuffle-wrap { display: grid; gap: 10px; justify-items: start; max-width: 34ch; }
@@ -266,13 +269,13 @@
   .ticker .beta { color: #fff; }
   @media (prefers-reduced-motion: no-preference) {
     .ticker-track { animation: tape 42s linear infinite; }
-    .ticker:hover .ticker-track { animation-play-state: paused; }
+    @media (hover: hover) { .ticker:hover .ticker-track { animation-play-state: paused; } }
     @keyframes tape { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   }
 
   /* ---------- Projects ---------- */
   .projects { padding: clamp(56px, 9vw, 112px) var(--gutter) clamp(48px, 7vw, 88px); }
-  .projects h2, .quiz h2 {
+  .projects h2, .quiz h2, .friends h2 {
     margin: 0 0 clamp(28px, 4vw, 48px);
     font-size: clamp(24px, 2.6vw, 30px);
     font-weight: 700;
@@ -361,13 +364,22 @@
   .grid .slot.over { border-color: var(--cobalt); border-style: dashed; border-width: 2px; }
   .grid .slot.open { border-color: var(--cobalt); }
   .grid .slot.miss { animation: shake 0.4s ease; background: #ffdcd8; border-color: #e5877d; }
-  .grid .slot .t { padding: 0 4px 10px; overflow-wrap: anywhere; }
+  @media (prefers-color-scheme: dark) { .grid .slot.miss { background: #4a1c18; border-color: #e5877d; } }
+  .grid .slot .t { padding: 0 4px 10px; overflow-wrap: break-word; hyphens: manual; }
   .play {
     position: absolute; right: 6px; bottom: 6px;
     display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
     border: 0; border-radius: 50%; background: var(--sun-ink); color: var(--sun); cursor: pointer;
   }
   .play svg { width: 10px; height: 10px; fill: currentColor; }
+  .play::before { content: ""; position: absolute; inset: -9px; }
+  @media (max-width: 600px) {
+    .grid .slot.solved { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 4px; }
+    .grid .slot .t { padding: 0 2px; }
+    .grid .slot.solved .play { position: relative; right: auto; bottom: auto; flex: none; width: 24px; height: 24px; }
+    .grid .cell { font-size: 12px; }
+    .grid .row { font-size: 13px; }
+  }
   .play.loading { opacity: 0.6; }
   .sample .mg-how { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; max-width: 540px; margin: 0 0 16px; font-size: 15px; color: var(--muted); }
   .mg-badge {
@@ -409,7 +421,7 @@
   .crate { max-width: 540px; padding: 14px; border-radius: 16px; background: var(--cobalt-soft); }
   .crate-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 2px 12px; font-size: 14px; font-weight: 650; color: var(--ink); }
   .crate-head b { font-variant-numeric: tabular-nums; }
-  .mg-reset { padding: 0; border: 0; background: none; font: inherit; color: var(--cobalt); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .mg-reset { padding: 11px 6px; margin: -11px -6px; border: 0; background: none; font: inherit; color: var(--cobalt); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
   @media (prefers-color-scheme: dark) { .mg-reset { color: var(--sun); } }
   .mg-tray { display: flex; flex-wrap: wrap; gap: 10px; min-height: 46px; }
   .mg-tray:empty::before { content: "All placed."; align-self: center; margin-left: 2px; font-size: 14px; color: var(--muted); }
@@ -417,11 +429,11 @@
     display: inline-flex; align-items: center; gap: 10px;
     padding: 7px 14px 7px 7px; border: 2px solid var(--cobalt); border-radius: 999px;
     background: var(--surface); color: var(--cobalt); font: inherit; font-size: 14.5px; font-weight: 750; font-stretch: 106%; line-height: 1.2;
-    cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+    cursor: grab; touch-action: manipulation; user-select: none; -webkit-user-select: none;
     box-shadow: 0 4px 0 var(--cobalt-deep);
     transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
   }
-  .song:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--cobalt-deep); }
+  @media (hover: hover) { .song:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--cobalt-deep); } }
   .song:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--cobalt-deep); }
   .song .disc {
     flex: none; width: 26px; height: 26px; border-radius: 50%;
@@ -461,12 +473,24 @@
     transform-style: preserve-3d;
     transition: transform 0.7s cubic-bezier(0.3, 0.8, 0.3, 1.1);
   }
-  .coin-scene:hover .coin, .coin-scene.flipped .coin { transform: rotateY(180deg); }
+  .coin-scene, .coin-scene * { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .coin-scene.flipped .coin { transform: rotateY(180deg); }
+  .face.back, .coin-scene.flipped .face.front { visibility: hidden; }
+  .coin-scene.flipped .face.back { visibility: visible; }
+  @media (hover: hover) {
+    .coin-scene:hover .coin { transform: rotateY(180deg); }
+    .coin-scene:hover .face.front { visibility: hidden; }
+    .coin-scene:hover .face.back { visibility: visible; }
+  }
   .face {
     position: absolute;
     inset: 0;
     border-radius: 50%;
+    -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
+    /* Safari can still show layered children through a hidden backface, so also swap
+       which face is visible at the halfway point of the 0.7s flip. */
+    transition: visibility 0s linear 0.35s;
     display: grid;
     place-items: center;
     box-shadow: 0 10px 0 var(--sun-deep), inset 0 0 0 10px rgba(255,255,255,0.35), inset 0 0 0 12px var(--sun-deep);
@@ -517,6 +541,44 @@
     border-top: 1px solid var(--line);
     color: var(--muted);
   }
+
+  /* ---------- Friends ---------- */
+  .friends { padding: 0 var(--gutter) clamp(56px, 8vw, 96px); }
+  .friends > .wrap { padding-top: clamp(48px, 7vw, 88px); border-top: 1px solid var(--line); }
+  .friends-intro { max-width: 46ch; margin: -16px 0 32px; color: var(--muted); font-size: 18px; }
+  .friend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap: 22px; max-width: 900px; }
+  .friend {
+    display: grid; align-content: start; gap: 10px;
+    padding: 22px 22px 24px; border: 1.5px solid var(--line); border-radius: 18px;
+    background: var(--surface); box-shadow: 0 5px 0 var(--line);
+  }
+  .friend .initial {
+    display: grid; place-items: center; width: 54px; height: 54px; border-radius: 13px;
+    background: var(--accent); color: var(--accent-ink); box-shadow: 0 5px 0 var(--accent-deep);
+    font-size: 32px; font-weight: 850; font-stretch: 112%; line-height: 1;
+  }
+  .friend h3 { margin: 8px 0 0; font-size: clamp(26px, 3vw, 32px); font-weight: 850; font-stretch: 112%; letter-spacing: -0.02em; line-height: 1.05; }
+  .friend .what { margin: 0; font-size: 14px; font-weight: 650; color: var(--muted); }
+  .friend .blurb { margin: 0; max-width: 40ch; }
+  .friend .links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 6px; }
+  .clips { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; padding: 0; list-style: none; }
+  .clip {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 14px 4px 5px;
+    border: 1.5px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink);
+    font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .clip .ic {
+    display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-ink);
+  }
+  .clip .ic svg { width: 10px; height: 10px; fill: currentColor; }
+  .clip.loading { opacity: 0.6; cursor: progress; }
+  .clip[aria-pressed="true"] { border-color: var(--accent-deep); background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+  @media (hover: hover) { .clip:hover { border-color: var(--accent-deep); } }
+  .clip:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; }
+  .clip-status { margin: 0; font-size: 14px; color: var(--muted); }
+  .clip-status a { color: inherit; text-underline-offset: 3px; }
 
   /* ---------- Quiz ---------- */
   .quiz {
@@ -576,7 +638,7 @@
     transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease, border-color 0.15s ease;
   }
   .opts.two .opt { text-align: center; font-size: 20px; font-weight: 750; min-height: 72px; }
-  .opt:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--cobalt); box-shadow: 0 6px 0 var(--cobalt-soft); }
+  @media (hover: hover) { .opt:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--cobalt); box-shadow: 0 6px 0 var(--cobalt-soft); } }
   .opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
   .opt:disabled { cursor: default; }
   .opt.right { background: var(--sun); border-color: var(--sun-deep); color: var(--sun-ink); box-shadow: 0 4px 0 var(--sun-deep); }
@@ -649,8 +711,8 @@
 
   footer { position: relative; overflow: hidden; padding: 40px var(--gutter) 0; font-size: 14px; color: var(--muted); }
   .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
-  .copy-mark { padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: default; }
-  .cursor { padding: 0 6px; margin-left: 2px; border: 0; background: none; color: var(--cobalt); cursor: pointer; vertical-align: baseline; }
+  .copy-mark { padding: 11px 6px; margin: -11px -6px; border: 0; background: none; font: inherit; color: inherit; cursor: default; }
+  .cursor { padding: 11px 24px 11px 12px; margin: -11px -24px -11px 0; border: 0; background: none; color: var(--cobalt); cursor: pointer; vertical-align: baseline; }
   .cursor::before { content: ""; display: inline-block; width: 8px; height: 1.1em; vertical-align: -0.2em; background: currentColor; }
   @media (prefers-color-scheme: dark) { .cursor { color: var(--sun); } }
   @media (prefers-reduced-motion: no-preference) {
@@ -660,11 +722,11 @@
   .eggs-panel .more { margin-left: 6px; padding: 0; border: 0; background: none; font: inherit; color: var(--cobalt); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
   @media (prefers-color-scheme: dark) { .eggs-panel .more { color: var(--sun); } }
   .eggs-btn {
-    padding: 0; border: 0; background: none; font: inherit; color: var(--muted); cursor: pointer;
+    padding: 11px 0; margin: -11px 0; border: 0; background: none; font: inherit; color: var(--muted); cursor: pointer;
     text-decoration: underline dotted; text-underline-offset: 4px;
   }
   .foot-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; }
-  .nowhere { color: var(--muted); text-underline-offset: 4px; }
+  .nowhere { display: inline-block; padding: 11px 0; margin: -11px 0; color: var(--muted); text-underline-offset: 4px; }
   .nowhere:hover { color: var(--ink); }
   .eggs-panel { margin: 14px 0 0; padding: 14px 18px; max-width: 440px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
   .eggs-panel .rank { margin: 0 0 6px; font-weight: 700; color: var(--ink); }
@@ -678,6 +740,7 @@
     content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 24px; z-index: 1; pointer-events: none;
     background: radial-gradient(14px 6px at 14px 0, transparent 98%, var(--water)) 0 0 / 28px 24px repeat-x;
   }
+  .tube::before { content: ""; position: absolute; inset: -14px -10px; }
   .tube {
     position: absolute; right: 14%; bottom: 12px; width: 52px; height: 22px; padding: 0; border: 0; border-radius: 50%;
     background: radial-gradient(ellipse at 50% 45%, var(--night) 0 26%, var(--sun) 30% 100%);
@@ -724,11 +787,16 @@
   .console-in { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--night-line); }
   .console-in .prompt { color: var(--sun); }
   .console-in input { flex: 1; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; outline: none; }
+  @media (max-width: 600px), (pointer: coarse) { .console-in input { font-size: 16px; } .console-in { padding: 12px 14px; } }
   @media (max-width: 600px) { .console { left: 0; right: 0; bottom: 0; width: auto; border-radius: 14px 14px 0 0; border-width: 2px 0 0; } }
 
   /* System notices */
   .notices { position: fixed; left: 16px; bottom: 16px; z-index: 75; display: grid; gap: 10px; width: min(380px, calc(100vw - 32px)); pointer-events: none; }
-  @media (max-width: 600px) { .notices { top: 12px; bottom: auto; } }
+  @media (max-width: 600px) {
+    .notices { top: 10px; bottom: auto; gap: 8px; }
+    .notice { padding: 9px 12px; font-size: 14px; }
+    .notice .sys { font-size: 12px; }
+  }
   .notice {
     padding: 12px 14px; border: 2px solid #8fb0ff; border-radius: 10px;
     background: rgba(19, 33, 154, 0.96); color: #fff; font-size: 15px; line-height: 1.4;
@@ -820,7 +888,7 @@
         </div>
 
         <figure class="sample" id="mg">
-          <p class="mg-how"><span class="mg-badge">Playable</span>Drag each song to the square that fits both its artist and its column.</p>
+          <p class="mg-how"><span class="mg-badge">Playable</span><span id="mgHow">Drag each song to the square that fits both its artist and its column.</span></p>
           <div class="grid" id="mgGrid">
             <div class="cell"></div>
             <div class="cell col">Came out in the 2010s</div>
@@ -907,6 +975,58 @@
     </div>
   </section>
 
+  <section class="friends" id="friends">
+    <div class="wrap">
+      <h2>Friends who make things</h2>
+      <p class="friends-intro">Talented people I know. Go look at their stuff.</p>
+      <div class="friend-grid">
+        <article class="friend" style="--accent: var(--cobalt); --accent-ink: #fff; --accent-deep: var(--cobalt-deep)">
+          <span class="initial" aria-hidden="true">D</span>
+          <h3>Duncan Fellows</h3>
+          <p class="what">Band, Austin</p>
+          <p class="blurb">Indie rock with big harmonies. They've played ACL and SXSW, and the band is named after a house on Duncan Lane.</p>
+          <ul class="clips" aria-label="Song previews" data-artist="Duncan Fellows">
+            <li><button class="clip" type="button" data-title="Fresh Squeezed" aria-pressed="false"><span class="ic"></span>Fresh Squeezed</button></li>
+            <li><button class="clip" type="button" data-title="Coffins" aria-pressed="false"><span class="ic"></span>Coffins</button></li>
+            <li><button class="clip" type="button" data-title="Two Stamps" aria-pressed="false"><span class="ic"></span>Two Stamps</button></li>
+          </ul>
+          <p class="clip-status" aria-live="polite" hidden></p>
+          <div class="links"><a class="link" href="https://duncanfellows.com" data-track="friend-duncan-fellows">Website</a></div>
+        </article>
+        <article class="friend" style="--accent: #ff6b6b; --accent-ink: #2b0f0d; --accent-deep: #c94a42">
+          <span class="initial" aria-hidden="true">C</span>
+          <h3>Cocolarry</h3>
+          <p class="what">Clothes and accoutrements</p>
+          <p class="blurb">Awesome custom clothes and illustration, made for the love of art and the love of being cozy.</p>
+          <div class="links">
+            <a class="link" href="https://cocolarry.com" data-track="friend-cocolarry">Shop</a>
+            <a class="link" href="https://instagram.com/__cocolarry" data-track="friend-cocolarry-instagram">Instagram</a>
+          </div>
+        </article>
+        <article class="friend" style="--accent: #35d07f; --accent-ink: #062b17; --accent-deep: #1f9a5a">
+          <span class="initial" aria-hidden="true">L</span>
+          <h3>Lindsey Serata</h3>
+          <p class="what">Artist</p>
+          <p class="blurb">Tons of cool planty art, including a whole series of Plant Girl prints. She also makes stickers and teaches drawing classes.</p>
+          <div class="links"><a class="link" href="https://www.lindseyserata.com/store" data-track="friend-lindsey-serata">Shop prints</a></div>
+        </article>
+        <article class="friend" style="--accent: var(--sun); --accent-ink: var(--sun-ink); --accent-deep: var(--sun-deep)">
+          <span class="initial" aria-hidden="true">S</span>
+          <h3>Slaptop</h3>
+          <p class="what">Electronic, San Francisco</p>
+          <p class="blurb">Sunny, danceable electronic pop that's played Outside Lands and Lollapalooza. My friend Evan Baker was in Slaptop in the early days, on songs like “With You” and “Panama.”</p>
+          <ul class="clips" aria-label="Song previews" data-artist="Slaptop">
+            <li><button class="clip" type="button" data-title="Sunrise" aria-pressed="false"><span class="ic"></span>Sunrise</button></li>
+            <li><button class="clip" type="button" data-title="Walls" aria-pressed="false"><span class="ic"></span>Walls</button></li>
+            <li><button class="clip" type="button" data-title="Panama" aria-pressed="false"><span class="ic"></span>Panama</button></li>
+          </ul>
+          <p class="clip-status" aria-live="polite" hidden></p>
+          <div class="links"><a class="link" href="https://music.apple.com/us/artist/slaptop/893741928" data-track="friend-slaptop">Listen on Apple Music</a></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
   <section class="quiz" id="quiz">
     <div class="wrap">
       <h2>How well do you know Steven?</h2>
@@ -942,7 +1062,7 @@
 <div class="console" id="console" role="dialog" aria-label="SQL console" hidden>
   <div class="console-bar"><span>psql: steven</span><button type="button" id="conClose" aria-label="Close the console">&times;</button></div>
   <div class="console-out" id="conOut"></div>
-  <label class="console-in"><span class="prompt">steven=#</span><input id="conIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="SQL command"></label>
+  <label class="console-in"><span class="prompt">steven=#</span><input id="conIn" placeholder="type help" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="SQL command"></label>
 </div>
 
 <script>
@@ -1180,6 +1300,20 @@
   /* ---------- Coin flip on tap (hover handles mouse) ---------- */
   const coin = document.getElementById("coin");
   coin.addEventListener("click", () => { coin.classList.toggle("flipped"); track("coin"); });
+  /* iPhones read quick taps as double-tap-to-zoom and swallow them, so the coin handles its own taps */
+  let coinTouch = null;
+  coin.addEventListener("touchstart", e => {
+    const t = e.changedTouches[0];
+    coinTouch = e.touches.length === 1 ? { x: t.clientX, y: t.clientY } : null;
+  }, { passive: true });
+  coin.addEventListener("touchcancel", () => { coinTouch = null; });
+  coin.addEventListener("touchend", e => {
+    const t = e.changedTouches[0], start = coinTouch;
+    coinTouch = null;
+    if (!start || Math.hypot(t.clientX - start.x, t.clientY - start.y) > 10) return;
+    e.preventDefault();
+    coin.click();
+  });
 
   /* ---------- Quiz ----------
      Edit QUESTIONS freely. Types:
@@ -1390,7 +1524,8 @@
     el.className = "notice";
     el.innerHTML = html;
     noticeBox.appendChild(el);
-    while (noticeBox.children.length > 3) noticeBox.firstElementChild.remove();
+    const most = matchMedia("(max-width: 600px)").matches ? 2 : 3;
+    while (noticeBox.children.length > most) noticeBox.firstElementChild.remove();
     setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 320); }, ms);
   }
   const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -1508,14 +1643,27 @@
     }, 1600);
   }
 
-  /* ---------- Coin: three quick taps ---------- */
-  let coinTaps = [];
+  /* ---------- Coin: each quick tap hops higher, the third one launches it ---------- */
+  let coinTaps = [], coinHop = null;
+  function hopCoin(n) {
+    if (reduceMotion) return;
+    const h = [0, 12, 34][n], s = [0, 0.05, 0.1][n], o = "50% 100%";
+    coinHop?.cancel();
+    coinHop = coin.animate([
+      { transform: "none", transformOrigin: o },
+      { transform: `scale(${1 + s}, ${1 - s})`, transformOrigin: o, offset: 0.14, easing: "cubic-bezier(0.2, 0.7, 0.4, 1)" },
+      { transform: `translateY(-${h}px) scale(${1 - s / 2}, ${1 + s / 2})`, transformOrigin: o, offset: 0.5, easing: "cubic-bezier(0.6, 0, 0.9, 0.5)" },
+      { transform: `scale(${1 + s / 2}, ${1 - s / 2})`, transformOrigin: o, offset: 0.84 },
+      { transform: "none", transformOrigin: o },
+    ], { duration: 340 + 110 * n });
+  }
   coin.addEventListener("click", () => {
     const now = Date.now();
     coinTaps = coinTaps.filter(t => now - t < 1000);
     coinTaps.push(now);
-    if (coinTaps.length < 3) return;
+    if (coinTaps.length < 3) return hopCoin(coinTaps.length);
     coinTaps = [];
+    coinHop?.cancel();
     notify("<p>Steelpushed.</p>", 2400);
     findEgg("steelpush");
     if (reduceMotion) return;
@@ -1750,7 +1898,21 @@
     conEl.hidden = false;
     findEgg("console");
     if (!conGreeted) { conGreeted = true; say('psql (16.4)\nType "help" for help.', "dim"); }
-    conIn.focus();
+    fitConsole();
+    if (matchMedia("(hover: hover) and (pointer: fine)").matches) conIn.focus(); /* on phones, wait for a tap so the keyboard doesn't jump up */
+  }
+  /* Keep the console above the on-screen keyboard (the visual viewport shrinks when it opens). */
+  function fitConsole() {
+    const vv = window.visualViewport;
+    if (!vv || conEl.hidden) return;
+    const covered = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    const edge = matchMedia("(max-width: 600px)").matches ? 0 : 16;
+    conEl.style.bottom = edge + covered + "px";
+    conEl.style.maxHeight = Math.max(160, Math.min(540, vv.height - 24)) + "px";
+  }
+  if (window.visualViewport) {
+    visualViewport.addEventListener("resize", fitConsole);
+    visualViewport.addEventListener("scroll", fitConsole);
   }
   function closeConsole() { conEl.hidden = true; }
   document.getElementById("conOpen").addEventListener("click", () => conEl.hidden ? openConsole() : closeConsole());
@@ -1881,7 +2043,7 @@
   const mmss = secs => `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
   const fits = (song, c) => c === 0 ? song.year >= 2010 && song.year <= 2019 : c === 1 ? song.secs > 210 : !!song.chant;
   function whyNot(song, r, c) {
-    if (song.row !== r) return `${song.title} isn't a ${MG_ROWS[r]} song.`;
+    if (song.row !== r) return `${song.title} isn't by ${MG_ROWS[r]}.`;
     if (!fits(song, c)) return [`${song.title} came out in ${song.year}.`, `${song.title} is only ${mmss(song.secs)}.`, `${song.title} doesn't have a chant of sounds.`][c];
     return null;
   }
@@ -1907,6 +2069,9 @@
   const PLAY_ICON = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1 9 5 2 9Z"/></svg>';
   const PAUSE_ICON = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1h2.2v8H2zM5.8 1H8v8H5.8z"/></svg>';
   const MG_START = "Pick a song from the crate below to start.";
+  if (matchMedia("(pointer: coarse)").matches) {
+    document.getElementById("mgHow").textContent = "Tap a song, then the square that fits both its artist and its column.";
+  }
 
   function mgSay(kind, text) {
     mgMsg.className = `mg-msg ${kind}`;
@@ -1928,7 +2093,7 @@
       } else {
         const song = MG_SONGS[idx];
         el.removeAttribute("role"); el.removeAttribute("aria-label"); el.tabIndex = -1;
-        el.innerHTML = `<span class="t">${esc(song.title)}</span><button class="play" type="button" data-song="${idx}" aria-label="Play a preview of ${esc(song.title)}">${idx === playingIdx ? PAUSE_ICON : PLAY_ICON}</button>`;
+        el.innerHTML = `<span class="t">${esc(song.title).replace(/\//g, "/<wbr>")}</span><button class="play" type="button" data-song="${idx}" aria-label="Play a preview of ${esc(song.title)}">${idx === playingIdx ? PAUSE_ICON : PLAY_ICON}</button>`;
       }
     });
     const left = mgTrayOrder.filter(k => !mgPlaced.flat().includes(k));
@@ -1989,7 +2154,7 @@
   let songDrag = null;
   mgTray.addEventListener("pointerdown", e => {
     const chip = e.target.closest(".song");
-    if (!chip || e.button !== 0) return;
+    if (!chip || e.button !== 0 || e.pointerType === "touch") return; /* on touch: tap a song, then a square */
     songDrag = { chip, idx: +chip.dataset.song, x: e.clientX, y: e.clientY, ghost: null };
     chip.setPointerCapture(e.pointerId);
   });
@@ -2075,6 +2240,7 @@
     const idx = +btn.dataset.song;
     if (playingIdx === idx) { stopAudio(); nowPlaying.hidden = true; return; }
     if (audio) audio.pause();
+    stopClip();
     btn.classList.add("loading");
     try {
       const p = await findPreview(idx);
@@ -2100,6 +2266,71 @@
     }
   });
   newGame();
+
+  /* ---------- Friends' songs: same preview lookup, same single player ---------- */
+  const clips = {};
+  let clipBtn = null, clipTry = 0;
+  for (const b of document.querySelectorAll(".clip .ic")) b.innerHTML = PLAY_ICON;
+  function clipStatus(btn) { return btn.closest(".friend").querySelector(".clip-status"); }
+  function stopClip() {
+    if (!clipBtn) return;
+    clipBtn.setAttribute("aria-pressed", "false");
+    clipBtn.querySelector(".ic").innerHTML = PLAY_ICON;
+    clipStatus(clipBtn).hidden = true;
+    clipBtn = null;
+  }
+  async function findClip(artist, title) {
+    const key = artist + "|" + title;
+    if (clips[key]) return clips[key];
+    const want = norm(title), who = norm(artist);
+    const data = await itunesSearch(artist + " " + title);
+    const candidates = (data.results || []).filter(t =>
+      t.previewUrl && norm(t.artistName || "").includes(who) && norm(t.trackName || "").startsWith(want));
+    const score = t => (/demo|remix|live|instrumental|sped|slowed|acoustic|version/i.test(t.trackName) ? 2 : 0)
+      + (norm(t.trackName) === want ? 0 : 1);
+    candidates.sort((a, b) => score(a) - score(b));
+    if (!candidates.length) throw new Error("not found");
+    return clips[key] = { url: candidates[0].previewUrl, page: candidates[0].trackViewUrl };
+  }
+  document.getElementById("friends").addEventListener("click", async e => {
+    const btn = e.target.closest(".clip");
+    if (!btn) return;
+    const title = btn.dataset.title, artist = btn.closest(".clips").dataset.artist;
+    const status = clipStatus(btn);
+    if (clipBtn === btn) { audio.pause(); stopClip(); return; }
+    if (audio) audio.pause();
+    if (playingIdx !== null) { playingIdx = null; renderBoard(); nowPlaying.hidden = true; }
+    stopClip();
+    const attempt = ++clipTry;
+    btn.classList.add("loading");
+    try {
+      const p = await findClip(artist, title);
+      if (attempt !== clipTry) return;
+      audio = audio || new Audio();
+      audio.src = p.url;
+      audio.onended = stopClip;
+      await audio.play();
+      if (attempt !== clipTry) return;
+      clipBtn = btn;
+      btn.setAttribute("aria-pressed", "true");
+      btn.querySelector(".ic").innerHTML = PAUSE_ICON;
+      status.innerHTML = "";
+      status.append(`Playing a preview of ${title}. `);
+      if (p.page) {
+        const a = document.createElement("a");
+        a.href = p.page; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Full song on Apple Music";
+        status.append(a, ".");
+      }
+      status.hidden = false;
+      track("link", `preview: ${artist} – ${title}`);
+    } catch {
+      if (attempt !== clipTry) return;
+      status.textContent = `Couldn't load a preview of ${title} right now.`;
+      status.hidden = false;
+    } finally {
+      btn.classList.remove("loading");
+    }
+  });
 
   /* ---------- Start up ---------- */
   if (store.get("sh:broke") === "1") document.getElementById("brokenTally").classList.add("seen");
