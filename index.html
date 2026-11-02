@@ -575,6 +575,7 @@
   .friend-toggle:focus-visible::after { outline: 3px solid var(--cobalt); outline-offset: 2px; }
   .friend .what { font-size: 14px; font-weight: 650; font-stretch: 100%; letter-spacing: 0; color: var(--muted); }
   .friend .cta { grid-area: cta; position: relative; z-index: 1; }
+  .friend.open .cta { display: none; }
   .friend .chev {
     grid-area: chev; width: 10px; height: 10px; margin: 0 4px 4px;
     border-right: 2.5px solid var(--muted); border-bottom: 2.5px solid var(--muted);
@@ -1025,7 +1026,8 @@
           <p class="clip-status" aria-live="polite" hidden></p>
           <div class="friend-more" id="fr-duncan" hidden>
             <p class="blurb">Indie rock with big harmonies. They've played ACL and SXSW, and the band is named after a house on Duncan Lane.</p>
-            <ul class="clips" aria-label="More song previews">
+            <ul class="clips" aria-label="Song previews">
+              <li><button class="clip" type="button" data-title="Fresh Squeezed" aria-pressed="false"><span class="ic"></span>Fresh Squeezed</button></li>
               <li><button class="clip" type="button" data-title="Coffins" aria-pressed="false"><span class="ic"></span>Coffins</button></li>
               <li><button class="clip" type="button" data-title="See You Soon" aria-pressed="false"><span class="ic"></span>See You Soon</button></li>
             </ul>
@@ -1041,7 +1043,7 @@
           </div>
           <div class="friend-more" id="fr-cocolarry" hidden>
             <p class="blurb">Awesome custom clothes and illustration, made for the love of art and the love of being cozy.</p>
-            <div class="links"><a class="link" href="https://cocolarry.com" data-track="friend-cocolarry">Shop</a></div>
+            <div class="links"><a class="link" href="https://instagram.com/__cocolarry" data-track="friend-cocolarry-instagram">Instagram</a><a class="link" href="https://cocolarry.com" data-track="friend-cocolarry">Shop</a></div>
           </div>
         </article>
         <article class="friend" style="--accent: #35d07f; --accent-ink: #062b17; --accent-deep: #1f9a5a">
@@ -1053,6 +1055,7 @@
           </div>
           <div class="friend-more" id="fr-lindsey" hidden>
             <p class="blurb">Tons of cool planty art, including a whole series of Plant Girl prints. She also makes stickers and teaches drawing classes.</p>
+            <div class="links"><a class="link" href="https://www.lindseyserata.com/store" data-track="friend-lindsey-serata">Shop prints</a></div>
           </div>
         </article>
         <article class="friend" data-artist="Slaptop" style="--accent: var(--sun); --accent-ink: var(--sun-ink); --accent-deep: var(--sun-deep)">
@@ -1065,11 +1068,54 @@
           <p class="clip-status" aria-live="polite" hidden></p>
           <div class="friend-more" id="fr-slaptop" hidden>
             <p class="blurb">Sunny, danceable electronic pop that's played Outside Lands and Lollapalooza. My friend Evan Baker was in Slaptop in the early days, on songs like “With You” and “Panama.”</p>
-            <ul class="clips" aria-label="More song previews">
+            <ul class="clips" aria-label="Song previews">
+              <li><button class="clip" type="button" data-title="Sunrise" aria-pressed="false"><span class="ic"></span>Sunrise</button></li>
               <li><button class="clip" type="button" data-title="Walls" aria-pressed="false"><span class="ic"></span>Walls</button></li>
               <li><button class="clip" type="button" data-title="Panama" aria-pressed="false"><span class="ic"></span>Panama</button></li>
             </ul>
             <div class="links"><a class="link" href="https://music.apple.com/us/artist/slaptop/893741928" data-track="friend-slaptop">Listen on Apple Music</a></div>
+          </div>
+        </article>
+        <article class="friend" data-artist="Dorian Electra" style="--accent: #ff5ccf; --accent-ink: #2b0526; --accent-deep: #c23a9e">
+          <div class="friend-top">
+            <span class="initial" aria-hidden="true">D</span>
+            <h3><button class="friend-toggle" type="button" aria-expanded="false" aria-controls="fr-dorian" data-slug="dorian-electra">Dorian Electra<span class="what">Hyperpop, from Houston</span></button></h3>
+            <div class="cta"><button class="clip" type="button" data-title="Daddy Like" aria-pressed="false"><span class="ic"></span>Daddy Like</button></div>
+            <span class="chev" aria-hidden="true"></span>
+          </div>
+          <p class="clip-status" aria-live="polite" hidden></p>
+          <div class="friend-more" id="fr-dorian" hidden>
+            <p class="blurb">Loud, theatrical pop that pokes at masculinity. They've made songs with Charli XCX, Rebecca Black and Pussy Riot, and their first viral video was a love song to the economist Friedrich Hayek.</p>
+            <ul class="clips" aria-label="Song previews">
+              <li><button class="clip" type="button" data-title="Daddy Like" aria-pressed="false"><span class="ic"></span>Daddy Like</button></li>
+              <li><button class="clip" type="button" data-title="Flamboyant" aria-pressed="false"><span class="ic"></span>Flamboyant</button></li>
+              <li><button class="clip" type="button" data-title="Guyliner" aria-pressed="false"><span class="ic"></span>Guyliner</button></li>
+            </ul>
+            <div class="links"><a class="link" href="https://www.dorianelectra.com" data-track="friend-dorian-electra">Website</a></div>
+          </div>
+        </article>
+        <article class="friend" style="--accent: #8b6cff; --accent-ink: #fff; --accent-deep: #6447d8">
+          <div class="friend-top">
+            <span class="initial" aria-hidden="true">C</span>
+            <h3><button class="friend-toggle" type="button" aria-expanded="false" aria-controls="fr-clarity" data-slug="clarity-haynes">Clarity Haynes<span class="what">Painter, Brooklyn</span></button></h3>
+            <div class="cta"><a class="clip" href="https://clarityhaynes.com/home.html" data-track="friend-clarity-haynes"><span class="ic go"></span>See her paintings</a></div>
+            <span class="chev" aria-hidden="true"></span>
+          </div>
+          <div class="friend-more" id="fr-clarity" hidden>
+            <p class="blurb">Queer feminist painter known for detailed, honest portraits of torsos, wrinkles, scars and stretch marks included. Her work has been shown at the Smithsonian's National Portrait Gallery.</p>
+            <div class="links"><a class="link" href="https://clarityhaynes.com/home.html" data-track="friend-clarity-haynes">Website</a></div>
+          </div>
+        </article>
+        <article class="friend" style="--accent: #ff8a3d; --accent-ink: #2b1400; --accent-deep: #cf6418">
+          <div class="friend-top">
+            <span class="initial" aria-hidden="true">K</span>
+            <h3><button class="friend-toggle" type="button" aria-expanded="false" aria-controls="fr-karl" data-slug="karl-wirsum">Karl Wirsum<span class="what">Painter, Chicago (1939–2021)</span></button></h3>
+            <div class="cta"><a class="clip" href="https://derekeller.com/artists/karl-wirsum" data-track="friend-karl-wirsum"><span class="ic go"></span>See his work</a></div>
+            <span class="chev" aria-hidden="true"></span>
+          </div>
+          <div class="friend-more" id="fr-karl" hidden>
+            <p class="blurb">A member of the Hairy Who, the Chicago group at the heart of the Chicago Imagists, and the one who named it. Bright, cartoonish, flatly graphic paintings, now in the Art Institute of Chicago and the Whitney.</p>
+            <div class="links"><a class="link" href="https://derekeller.com/artists/karl-wirsum" data-track="friend-karl-wirsum">Derek Eller Gallery</a></div>
           </div>
         </article>
       </div>
@@ -2318,7 +2364,7 @@
 
   /* ---------- Friends' songs: same preview lookup, same single player ---------- */
   const clips = {};
-  let clipBtn = null, clipTry = 0;
+  let clipNow = null, clipTry = 0;   // { card, title } of the song playing, if any
   const GO_ICON = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2h4.5v4.5M8 2 2 8"/></svg>';
   for (const b of document.querySelectorAll(".clip .ic")) b.innerHTML = b.classList.contains("go") ? GO_ICON : PLAY_ICON;
   for (const t of document.querySelectorAll(".friend-toggle")) t.addEventListener("click", () => {
@@ -2328,13 +2374,19 @@
     t.closest(".friend").classList.toggle("open", open);
     if (open) track("link", "friend-open-" + t.dataset.slug);
   });
-  function clipStatus(btn) { return btn.closest(".friend").querySelector(".clip-status"); }
+  // The featured song shows up twice in a card (in the row and in the open list), so both buttons move together
+  function songButtons(card, title) { return [...card.querySelectorAll("button.clip")].filter(b => b.dataset.title === title); }
+  function markSong(card, title, on) {
+    for (const b of songButtons(card, title)) {
+      b.setAttribute("aria-pressed", String(on));
+      b.querySelector(".ic").innerHTML = on ? PAUSE_ICON : PLAY_ICON;
+    }
+  }
   function stopClip() {
-    if (!clipBtn) return;
-    clipBtn.setAttribute("aria-pressed", "false");
-    clipBtn.querySelector(".ic").innerHTML = PLAY_ICON;
-    clipStatus(clipBtn).hidden = true;
-    clipBtn = null;
+    if (!clipNow) return;
+    markSong(clipNow.card, clipNow.title, false);
+    clipNow.card.querySelector(".clip-status").hidden = true;
+    clipNow = null;
   }
   async function findClip(artist, title) {
     const key = artist + "|" + title;
@@ -2352,9 +2404,9 @@
   document.getElementById("friends").addEventListener("click", async e => {
     const btn = e.target.closest("button.clip");
     if (!btn) return;
-    const title = btn.dataset.title, artist = btn.closest(".friend").dataset.artist;
-    const status = clipStatus(btn);
-    if (clipBtn === btn) { audio.pause(); stopClip(); return; }
+    const card = btn.closest(".friend"), title = btn.dataset.title, artist = card.dataset.artist;
+    const status = card.querySelector(".clip-status");
+    if (clipNow && clipNow.card === card && clipNow.title === title) { audio.pause(); stopClip(); return; }
     if (audio) audio.pause();
     if (playingIdx !== null) { playingIdx = null; renderBoard(); nowPlaying.hidden = true; }
     stopClip();
@@ -2368,9 +2420,8 @@
       audio.onended = stopClip;
       await audio.play();
       if (attempt !== clipTry) return;
-      clipBtn = btn;
-      btn.setAttribute("aria-pressed", "true");
-      btn.querySelector(".ic").innerHTML = PAUSE_ICON;
+      clipNow = { card, title };
+      markSong(card, title, true);
       status.innerHTML = "";
       status.append(`Playing a preview of ${title}. `);
       if (p.page) {
