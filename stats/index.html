@@ -128,6 +128,12 @@
   @media (max-width: 560px) { .meter i { display: none; } }
   .empty { color: var(--muted); margin: 4px 0 8px; }
   .quizline { margin: 0 0 14px; }
+  .panelhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }
+  .panelhead h2 { margin: 0; }
+  .panelhead h2 .muted { font-weight: 600; }
+  #beta { overflow-x: auto; }
+  #beta td { overflow-wrap: anywhere; }
+  #beta a { color: inherit; }
   .quizline b { font-variant-numeric: tabular-nums; }
 </style>
 </head>
@@ -152,6 +158,7 @@
     coin: "Trickle Down coin", link: "Link", quiz_start: "Started the quiz", quiz_finish: "Finished the quiz",
     quiz_copy: "Copied a quiz result", quiz_again: "Played the quiz again",
   };
+  const PROJECT_NAMES = { "frontiers-celestia": "Frontiers Celestia" };
   const LINK_NAMES = {
     linkedin: "LinkedIn", "musicgrid-play": "MusicGrid: play today's grid",
     "musicgrid-builder": "MusicGrid: build a grid", nowhere: "Link to nowhere", "friend-duncan-fellows": "Friends: Duncan Fellows", "friend-slaptop": "Friends: Slaptop", "friend-cocolarry": "Friends: Cocolarry", "friend-cocolarry-instagram": "Friends: Cocolarry on Instagram", "friend-lindsey-serata": "Friends: Lindsey Serata", "friend-open-duncan-fellows": "Friends: opened Duncan Fellows", "friend-open-cocolarry": "Friends: opened Cocolarry", "friend-open-lindsey-serata": "Friends: opened Lindsey Serata", "friend-open-slaptop": "Friends: opened Slaptop", "friend-dorian-electra": "Friends: Dorian Electra", "friend-clarity-haynes": "Friends: Clarity Haynes", "friend-karl-wirsum": "Friends: Karl Wirsum", "friend-open-dorian-electra": "Friends: opened Dorian Electra", "friend-open-clarity-haynes": "Friends: opened Clarity Haynes", "friend-open-karl-wirsum": "Friends: opened Karl Wirsum", "trickledown-beta": "Trickle Down: try the beta",
@@ -246,7 +253,7 @@
   }
 
   function render(d) {
-    const v = d.visitors, q = d.quiz;
+    const v = d.visitors, q = d.quiz, beta = d.beta || [];
     const rows = fillDays(d.daily);
     const since = v.first_seen ? new Date(v.first_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
     const clickRows = d.clicks.map(c => [
@@ -302,6 +309,16 @@
         </section>
       </div>
 
+      <section class="panel" id="beta">
+        <div class="panelhead">
+          <h2>Beta sign-ups <span class="muted">${fmt(beta.length)}</span></h2>
+          ${beta.length ? `<button class="btn quiet" type="button" id="copyEmails">Copy emails</button>` : ""}
+        </div>
+        ${table([{ label: "When" }, { label: "Project" }, { label: "Name" }, { label: "Email" }, { label: "Plays on" }, { label: "Note" }],
+          beta.map(b => [esc(b.at), esc(PROJECT_NAMES[b.project] || b.project), esc(b.name), `<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`, esc(b.platform), esc(b.note)]),
+          "Nobody has signed up yet.")}
+      </section>
+
       <section class="panel">
         <h2>The quiz</h2>
         <p class="quizline">${fmt(q.people_started)} ${q.people_started === 1 ? "person" : "people"} started it and ${fmt(q.people_finished)} finished${q.finishes ? `, with an average score of <b>${q.average_score}</b>` : ""}.</p>
@@ -311,6 +328,12 @@
     document.getElementById("days").addEventListener("change", e => { days = Number(e.target.value); store.set("sh:statsDays", days); load(); });
     document.getElementById("me").addEventListener("change", e => { store.set("sh:me", e.target.checked ? "1" : "0"); render(d); });
     document.getElementById("out").addEventListener("click", () => { store.del("sh:adminKey"); key = ""; gate(); });
+    const copy = document.getElementById("copyEmails");
+    if (copy) copy.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(beta.map(b => b.email).join(", ")); copy.textContent = "Copied!"; }
+      catch { copy.textContent = "Couldn't copy"; }
+      setTimeout(() => copy.textContent = "Copy emails", 1800);
+    });
 
     const box = document.getElementById("chart");
     function draw() {
