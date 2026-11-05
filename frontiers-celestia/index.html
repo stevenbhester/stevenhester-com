@@ -431,6 +431,44 @@ a { color: var(--amber); }
 }
 .polaroid figcaption b { display: block; color: #c9542f; font-size: 1.45rem; }
 .snap-note { margin-top: 34px; text-align: center; color: var(--moss); font-size: 1.25rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* the fourth photo: classified */
+.secret-wrap { display: grid; justify-items: center; margin-top: clamp(40px, 6vw, 70px); }
+.polaroid.secret { width: min(100%, 520px); }
+.polaroid.secret:hover { transform: translateY(-4px) scale(1.02); }
+.polaroid.secret .snap img { filter: saturate(0.85); }
+.tape {
+  position: absolute; left: -14%; width: 128%; height: 34px; z-index: 3; overflow: hidden; pointer-events: none;
+  display: flex; align-items: center; white-space: nowrap;
+  background:
+    repeating-linear-gradient(-45deg, #1f1828 0 12px, transparent 12px 24px) left / 46px 100% no-repeat,
+    repeating-linear-gradient(-45deg, #1f1828 0 12px, transparent 12px 24px) right / 46px 100% no-repeat,
+    #ffd94d;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+  font-family: var(--f-mono); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.14em; color: #1f1828;
+}
+.tape i { font-style: normal; padding-left: 56px; }
+.tape.t1 { top: 30%; rotate: -14deg; }
+.tape.t2 { top: 54%; rotate: 9deg; background-color: #ffcf3f; }
+.classified {
+  position: absolute; z-index: 4; right: 8%; top: 12%; rotate: 12deg; pointer-events: none;
+  font-family: var(--f-mono); font-weight: 700; font-size: clamp(1rem, 0.8rem + 1vw, 1.5rem); letter-spacing: 0.16em;
+  color: #e0384f; border: 3px solid #e0384f; border-radius: 6px; padding: 2px 10px; opacity: 0.85;
+  background: rgba(255, 250, 240, 0.25); mix-blend-mode: multiply;
+}
+.polaroid.secret figcaption { font-size: 1.45rem; }
+.polaroid.secret figcaption b { font-family: var(--f-mono); font-size: 0.85rem; letter-spacing: 0.18em; color: #a0603a; text-transform: uppercase; }
+.bar { position: relative; }
+.bar::after {
+  content: ""; position: absolute; left: -2px; right: 6px; top: 60%; height: 0.48em; translate: 0 -50%;
+  background: #1f1828; border-radius: 3px; rotate: -3deg; opacity: 0.94;
+}
+.bar.part::after { left: 18%; right: -2px; rotate: 2deg; height: 0.42em; top: 54%; }
+.motion .polaroid.secret.in .tape { animation: tape-in 0.5s cubic-bezier(.2, .8, .2, 1) both; }
+.motion .polaroid.secret.in .tape.t2 { animation-delay: 0.18s; }
+.motion .polaroid.secret.in .classified { animation: stamp-in 0.35s cubic-bezier(.3, 1.6, .5, 1) 0.5s both; }
+@keyframes tape-in { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes stamp-in { from { opacity: 0; transform: scale(2.2); } to { opacity: 0.85; transform: none; } }
 .lightbox { padding: 0; border: 0; background: transparent; max-width: min(96vw, 1440px); max-height: 92vh; overflow: visible; }
 .lightbox::backdrop { background: rgba(10, 8, 22, 0.86); }
 .lightbox img { display: block; max-width: min(96vw, 1440px); max-height: 92vh; width: auto; height: auto; border: 10px solid #fffaf0; border-radius: 3px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
@@ -954,17 +992,29 @@ a { color: var(--amber); }
       </figure>
       <figure class="polaroid slide" style="--r:2.5deg; --i:1">
         <span class="pin" aria-hidden="true"></span>
-        <button type="button" class="snap" data-full="shots/2_a_few_friends.jpg" aria-label="Enlarge: a few friends in">
-          <img src="shots/2_a_few_friends.jpg" alt="A few days in: the plots are growing, a patched-up tent, and the first critters have moved in to help." loading="lazy" width="1200" height="900">
+        <button type="button" class="snap" data-full="shots/2_settling_in.jpg" aria-label="Enlarge: settling in">
+          <img src="shots/2_settling_in.jpg" alt="Settling in: a paved trail and lamps, six crop blocks with critter crews, a sawmill and the first chests." loading="lazy" width="1200" height="900">
         </button>
-        <figcaption><b>a few friends in</b> someone else waters now</figcaption>
+        <figcaption><b>settling in</b> the critters run the fields now</figcaption>
       </figure>
       <figure class="polaroid slide" style="--r:-1.5deg; --i:2">
         <span class="pin" aria-hidden="true"></span>
         <button type="button" class="snap" data-full="shots/3_endgame.jpg" aria-label="Enlarge: the endgame">
-          <img src="shots/3_endgame.jpg" alt="Late game: a cottage, fenced fields of four crops each tended by critters, playpens full of critters, a machine yard feeding chests, and the quarry being worked." loading="lazy" width="1200" height="900">
+          <img src="shots/3_endgame.jpg" alt="Late game, the whole homestead: fields carved into giant critter faces growing each one's favorite crop, a tidy crop grid, a huge machine yard with flight routes into a wall of vaults, a solar farm, playpens and the quarry." loading="lazy" width="1200" height="900">
         </button>
-        <figcaption><b>a whole lot later</b> every chore, handled</figcaption>
+        <figcaption><b>a whole lot later</b> every chore, handled (and the fields have faces)</figcaption>
+      </figure>
+    </div>
+    <div class="secret-wrap">
+      <figure class="polaroid secret slide" style="--r:2deg; --i:0">
+        <span class="pin" aria-hidden="true"></span>
+        <button type="button" class="snap" data-full="shots/4_haven.jpg" aria-label="Enlarge: a classified photo">
+          <img src="shots/4_haven.jpg" alt="A slightly blurry, classified photo of a little town with a town hall, shops, homes, farms and people in the plaza." loading="lazy" width="1200" height="900">
+        </button>
+        <span class="tape t1" aria-hidden="true"><i>TOP SECRET · DO NOT CROSS · TOP SECRET · DO NOT CROSS · TOP SECRET · DO NOT CROSS ·</i></span>
+        <span class="tape t2" aria-hidden="true"><i>CHARTER EYES ONLY · CLASSIFIED · CHARTER EYES ONLY · CLASSIFIED · CHARTER EYES ONLY ·</i></span>
+        <span class="classified" aria-hidden="true">REDACTED</span>
+        <figcaption><b>file #7-H</b> <span class="sr-only">build a community</span><span aria-hidden="true"><span class="bar">build</span> a <span class="bar part">commu</span>nity</span></figcaption>
       </figure>
     </div>
     <p class="snap-note hand">real screenshots, straight from the game ✦ tap one to look closer</p>
