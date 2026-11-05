@@ -433,8 +433,30 @@ a { color: var(--amber); }
 .snap-note { margin-top: 34px; text-align: center; color: var(--moss); font-size: 1.25rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* the fourth photo: classified */
+/* the late-game shot gets the spotlight: big, with notes pinned beside it */
+.polaroids { max-width: 820px; margin-inline: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.hero-shot { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 28px; align-items: center; max-width: 1080px; margin: clamp(44px, 6vw, 76px) auto 0; }
+.polaroid.big { padding: 16px 16px 0; }
+.polaroid.big figcaption { font-size: 1.6rem; padding: 14px 4px 20px; }
+.polaroid.big figcaption b { font-size: 1.9rem; }
+.polaroid.big .pin.two { left: auto; right: 22%; }
+.polaroid.big .pin { left: 22%; }
+.polaroid.big .pin.two { left: auto; right: 22%; }
+.shot-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; color: var(--cream); font-size: 1.35rem; line-height: 1.15; }
+.shot-notes li { position: relative; padding-left: 26px; rotate: var(--tilt, -2deg); }
+.shot-notes li:nth-child(even) { --tilt: 2deg; color: var(--turf); }
+.shot-notes li::before { content: "←"; position: absolute; left: 0; color: var(--amber); }
+@media (max-width: 900px) {
+  .hero-shot { grid-template-columns: minmax(0, 1fr); }
+  .shot-notes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shot-notes li::before { content: "↑"; }
+}
+@media (max-width: 760px) {
+  .polaroids { grid-template-columns: minmax(0, 1fr); }
+}
 .secret-wrap { display: grid; justify-items: center; margin-top: clamp(40px, 6vw, 70px); }
-.polaroid.secret { width: min(100%, 520px); }
+.polaroid.secret { width: min(100%, 440px); }
+.polaroid.secret { width: min(100%, 440px); }
 .polaroid.secret:hover { transform: translateY(-4px) scale(1.02); }
 .polaroid.secret .snap img { filter: saturate(0.85); }
 .tape {
@@ -1001,13 +1023,21 @@ a { color: var(--amber); }
         </button>
         <figcaption><b>settling in</b> the critters run the fields now</figcaption>
       </figure>
-      <figure class="polaroid slide" style="--r:-1.5deg; --i:2">
-        <span class="pin" aria-hidden="true"></span>
-        <button type="button" class="snap" data-full="shots/3_endgame.jpg" aria-label="Enlarge: the endgame">
-          <img src="shots/3_endgame.jpg" alt="Late game, the whole homestead: fields carved into giant critter faces growing each one's favorite crop, a tidy crop grid, a huge machine yard with flight routes into a wall of vaults, a solar farm, playpens and the quarry." loading="lazy" width="1200" height="900">
+    </div>
+    <div class="hero-shot">
+      <figure class="polaroid big slide" style="--r:-1deg; --i:0">
+        <span class="pin" aria-hidden="true"></span><span class="pin two" aria-hidden="true"></span>
+        <button type="button" class="snap" data-full="shots/3_endgame_big.jpg" aria-label="Enlarge: a whole lot later">
+          <img src="shots/3_endgame.jpg" alt="Late game, the whole homestead redesigned: a cottage in Lumoth colors, a meadow-stone avenue lined with blossom trees and lanterns, a fountain plaza with hedges, flower beds, benches and statues, a fenced crop grid on themed paths, giant critter-face fields framed in their own paving and fences, a standing-stone garden, an orchard tree farm, a machine district with a solar farm and a wall of vaults, a playpen ranch and a lakeside promenade." loading="lazy" width="1200" height="900">
         </button>
-        <figcaption><b>a whole lot later</b> every chore, handled (and the fields have faces)</figcaption>
+        <figcaption><b>a whole lot later</b> every chore handled, every corner designed</figcaption>
       </figure>
+      <ul class="shot-notes hand" aria-label="What's in the picture">
+        <li>fields shaped like critter faces</li>
+        <li>paths and fences in every zone's style</li>
+        <li>a tree farm the critters log</li>
+        <li>machines humming into vaults</li>
+      </ul>
     </div>
     <div class="secret-wrap">
       <figure class="polaroid secret slide" style="--r:2deg; --i:0">
