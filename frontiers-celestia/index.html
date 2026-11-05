@@ -396,6 +396,51 @@ a { color: var(--amber); }
 .panel.on .bush .eyes, .bush.static .eyes { opacity: 1; }
 
 
+/* ───────────── Snapshots: Polaroids pinned to a string of lights ───────────── */
+.snaps { background: radial-gradient(70% 50% at 50% 30%, rgba(255, 194, 107, 0.12), transparent 70%), linear-gradient(#241b42, var(--night-2)); }
+.snaps h2 { font-size: var(--step-3); margin-top: 8px; max-width: 20ch; }
+.snaps h2 em { font-style: normal; color: var(--amber); }
+.snaps .line {
+  position: relative; height: 40px; margin: 34px -4% -28px;
+  background: radial-gradient(60% 100% at 50% 0%, transparent 62%, rgba(255, 241, 220, 0.35) 63% 65%, transparent 66%) center top / 100% 80px no-repeat;
+}
+.snaps .line::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle, #ffd94d 0 3px, rgba(255, 217, 77, 0.35) 4px 7px, transparent 8px) 0 0 / 7% 100% repeat-x;
+  -webkit-mask: radial-gradient(60% 100% at 50% 0%, transparent 58%, #000 60% 70%, transparent 72%) center top / 100% 80px no-repeat;
+          mask: radial-gradient(60% 100% at 50% 0%, transparent 58%, #000 60% 70%, transparent 72%) center top / 100% 80px no-repeat;
+}
+.polaroids { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(18px, 3vw, 40px); align-items: start; }
+.polaroid {
+  margin: 0; position: relative; background: #fffaf0; padding: 12px 12px 0; border-radius: 3px;
+  box-shadow: 0 2px 0 #e8dcc4, 0 20px 40px rgba(0, 0, 0, 0.45);
+  rotate: var(--r); transition: rotate 0.3s cubic-bezier(.3, 1.6, .5, 1), transform 0.3s;
+}
+.polaroid:nth-child(2) { margin-top: 26px; }
+.polaroid:hover { rotate: 0deg; transform: translateY(-6px) scale(1.03); z-index: 2; }
+.polaroid .pin {
+  position: absolute; top: -14px; left: 50%; width: 18px; height: 34px; margin-left: -9px; z-index: 1; border-radius: 3px;
+  background: linear-gradient(90deg, #c9874f, #e0a56b 50%, #b97a45);
+  box-shadow: 0 3px 4px rgba(0, 0, 0, 0.35);
+}
+.polaroid .pin::after { content: ""; position: absolute; left: 3px; right: 3px; top: 13px; height: 3px; background: #8a5a30; border-radius: 2px; }
+.snap { display: block; width: 100%; padding: 0; border: 0; background: #1a1430; cursor: zoom-in; line-height: 0; }
+.snap img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; display: block; image-rendering: auto; }
+.polaroid figcaption {
+  padding: 12px 4px 16px; font-family: var(--f-hand); font-weight: 700; font-size: 1.3rem; line-height: 1.1; color: #4b3a48; text-align: center;
+}
+.polaroid figcaption b { display: block; color: #c9542f; font-size: 1.45rem; }
+.snap-note { margin-top: 34px; text-align: center; color: var(--moss); font-size: 1.25rem; }
+.lightbox { padding: 0; border: 0; background: transparent; max-width: min(96vw, 1440px); max-height: 92vh; overflow: visible; }
+.lightbox::backdrop { background: rgba(10, 8, 22, 0.86); }
+.lightbox img { display: block; max-width: min(96vw, 1440px); max-height: 92vh; width: auto; height: auto; border: 10px solid #fffaf0; border-radius: 3px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+.lb-close { position: absolute; top: -16px; right: -16px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--amber); color: var(--ink); font: 700 1.1rem var(--f-display); cursor: pointer; box-shadow: 0 4px 0 #c98a3a; }
+@media (max-width: 760px) {
+  .polaroids { grid-template-columns: minmax(0, 1fr); gap: 40px; max-width: 440px; margin-inline: auto; }
+  .polaroid:nth-child(2) { margin-top: 0; }
+  .snaps .line { display: none; }
+}
+
 /* ───────────── Critters ───────────── */
 .critters { background: radial-gradient(70% 50% at 0% 0%, rgba(185, 163, 240, 0.18), transparent 70%), linear-gradient(var(--night-2), #1f3a3a 85%, #234540); }
 .crit-intro { width: min(76vw, 440px); }
@@ -891,6 +936,43 @@ a { color: var(--amber); }
       </div>
     </div>
   </div>
+</section>
+
+<!-- ═════════ SNAPSHOTS: three Polaroids on a string ═════════ -->
+<section class="band snaps" id="snapshots">
+  <div class="wrap">
+    <span class="eyebrow">snapshots from Lot 7</span>
+    <h2>From a tent in the junk… <em>to all of this.</em></h2>
+    <div class="line" aria-hidden="true"></div>
+    <div class="polaroids">
+      <figure class="polaroid slide" style="--r:-4deg; --i:0">
+        <span class="pin" aria-hidden="true"></span>
+        <button type="button" class="snap" data-full="shots/1_day_one.jpg" aria-label="Enlarge: day one">
+          <img src="shots/1_day_one.jpg" alt="Day one on the homestead: a little tent, a crate of supplies, three small plots and junk everywhere." loading="lazy" width="1200" height="900">
+        </button>
+        <figcaption><b>day one</b> one tent, a lot of junk</figcaption>
+      </figure>
+      <figure class="polaroid slide" style="--r:2.5deg; --i:1">
+        <span class="pin" aria-hidden="true"></span>
+        <button type="button" class="snap" data-full="shots/2_a_few_friends.jpg" aria-label="Enlarge: a few friends in">
+          <img src="shots/2_a_few_friends.jpg" alt="A few days in: the plots are growing, a patched-up tent, and the first critters have moved in to help." loading="lazy" width="1200" height="900">
+        </button>
+        <figcaption><b>a few friends in</b> someone else waters now</figcaption>
+      </figure>
+      <figure class="polaroid slide" style="--r:-1.5deg; --i:2">
+        <span class="pin" aria-hidden="true"></span>
+        <button type="button" class="snap" data-full="shots/3_endgame.jpg" aria-label="Enlarge: the endgame">
+          <img src="shots/3_endgame.jpg" alt="Late game: a cottage, fenced fields of four crops each tended by critters, playpens full of critters, a machine yard feeding chests, and the quarry being worked." loading="lazy" width="1200" height="900">
+        </button>
+        <figcaption><b>a whole lot later</b> every chore, handled</figcaption>
+      </figure>
+    </div>
+    <p class="snap-note hand">real screenshots, straight from the game ✦ tap one to look closer</p>
+  </div>
+  <dialog class="lightbox" id="lightbox" aria-label="Screenshot">
+    <img alt="" id="lightbox-img">
+    <button type="button" class="lb-close" id="lightbox-close" aria-label="Close">✕</button>
+  </dialog>
 </section>
 
 <!-- ═════════ CRITTERS: a parade, sideways ═════════ -->
@@ -1628,6 +1710,17 @@ a { color: var(--amber); }
   drawOrbit();
   addEventListener('resize', drawOrbit);
   new IntersectionObserver((es, ob) => es.forEach((e) => { if (e.isIntersecting) { orbit.classList.add('in'); ob.disconnect(); } }), { rootMargin: '0px 0px -15% 0px' }).observe(orbit);
+
+  /* ── snapshots: tap a Polaroid to see it big ── */
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  document.querySelectorAll('.snap').forEach((b) => b.addEventListener('click', () => {
+    const img = b.querySelector('img');
+    lightboxImg.src = b.dataset.full; lightboxImg.alt = img.alt;
+    if (lightbox.showModal) lightbox.showModal(); else window.open(b.dataset.full, '_blank');
+  }));
+  document.getElementById('lightbox-close').addEventListener('click', () => lightbox.close());
+  lightbox.addEventListener('click', (e) => { if (e.target === lightbox) lightbox.close(); });
 
   /* ── the journal: pop the clasp, then page through sideways ── */
   const journal = document.getElementById('journal');
