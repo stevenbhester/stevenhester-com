@@ -173,66 +173,31 @@ a { color: var(--amber); }
 .hs-bar i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 241, 220, 0.14); overflow: hidden; }
 .hs-bar i b { display: block; height: 100%; background: var(--amber); transform-origin: left; transform: scaleX(0); }
 
-/* ───────────── The pitch and its Venn ───────────── */
+/* ───────────── The pitch: four favorite games orbiting Celestia ───────────── */
 .pitch { background: radial-gradient(80% 60% at 50% 100%, #2f5550 0%, transparent 70%), linear-gradient(#2c2148, var(--night-2)); }
 .pitch h2 { font-size: var(--step-3); max-width: 18ch; margin-top: 8px; }
 .pitch h2 em { font-style: normal; color: var(--turf); }
 .pitch .lede { margin-top: 16px; font-size: var(--step-1); font-weight: 700; max-width: 40ch; }
-.venn { position: relative; margin: clamp(36px, 5vw, 56px) auto 0; width: min(100%, 860px); aspect-ratio: 860 / 640; }
-.v-set {
-  position: absolute; width: 43%; aspect-ratio: 1; border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, rgba(var(--c), 0.2), rgba(var(--c), 0.1));
-  border: 2px solid rgba(var(--c), 0.65);
-  mix-blend-mode: screen;
-}
-.v-set.tl { left: 4%; top: 0; }  .v-set.tr { right: 4%; top: 0; }
-.v-set.bl { left: 4%; bottom: 0; } .v-set.br { right: 4%; bottom: 0; }
-.v-name { position: absolute; font-family: var(--f-display); font-weight: 600; font-size: clamp(1.1rem, 0.8rem + 1vw, 1.55rem); color: rgb(var(--c)); line-height: 1.1; }
-.v-out { position: absolute; list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; width: 56%; font-size: 0.95rem; line-height: 1.3; color: rgba(255, 241, 220, 0.72); }
-.v-out li { text-decoration: line-through; text-decoration-color: rgba(255, 107, 140, 0.85); text-decoration-thickness: 2px; }
-.v-out li::before { content: "✗ "; color: var(--heart); text-decoration: none; display: inline-block; margin-right: 2px; }
-.tl .v-name, .tl .v-out, .bl .v-name, .bl .v-out { left: 13%; }
-.tr .v-name, .tr .v-out, .br .v-name, .br .v-out { right: 13%; text-align: right; }
-.tl .v-name, .tr .v-name { top: 14%; } .tl .v-out, .tr .v-out { top: 25%; }
-.bl .v-name, .br .v-name { bottom: 14%; } .bl .v-out, .br .v-out { bottom: 24%; }
-.v-in {
-  position: absolute; z-index: 2; width: max-content; max-width: 210px;
-  background: var(--cream); color: var(--ink); border-radius: 14px; padding: 7px 12px 8px;
-  font-family: var(--f-display); font-weight: 600; font-size: 0.98rem; line-height: 1.15;
-  box-shadow: 0 0 0 3px rgb(var(--c)), 0 10px 24px rgba(0, 0, 0, 0.35);
-  mix-blend-mode: normal;
-}
-.v-in::before { content: "✓ "; color: #2f9c6a; }
-.v-in i { display: block; font-style: normal; font-family: var(--f-hand); font-weight: 700; font-size: 1.12rem; color: #7b55c9; line-height: 1; margin-top: 2px; }
-.tl .v-in { left: 20%; top: 50%; rotate: -2deg; } .tr .v-in { right: 20%; top: 50%; rotate: 2deg; }
-.bl .v-in { left: 20%; top: 30%; rotate: 1.5deg; } .br .v-in { right: 20%; top: 30%; rotate: -1.5deg; }
-.venn { isolation: isolate; }
-.v-core {
-  position: absolute; left: 50%; top: 50%; translate: -50% -50%; z-index: 3;
-  width: 23%; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; text-align: center; gap: 2px;
-  background: radial-gradient(circle at 40% 35%, #3b2a66, #1d1640 75%); border: 3px solid var(--amber);
-  box-shadow: 0 0 0 8px rgba(255, 194, 107, 0.12), 0 0 50px rgba(255, 194, 107, 0.35);
-}
-.v-core b { font-family: var(--f-display); font-weight: 700; font-size: clamp(1rem, 0.7rem + 1vw, 1.45rem); line-height: 1; color: var(--cream); }
-.v-kicker { font-family: var(--f-hand); font-weight: 700; color: var(--turf); font-size: 1.05rem; line-height: 1; }
-.v-key { margin-top: 18px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; font-size: var(--step--1); color: var(--cream-dim); }
-.v-key .k-in::before { content: "✓ "; color: var(--turf); font-weight: 800; }
-.v-key .k-out::before { content: "✗ "; color: var(--heart); font-weight: 800; }
-.motion .v-set.slide { transform: scale(0.6); }
-.motion .v-set.slide.in { transform: none; }
-.motion .v-core { animation: core 3.4s ease-in-out infinite; }
-@keyframes core { 50% { box-shadow: 0 0 0 12px rgba(255, 194, 107, 0.08), 0 0 70px rgba(255, 194, 107, 0.45); } }
-@media (max-width: 760px) {
-  .venn { aspect-ratio: auto; display: grid; gap: 12px; }
-  .v-core { position: relative; left: auto; top: auto; translate: none; order: -1; width: auto; aspect-ratio: auto; border-radius: 18px; padding: 14px 16px; justify-self: stretch; }
-  .v-core b br { display: none; }
-  .v-set { position: relative; inset: auto !important; width: auto; aspect-ratio: auto; border-radius: 18px; mix-blend-mode: normal;
-    display: grid; gap: 8px; padding: 14px 16px; background: rgba(var(--c), 0.1); }
-  .v-name, .v-out, .v-in { position: static; text-align: left !important; width: auto; max-width: none; }
-  .v-out { display: flex; flex-wrap: wrap; gap: 2px 14px; }
-  .v-in { justify-self: start; }
-  .motion .v-set.slide { transform: translateX(60px); }
-}
+.orbit { position: relative; margin: clamp(28px, 4vw, 48px) auto 0; width: min(100%, 980px); }
+.orbit svg { display: block; width: 100%; height: auto; overflow: visible; }
+.orbit .o-name { font-family: var(--f-display); font-weight: 600; }
+.orbit .o-love { font-family: var(--f-hand); font-weight: 700; }
+.orbit .o-twist { font-family: var(--f-hand); font-weight: 700; fill: var(--cream); }
+.orbit .o-title { font-family: var(--f-display); font-weight: 700; fill: var(--cream); }
+.orbit .o-kicker { font-family: var(--f-hand); font-weight: 700; fill: var(--turf); }
+.orbit .beam-glow { fill: none; stroke-width: 14; stroke-linecap: round; opacity: 0.16; }
+.orbit .beam { fill: none; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 1 13; }
+.motion .orbit .beam { animation: beam 1.4s linear infinite; }
+@keyframes beam { to { stroke-dashoffset: -28; } }
+.motion .orbit .moon { animation: moon-bob 5s ease-in-out infinite; animation-delay: var(--d); }
+@keyframes moon-bob { 50% { transform: translateY(-6px); } }
+.motion .orbit .pl-glow { animation: pl-glow 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pl-glow { 50% { opacity: 0.55; transform: scale(1.08); } }
+.motion .orbit .spin { animation: spin 26s linear infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.motion .orbit .wink { animation: blink 4.6s infinite; transform-box: fill-box; transform-origin: center; }
+.motion .orbit { opacity: 0; transform: scale(0.94); transition: opacity 0.8s ease, transform 1s cubic-bezier(.2, .8, .2, 1); }
+.motion .orbit.in { opacity: 1; transform: none; }
 
 /* ───────────── How you got here: a buckled journal ───────────── */
 .story { background: radial-gradient(70% 60% at 80% 40%, #33285c 0%, transparent 70%), linear-gradient(var(--night-2), #241b42); }
@@ -760,33 +725,7 @@ a { color: var(--amber); }
     <h2>A cozy colony sim where the factory is <em>made of critters.</em></h2>
     <p class="lede">Automate your whole homestead with cute critters instead of fancy machines. Then wander off while they keep it running.</p>
 
-    <div class="venn" role="group" aria-label="What Frontiers Celestia takes from four favorite games, and what it leaves out">
-      <div class="v-set tl slide" style="--c:155, 232, 106; --i:0">
-        <b class="v-name">Stardew Valley</b>
-        <ul class="v-out" aria-label="Left out"><li>seasons and a calendar</li><li>watering every crop forever</li></ul>
-        <span class="v-in">a cozy homestead <i>(on the cheapest planet)</i></span>
-      </div>
-      <div class="v-set tr slide" style="--c:255, 194, 107; --i:1">
-        <b class="v-name">Satisfactory</b>
-        <ul class="v-out" aria-label="Left out"><li>conveyor belts</li><li>spreadsheet brain</li></ul>
-        <span class="v-in">automation <i>(via critters!)</i></span>
-      </div>
-      <div class="v-set bl slide" style="--c:255, 159, 179; --i:2">
-        <b class="v-name">RimWorld</b>
-        <ul class="v-out" aria-label="Left out"><li>raids</li><li>anybody dying</li></ul>
-        <span class="v-in">workers with personalities <i>(and frenemies)</i></span>
-      </div>
-      <div class="v-set br slide" style="--c:115, 242, 230; --i:3">
-        <b class="v-name">Terraria</b>
-        <ul class="v-out" aria-label="Left out"><li>boss fights</li><li>swinging a sword</li></ul>
-        <span class="v-in">exploring with friends <i>(up to four, online)</i></span>
-      </div>
-      <div class="v-core">
-        <span class="v-kicker">the cozy middle</span>
-        <b>Frontiers <br>Celestia</b>
-      </div>
-    </div>
-    <p class="v-key"><span class="k-in">what we kept</span><span class="k-out">what we left behind</span></p>
+    <figure class="orbit" id="orbit" role="img" aria-label="Frontiers Celestia in the middle, with four favorite games orbiting it. From Stardew Valley, a little farm to fall for, here on a bargain planet. From Satisfactory, automating everything, but the factory is critters. From RimWorld, workers with big personalities: every critter has opinions. From Terraria, heading out with friends: new wilds every dawn."></figure>
   </div>
 </section>
 
@@ -1561,6 +1500,134 @@ a { color: var(--amber); }
     paintDay(span > 0 ? clamp(-r.top / span, 0, 0.94) : 0.64);
   }
   if (reduce) paintDay(0.64);
+
+  /* ── the orbit: four favorite games, each beaming its best bit into Celestia ── */
+  const orbit = document.getElementById('orbit');
+  const GAMES = [
+    { name: 'Stardew Valley', love: 'a little farm to fall for', twist: 'here, on a bargain planet', c: '#9be86a', icon: 'farm' },
+    { name: 'Satisfactory', love: 'automating everything', twist: 'but the factory is critters', c: '#ffc26b', icon: 'gear' },
+    { name: 'RimWorld', love: 'workers with big personalities', twist: 'every critter has opinions', c: '#ff9fb3', icon: 'faces' },
+    { name: 'Terraria', love: 'heading out with friends', twist: 'new wilds every dawn', c: '#73f2e6', icon: 'compass' }
+  ];
+  const ICONS = {
+    farm: '<ellipse cy="18" rx="30" ry="11" fill="#6b4a3e"/><ellipse cy="14" rx="26" ry="6" fill="#8a5f4c"/>' +
+      '<path d="M-10 14 q-13 -18 0 -30 q13 12 0 30z" fill="#9be86a"/><path d="M11 14 q-10 -16 0 -25 q10 9 0 25z" fill="#7fd8bf"/>' +
+      '<ellipse cx="21" cy="-16" rx="7" ry="5" fill="#c9a6ff" transform="rotate(-20 21 -16)"/><circle cx="-22" cy="-20" r="3" fill="#ffd94d"/><circle cx="-28" cy="-8" r="2" fill="#fff1dc"/>',
+    gear: '<g class="spin"><circle r="25" fill="none" stroke="#ffc26b" stroke-width="9" stroke-dasharray="7.2 8.5"/></g>' +
+      '<circle r="21" fill="#ffc26b"/><circle r="21" fill="none" stroke="#c98a3a" stroke-width="2"/>' +
+      '<g class="wink" fill="#1f1828"><ellipse cx="-7" cy="-3" rx="2.8" ry="3.8"/><ellipse cx="7" cy="-3" rx="2.8" ry="3.8"/></g>' +
+      '<g fill="#ff8fb0" opacity="0.8"><ellipse cx="-12" cy="5" rx="4" ry="2.4"/><ellipse cx="12" cy="5" rx="4" ry="2.4"/></g>' +
+      '<path d="M-4 6 q4 4 8 0" stroke="#1f1828" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+      '<path d="M0 -21 q-3 -10 4 -14 q2 8 -4 14z" fill="#7fd8bf"/>',
+    faces: '<g transform="translate(-14 6)"><ellipse rx="17" ry="15" fill="#ffd0dc"/>' +
+      '<g class="wink" fill="#1f1828"><ellipse cx="-6" cy="-2" rx="2.4" ry="3.2"/><ellipse cx="6" cy="-2" rx="2.4" ry="3.2"/></g>' +
+      '<path d="M-4 5 q4 4 8 0" stroke="#1f1828" stroke-width="2" fill="none" stroke-linecap="round"/></g>' +
+      '<g transform="translate(16 2)"><ellipse rx="15" ry="14" fill="#c2adff"/>' +
+      '<path d="M-8 -4 l5 2 M8 -4 l-5 2" stroke="#1f1828" stroke-width="2.2" stroke-linecap="round"/>' +
+      '<path d="M-4 6 h8" stroke="#1f1828" stroke-width="2" stroke-linecap="round"/></g>' +
+      '<path d="M-17 -16 C-24 -23 -20 -30 -17 -25 C-14 -30 -10 -23 -17 -16z" fill="#ff6b8c"/>' +
+      '<path d="M12 -20 l3 -4 l3 4 l3 -4 l3 4" stroke="#ff6b8c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    compass: '<circle r="27" fill="none" stroke="#73f2e6" stroke-width="2" stroke-dasharray="3 4" opacity="0.7"/>' +
+      '<g class="spin"><path d="M0 -24 L5 -5 L24 0 L5 5 L0 24 L-5 5 L-24 0 L-5 -5Z" fill="#73f2e6"/>' +
+      '<path d="M0 -24 L5 -5 L0 0Z M24 0 L5 5 L0 0Z M0 24 L-5 5 L0 0Z M-24 0 L-5 -5 L0 0Z" fill="#2f9c8a" opacity="0.6"/></g>' +
+      '<circle r="4" fill="#fff1dc"/>' +
+      '<g transform="translate(-26 22)"><circle r="8" fill="#e9d6c2"/><circle cx="1" cy="-1" r="4.5" fill="#2a2148"/></g>' +
+      '<g transform="translate(26 22)"><circle r="8" fill="#ffc26b"/><circle cx="-1" cy="-1" r="4.5" fill="#2a2148"/></g>'
+  };
+  const wrapText = (t, max) => {
+    const out = []; let line = '';
+    for (const w of t.split(' ')) {
+      if (line && (line + ' ' + w).length > max) { out.push(line); line = w; } else line = line ? line + ' ' + w : w;
+    }
+    if (line) out.push(line);
+    return out;
+  };
+  const f1 = (n) => n.toFixed(1);
+  function planet(x, y, R) {
+    const k = R / 50;
+    return `<g transform="translate(${x} ${y}) scale(${k.toFixed(3)})">
+      <circle class="pl-glow" r="86" fill="url(#o-glow)"/>
+      <ellipse cy="4" rx="96" ry="20" fill="none" stroke="#b9a3f0" stroke-width="5" opacity="0.5" transform="rotate(-14)"/>
+      <circle r="50" fill="url(#o-pl)"/>
+      <circle cx="-18" cy="-12" r="8" fill="#fff" opacity="0.18"/><circle cx="18" cy="18" r="5" fill="#7a4f9c" opacity="0.35"/>
+      <path d="M-9 -47 L0 -61 L9 -47Z" fill="#ffc26b"/><path d="M0 -61 V-67" stroke="#2a1d23" stroke-width="2"/><path d="M0 -67 l8 2.5 l-8 2.5z" fill="#73f2e6"/>
+      <path d="M-94 12 Q0 40 94 -4" fill="none" stroke="#b9a3f0" stroke-width="5" opacity="0.85" transform="rotate(-14)"/>
+    </g>`;
+  }
+  function moonArt(g, x, y, r, k, i) {
+    return `<g class="moon" style="--d:${(i * 0.7).toFixed(1)}s">
+      <circle cx="${x}" cy="${y}" r="${r + 12}" fill="none" stroke="${g.c}" stroke-width="1.5" stroke-dasharray="2 6" opacity="0.45"/>
+      <circle cx="${x}" cy="${y}" r="${r}" fill="${g.c}" fill-opacity="0.14" stroke="${g.c}" stroke-width="2.5"/>
+      <g transform="translate(${x} ${y}) scale(${k})">${ICONS[g.icon]}</g>
+    </g>`;
+  }
+  const DEFS = `<defs>
+    <radialGradient id="o-pl" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#ffe0b8"/><stop offset="0.55" stop-color="#ff9fb3"/><stop offset="1" stop-color="#7a4f9c"/></radialGradient>
+    <radialGradient id="o-glow" r="0.5"><stop offset="0" stop-color="#ffd8a8" stop-opacity="0.5"/><stop offset="1" stop-color="#ffd8a8" stop-opacity="0"/></radialGradient>
+  </defs>`;
+  function wide() {
+    const W = 960, H = 660, px = 480, py = 350, R = 72, r = 54;
+    const spots = [[120, 150, -1], [840, 150, -1], [120, 520, 1], [840, 520, 1]];
+    let beams = '', moons = '', words = '';
+    GAMES.forEach((g, i) => {
+      const [mx, my, below] = spots[i];
+      const dx = px - mx, dy = py - my, d = Math.hypot(dx, dy), ux = dx / d, uy = dy / d;
+      const sx = mx + ux * (r + 14), sy = my + uy * (r + 14);
+      const ex = px - ux * (R + 34), ey = py - uy * (R + 34);
+      const cx = (sx + ex) / 2, cy = sy;
+      const flow = `M${f1(sx)} ${f1(sy)} Q${f1(cx)} ${f1(cy)} ${f1(ex)} ${f1(ey)}`;
+      const read = mx < px ? flow : `M${f1(ex)} ${f1(ey)} Q${f1(cx)} ${f1(cy)} ${f1(sx)} ${f1(sy)}`;
+      beams += `<path class="beam-glow" d="${flow}" stroke="${g.c}"/><path class="beam" d="${flow}" stroke="${g.c}"/>
+        <path id="o-read-${i}" d="${read}" fill="none"/>
+        <text class="o-twist" font-size="21" dy="-13"><textPath href="#o-read-${i}" startOffset="50%" text-anchor="middle">${g.twist}</textPath></text>`;
+      moons += moonArt(g, mx, my, r, 1, i);
+      const ny = below > 0 ? my + r + 34 : my - r - 40, ly = ny + 25;
+      words += `<text class="o-name" x="${mx}" y="${ny}" font-size="24" text-anchor="middle" fill="${g.c}">${g.name}</text>
+        <text class="o-love" x="${mx}" y="${ly}" font-size="20" text-anchor="middle" fill="${g.c}" fill-opacity="0.85">♥ ${g.love}</text>`;
+    });
+    const mid = `<text class="o-title" x="${px}" y="54" font-size="38" text-anchor="middle">Frontiers Celestia</text>
+      <text class="o-kicker" x="${px}" y="88" font-size="23" text-anchor="middle">all of it, cozier</text>
+      ${planet(px, py, R)}`;
+    return `<svg viewBox="0 -4 ${W} ${H}" aria-hidden="true">${DEFS}${beams}${moons}${mid}${words}</svg>`;
+  }
+  function tall() {
+    const W = 360, px = 180, py = 196, R = 54, r = 42;
+    const spots = [[84, 440], [276, 440], [84, 702], [276, 702]];
+    let beams = '', moons = '', words = '', bottom = 0;
+    GAMES.forEach((g, i) => {
+      const [mx, my] = spots[i];
+      const left = mx < px;
+      let flow;
+      if (i < 2) {
+        const sx = mx, sy = my - r - 14, ex = px + (left ? -R * 0.55 : R * 0.55), ey = py + R + 12;
+        flow = `M${sx} ${sy} Q${sx} ${f1(ey + 30)} ${f1(ex)} ${f1(ey)}`;
+      } else {
+        const sx = mx + (left ? r * 0.75 : -r * 0.75), sy = my - r * 0.75, ex = px + (left ? -5 : 5), ey = py + R + 16;
+        flow = `M${f1(sx)} ${f1(sy)} Q${px} ${my - 70} ${ex} ${ey}`;
+      }
+      beams += `<path class="beam-glow" d="${flow}" stroke="${g.c}"/><path class="beam" d="${flow}" stroke="${g.c}"/>`;
+      moons += moonArt(g, mx, my, r, 0.8, i);
+      let y = my + r + 30;
+      words += `<text class="o-name" x="${mx}" y="${y}" font-size="19" text-anchor="middle" fill="${g.c}">${g.name}</text>`;
+      for (const [k, line] of wrapText('♥ ' + g.love, 19).entries()) { y += k ? 19 : 23; words += `<text class="o-love" x="${mx}" y="${y}" font-size="18" text-anchor="middle" fill="${g.c}" fill-opacity="0.85">${line}</text>`; }
+      for (const [k, line] of wrapText('→ ' + g.twist, 19).entries()) { y += k ? 19 : 22; words += `<text class="o-twist" x="${mx}" y="${y}" font-size="18" text-anchor="middle">${line}</text>`; }
+      bottom = Math.max(bottom, y);
+    });
+    const mid = `<text class="o-title" x="${px}" y="60" font-size="30" text-anchor="middle">Frontiers Celestia</text>
+      <text class="o-kicker" x="${px}" y="88" font-size="20" text-anchor="middle">all of it, cozier</text>
+      ${planet(px, py, R)}`;
+    return `<svg viewBox="0 26 ${W} ${bottom - 12}" aria-hidden="true">${DEFS}${beams}${moons}${mid}${words}</svg>`;
+  }
+  let orbitMode = '';
+  function drawOrbit() {
+    const mode = innerWidth < 700 ? 'tall' : 'wide';
+    if (mode === orbitMode) return;
+    orbitMode = mode;
+    orbit.innerHTML = mode === 'tall' ? tall() : wide();
+  }
+  drawOrbit();
+  addEventListener('resize', drawOrbit);
+  new IntersectionObserver((es, ob) => es.forEach((e) => { if (e.isIntersecting) { orbit.classList.add('in'); ob.disconnect(); } }), { rootMargin: '0px 0px -15% 0px' }).observe(orbit);
 
   /* ── the journal: pop the clasp, then page through sideways ── */
   const journal = document.getElementById('journal');
