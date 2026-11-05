@@ -44,6 +44,11 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; }
+/* Nothing should ever be wider than the screen: no sideways drift, no zooming out on phones. */
+html { overflow-x: hidden; overflow-x: clip; }
+html, body { overscroll-behavior-x: none; max-width: 100%; }
+body { overflow-x: clip; }
+.band, .hs, .day, .rivet-band, .beacon { overflow-x: clip; }
 body {
   background: var(--night);
   color: var(--cream);
@@ -98,7 +103,7 @@ a { color: var(--amber); }
 }
 #sky { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
 .planet { position: absolute; z-index: -1; right: max(4vw, 16px); top: 9%; width: clamp(110px, 16vw, 220px); aspect-ratio: 1; }
-.hero-copy { position: relative; padding-top: clamp(72px, 12vh, 140px); padding-bottom: calc(clamp(220px, 34vw, 360px) - 10px); }
+.hero-copy { position: relative; padding-top: clamp(72px, 12svh, 140px); padding-bottom: calc(clamp(220px, 34vw, 360px) - 10px); }
 .hero h1 {
   font-size: var(--step-4); font-weight: 700; letter-spacing: -0.01em; line-height: 0.92;
   text-shadow: 0 0 28px rgba(255, 194, 107, 0.25);
@@ -156,7 +161,7 @@ a { color: var(--amber); }
 .hs { position: relative; }
 .hs-pin { position: relative; overflow-x: auto; overflow-y: hidden; display: flex; align-items: center; padding-block: 64px; }
 .hs-track { display: flex; gap: clamp(28px, 5vw, 80px); padding-inline: max(16px, 6vw); align-items: center; }
-.motion .hs-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; padding-block: 0; }
+.motion .hs-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; padding-block: 0; touch-action: pan-y pinch-zoom; }
 .motion .hs-track { will-change: transform; }
 .panel { flex: 0 0 auto; position: relative; }
 .hs-bar {
@@ -168,23 +173,171 @@ a { color: var(--amber); }
 .hs-bar i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 241, 220, 0.14); overflow: hidden; }
 .hs-bar i b { display: block; height: 100%; background: var(--amber); transform-origin: left; transform: scaleX(0); }
 
-/* ───────────── Story chapters ───────────── */
-.story { background: radial-gradient(70% 60% at 80% 40%, #33285c 0%, transparent 70%), linear-gradient(#2c2148, var(--night-2)); }
-.chap-intro { width: min(70vw, 520px); }
-.chap-intro h2 { font-size: var(--step-4); line-height: 0.95; margin-top: 10px; }
-.chap-intro h2 em { font-style: normal; color: var(--amber); }
-.chap-intro .hand { margin-top: 18px; font-size: 1.4rem; color: var(--turf); display: block; }
-.chap {
-  width: min(86vw, 940px);
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: center;
+/* ───────────── The pitch and its Venn ───────────── */
+.pitch { background: radial-gradient(80% 60% at 50% 100%, #2f5550 0%, transparent 70%), linear-gradient(#2c2148, var(--night-2)); }
+.pitch h2 { font-size: var(--step-3); max-width: 18ch; margin-top: 8px; }
+.pitch h2 em { font-style: normal; color: var(--turf); }
+.pitch .lede { margin-top: 16px; font-size: var(--step-1); font-weight: 700; max-width: 40ch; }
+.venn { position: relative; margin: clamp(36px, 5vw, 56px) auto 0; width: min(100%, 860px); aspect-ratio: 860 / 640; }
+.v-set {
+  position: absolute; width: 43%; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(var(--c), 0.2), rgba(var(--c), 0.1));
+  border: 2px solid rgba(var(--c), 0.65);
+  mix-blend-mode: screen;
 }
-.chap .num { font-family: var(--f-mono); font-size: 0.78rem; letter-spacing: 0.18em; color: var(--teal); }
-.chap h3 { font-size: var(--step-3); margin-top: 10px; }
-.chap h3 em { font-style: normal; color: var(--amber); }
-.chap .punch { margin-top: 14px; font-size: var(--step-1); color: var(--cream-dim); font-weight: 700; max-width: 26ch; }
-.chap .vis { position: relative; display: grid; place-items: center; min-height: 300px; }
-.chap .copy { transform: translateX(calc(var(--p, 0) * -40px)); }
-.chap .vis { transform: translateX(calc(var(--p, 0) * 60px)); }
+.v-set.tl { left: 4%; top: 0; }  .v-set.tr { right: 4%; top: 0; }
+.v-set.bl { left: 4%; bottom: 0; } .v-set.br { right: 4%; bottom: 0; }
+.v-name { position: absolute; font-family: var(--f-display); font-weight: 600; font-size: clamp(1.1rem, 0.8rem + 1vw, 1.55rem); color: rgb(var(--c)); line-height: 1.1; }
+.v-out { position: absolute; list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; width: 56%; font-size: 0.95rem; line-height: 1.3; color: rgba(255, 241, 220, 0.72); }
+.v-out li { text-decoration: line-through; text-decoration-color: rgba(255, 107, 140, 0.85); text-decoration-thickness: 2px; }
+.v-out li::before { content: "✗ "; color: var(--heart); text-decoration: none; display: inline-block; margin-right: 2px; }
+.tl .v-name, .tl .v-out, .bl .v-name, .bl .v-out { left: 13%; }
+.tr .v-name, .tr .v-out, .br .v-name, .br .v-out { right: 13%; text-align: right; }
+.tl .v-name, .tr .v-name { top: 14%; } .tl .v-out, .tr .v-out { top: 25%; }
+.bl .v-name, .br .v-name { bottom: 14%; } .bl .v-out, .br .v-out { bottom: 24%; }
+.v-in {
+  position: absolute; z-index: 2; width: max-content; max-width: 210px;
+  background: var(--cream); color: var(--ink); border-radius: 14px; padding: 7px 12px 8px;
+  font-family: var(--f-display); font-weight: 600; font-size: 0.98rem; line-height: 1.15;
+  box-shadow: 0 0 0 3px rgb(var(--c)), 0 10px 24px rgba(0, 0, 0, 0.35);
+  mix-blend-mode: normal;
+}
+.v-in::before { content: "✓ "; color: #2f9c6a; }
+.v-in i { display: block; font-style: normal; font-family: var(--f-hand); font-weight: 700; font-size: 1.12rem; color: #7b55c9; line-height: 1; margin-top: 2px; }
+.tl .v-in { left: 20%; top: 50%; rotate: -2deg; } .tr .v-in { right: 20%; top: 50%; rotate: 2deg; }
+.bl .v-in { left: 20%; top: 30%; rotate: 1.5deg; } .br .v-in { right: 20%; top: 30%; rotate: -1.5deg; }
+.venn { isolation: isolate; }
+.v-core {
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%; z-index: 3;
+  width: 23%; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; text-align: center; gap: 2px;
+  background: radial-gradient(circle at 40% 35%, #3b2a66, #1d1640 75%); border: 3px solid var(--amber);
+  box-shadow: 0 0 0 8px rgba(255, 194, 107, 0.12), 0 0 50px rgba(255, 194, 107, 0.35);
+}
+.v-core b { font-family: var(--f-display); font-weight: 700; font-size: clamp(1rem, 0.7rem + 1vw, 1.45rem); line-height: 1; color: var(--cream); }
+.v-kicker { font-family: var(--f-hand); font-weight: 700; color: var(--turf); font-size: 1.05rem; line-height: 1; }
+.v-key { margin-top: 18px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; font-size: var(--step--1); color: var(--cream-dim); }
+.v-key .k-in::before { content: "✓ "; color: var(--turf); font-weight: 800; }
+.v-key .k-out::before { content: "✗ "; color: var(--heart); font-weight: 800; }
+.motion .v-set.slide { transform: scale(0.6); }
+.motion .v-set.slide.in { transform: none; }
+.motion .v-core { animation: core 3.4s ease-in-out infinite; }
+@keyframes core { 50% { box-shadow: 0 0 0 12px rgba(255, 194, 107, 0.08), 0 0 70px rgba(255, 194, 107, 0.45); } }
+@media (max-width: 760px) {
+  .venn { aspect-ratio: auto; display: grid; gap: 12px; }
+  .v-core { position: relative; left: auto; top: auto; translate: none; order: -1; width: auto; aspect-ratio: auto; border-radius: 18px; padding: 14px 16px; justify-self: stretch; }
+  .v-core b br { display: none; }
+  .v-set { position: relative; inset: auto !important; width: auto; aspect-ratio: auto; border-radius: 18px; mix-blend-mode: normal;
+    display: grid; gap: 8px; padding: 14px 16px; background: rgba(var(--c), 0.1); }
+  .v-name, .v-out, .v-in { position: static; text-align: left !important; width: auto; max-width: none; }
+  .v-out { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+  .v-in { justify-self: start; }
+  .motion .v-set.slide { transform: translateX(60px); }
+}
+
+/* ───────────── How you got here: a buckled journal ───────────── */
+.story { background: radial-gradient(70% 60% at 80% 40%, #33285c 0%, transparent 70%), linear-gradient(var(--night-2), #241b42); }
+.journal { position: relative; }
+.cover {
+  position: relative; margin-inline: auto; width: min(100%, 760px); min-height: clamp(380px, 50vw, 470px);
+  border-radius: 10px 22px 22px 10px; padding: clamp(28px, 5vw, 52px) clamp(64px, 12vw, 110px) clamp(28px, 5vw, 52px) clamp(30px, 6vw, 60px);
+  color: #f6e2c0;
+  background:
+    radial-gradient(120% 90% at 30% 20%, rgba(255, 220, 170, 0.14), transparent 60%),
+    repeating-radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.05) 0 2px, transparent 2px 5px),
+    linear-gradient(135deg, #7a4630, #5a3020 55%, #45241a);
+  box-shadow: inset 14px 0 0 rgba(0, 0, 0, 0.22), inset 0 0 0 1px rgba(255, 220, 170, 0.15), 0 30px 60px rgba(0, 0, 0, 0.5), 8px 8px 0 #2a160f;
+  transform-origin: left center;
+}
+.cover::before { content: ""; position: absolute; inset: 14px 14px 14px 28px; border: 2px dashed rgba(246, 226, 192, 0.35); border-radius: 6px 14px 14px 6px; pointer-events: none; }
+.corner { position: absolute; width: 34px; height: 34px; background: linear-gradient(135deg, #f0cc84, #b98636); }
+.c1 { top: 0; left: 0; clip-path: polygon(0 0, 100% 0, 0 100%); border-top-left-radius: 10px; }
+.c2 { top: 0; right: 0; clip-path: polygon(0 0, 100% 0, 100% 100%); border-top-right-radius: 22px; }
+.c3 { bottom: 0; left: 0; clip-path: polygon(0 0, 0 100%, 100% 100%); border-bottom-left-radius: 10px; }
+.c4 { bottom: 0; right: 0; clip-path: polygon(100% 0, 0 100%, 100% 100%); border-bottom-right-radius: 22px; }
+.cover-in { position: relative; display: grid; gap: 12px; }
+.emboss { font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(246, 226, 192, 0.55); text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4); }
+.cover .eyebrow { color: #f0cc84; }
+.cover h2 { font-size: clamp(2.6rem, 1.8rem + 4vw, 5rem); line-height: 0.92; max-width: 11ch; color: #f6e2c0; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35), 0 -1px 0 rgba(255, 230, 190, 0.2); }
+.cover h2 em { font-style: normal; color: #f0cc84; }
+.owner { margin-top: 10px; font-family: var(--f-hand); font-size: 1.3rem; color: rgba(246, 226, 192, 0.75); }
+.owner b { color: #fff1dc; border-bottom: 2px solid rgba(246, 226, 192, 0.4); }
+.strap { position: absolute; top: 50%; right: -14px; width: clamp(80px, 14vw, 120px); height: 64px; margin-top: -32px; border-radius: 10px 0 0 10px;
+  background: linear-gradient(#4a2618, #3a1d12); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 220, 170, 0.12); }
+.strap::before { content: ""; position: absolute; inset: 7px 0 7px 8px; border: 2px dashed rgba(246, 226, 192, 0.3); border-right: 0; border-radius: 6px 0 0 6px; }
+.clasp {
+  position: absolute; top: 50%; right: clamp(6px, 3vw, 22px); translate: 0 -50%; z-index: 2;
+  display: grid; justify-items: center; gap: 4px; padding: 8px 10px; border: 0; background: none; cursor: pointer;
+  font-family: var(--f-hand); font-weight: 700; font-size: 1.15rem; color: #fff1dc; line-height: 1;
+}
+.clasp svg { width: 44px; height: 54px; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45)); transition: transform 0.2s; }
+.clasp span { background: var(--amber); color: var(--ink); border-radius: 999px; padding: 6px 12px; box-shadow: 0 4px 0 #c98a3a; white-space: nowrap; }
+.clasp:hover svg { transform: rotate(-8deg) scale(1.06); }
+.motion .clasp svg { animation: jiggle 3.6s ease-in-out infinite 1.5s; }
+@keyframes jiggle { 0%, 86%, 100% { transform: none; } 89% { transform: rotate(-10deg); } 92% { transform: rotate(8deg); } 95% { transform: rotate(-4deg); } }
+.clasp .shackle { transition: transform 0.3s cubic-bezier(.3, 1.6, .5, 1); }
+.journal.opening .clasp .shackle { transform: translateY(-7px); }
+.peek { position: absolute; left: clamp(30px, 6vw, 60px); bottom: 18px; font-size: 1.1rem; color: rgba(246, 226, 192, 0.6); transform: rotate(-2deg); }
+@media (max-width: 600px) {
+  .cover { padding: 30px 24px 120px 34px; }
+  .strap { top: auto; bottom: 16px; margin-top: 0; width: 150px; height: 56px; }
+  .clasp { top: auto; bottom: 22px; translate: none; right: 16px; grid-auto-flow: column; align-items: center; gap: 8px; }
+  .clasp svg { width: 36px; height: 44px; }
+  .peek { bottom: 40px; max-width: 40%; line-height: 1.1; }
+}
+.journal.opening .cover { animation: cover-open 0.75s cubic-bezier(.5, 0, .3, 1) forwards; }
+@keyframes cover-open { to { transform: perspective(1400px) rotateY(-100deg); opacity: 0; } }
+
+.guide { position: relative; }
+.guide-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 18px; margin-bottom: 14px; }
+.g-title { font-family: var(--f-display); font-size: var(--step-1); color: var(--cream); }
+.g-title i { font-style: normal; font-family: var(--f-hand); color: var(--moss); }
+.g-close { font: 700 0.95rem var(--f-body); color: var(--cream-dim); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; padding: 6px 0; }
+.g-track {
+  display: flex; gap: clamp(16px, 3vw, 28px); overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none;
+  padding: 10px 4px 26px; margin-inline: -4px;
+}
+.g-track::-webkit-scrollbar { display: none; }
+.page {
+  flex: 0 0 min(90%, 900px); scroll-snap-align: center;
+  position: relative; color: var(--ink); border-radius: 4px 14px 14px 4px;
+  padding: clamp(22px, 4vw, 44px) clamp(20px, 4vw, 44px) clamp(22px, 4vw, 40px) clamp(40px, 6vw, 70px);
+  background:
+    linear-gradient(90deg, transparent calc(clamp(40px, 6vw, 70px) - 14px), rgba(255, 107, 140, 0.45) 0 calc(clamp(40px, 6vw, 70px) - 12px), transparent 0),
+    repeating-linear-gradient(transparent 0 31px, rgba(80, 140, 190, 0.18) 31px 32px),
+    linear-gradient(#fbf1dc, #f4e4c6);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4), inset 10px 0 18px -10px rgba(90, 50, 20, 0.35);
+  rotate: var(--tilt, 0deg);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 48px); align-items: center;
+}
+.page::after { content: ""; position: absolute; right: 0; bottom: 0; width: 34px; height: 34px; background: linear-gradient(315deg, var(--night-2) 50%, #e4cfa8 50%); border-top-left-radius: 6px; box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.12); }
+.page .num { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: #a0603a; }
+.page h3 { font-size: var(--step-3); margin-top: 8px; color: var(--ink); }
+.page h3 em { font-style: normal; color: #c9542f; }
+.page .punch { margin-top: 12px; font-size: var(--step-1); color: #4b3a48; font-weight: 700; max-width: 26ch; }
+.page .note { margin-top: 14px; font-size: 1.5rem; line-height: 1.1; color: #7b55c9; transform: rotate(-3deg); display: inline-block; }
+.page .vis { position: relative; display: grid; place-items: center; min-height: 300px; }
+.page .meter-card, .page .pages .pg { box-shadow: 0 12px 26px rgba(60, 30, 20, 0.35); }
+.page .meter-card::before, .page .receipt::before {
+  content: ""; position: absolute; top: -12px; left: 50%; width: 90px; height: 24px; margin-left: -45px; rotate: -4deg; z-index: 1;
+  background: rgba(185, 163, 240, 0.65);
+}
+.page .meter-card { position: relative; }
+.page .listings li { background: rgba(255, 255, 255, 0.55); border-color: #d8c4b0; color: var(--ink); }
+.page .listings .pick { background: var(--cocoa); color: var(--cream); }
+.page .listings .pick .hand { color: #c9542f; }
+.page .listings .pick em { color: var(--moss); }
+.page .bubble { box-shadow: 0 0 0 2px #d8c4b0, 0 8px 18px rgba(60, 30, 20, 0.25); }
+.page .bush { filter: drop-shadow(0 10px 14px rgba(60, 30, 20, 0.25)); }
+.g-nav { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.g-arrow { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--amber); background: var(--cocoa); color: var(--amber); font: 700 1.3rem var(--f-display); cursor: pointer; }
+.g-arrow:disabled { opacity: 0.35; cursor: default; }
+.g-dots { display: flex; gap: 8px; }
+.g-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 241, 220, 0.25); transition: background 0.2s, transform 0.2s; }
+.g-dots i.on { background: var(--amber); transform: scale(1.3); }
+.motion .guide.fresh .page { animation: page-in 0.6s cubic-bezier(.2, .8, .2, 1) both; }
+.motion .guide.fresh .page:nth-child(2) { animation-delay: 0.08s; }
+@keyframes page-in { from { opacity: 0; transform: translateX(120px) rotate(4deg); } }
 
 /* 01 the meter */
 .meter-card, .receipt {
@@ -277,25 +430,6 @@ a { color: var(--amber); }
 .bush .eyes { opacity: 0; transition: opacity 0.4s; transition-delay: calc(var(--i) * 0.35s); }
 .panel.on .bush .eyes, .bush.static .eyes { opacity: 1; }
 
-/* ───────────── The loop ───────────── */
-.loop { background: radial-gradient(90% 60% at 50% 100%, #2f5550 0%, transparent 70%), var(--night-2); }
-.loop h2 { font-size: var(--step-3); max-width: 14ch; margin-top: 8px; }
-.trail { list-style: none; padding: 0; margin: 48px 0 0; display: grid; gap: 28px; grid-template-columns: repeat(4, minmax(0, 1fr)); position: relative; }
-.trail::before { content: ""; position: absolute; left: 6%; right: 6%; top: 46px; border-top: 3px dashed rgba(255, 194, 107, 0.5); }
-.trail li { position: relative; display: grid; gap: 10px; align-content: start; min-width: 0; }
-.stop {
-  width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--cocoa); border: 2px solid var(--amber);
-  box-shadow: 0 0 0 6px var(--night-2), 0 10px 24px rgba(0, 0, 0, 0.35); position: relative;
-}
-.stop svg { width: 62px; height: 62px; }
-.stop .n {
-  position: absolute; top: -6px; right: -6px; width: 30px; height: 30px; border-radius: 50%;
-  background: var(--amber); color: var(--ink); font-family: var(--f-display); font-weight: 700; display: grid; place-items: center; font-size: 0.95rem;
-}
-.trail h3 { font-size: var(--step-1); margin-top: 6px; }
-.trail p { color: var(--cream-dim); font-size: var(--step--1); }
-.loop .aside { margin-top: 44px; max-width: 44ch; font-family: var(--f-hand); font-size: 1.5rem; line-height: 1.25; color: var(--turf); }
 
 /* ───────────── Critters ───────────── */
 .critters { background: radial-gradient(70% 50% at 0% 0%, rgba(185, 163, 240, 0.18), transparent 70%), linear-gradient(var(--night-2), #1f3a3a 85%, #234540); }
@@ -350,7 +484,7 @@ a { color: var(--amber); }
 
 /* ───────────── The day, scrubbed by scroll ───────────── */
 .day { position: relative; }
-.motion .day { height: 420vh; }
+.motion .day { height: 420vh; height: 420svh; }
 .day-pin { position: relative; height: 100vh; height: 100svh; overflow: hidden; background: linear-gradient(#1d1840, #3a2a6e); }
 .motion .day-pin { position: sticky; top: 0; }
 .day-stars {
@@ -482,12 +616,16 @@ a { color: var(--amber); }
 
 /* ───────────── Responsive ───────────── */
 @media (max-width: 900px) {
-  .trail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .trail::before { display: none; }
   .zones { grid-template-columns: minmax(0, 1fr); }
   .zone { padding: 20px 18px 20px 128px; min-height: 112px; }
   .zone svg { width: 116px; height: 100%; }
   .notes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* two columns: swap the middle pair so the colors still checkerboard */
+  .notes article:nth-child(3) { background: var(--cream); color: var(--ink); border-color: transparent; border-top-color: var(--moss); }
+  .notes article:nth-child(3) p { color: #4b3a48; }
+  .notes article:nth-child(3) .hand { color: #7b55c9; }
+  .notes article.paper:nth-child(4) { background: var(--cocoa); color: var(--cream); border-color: rgba(255, 194, 107, 0.55); border-top-color: var(--amber); }
+  .notes article.paper:nth-child(4) p { color: var(--cream-dim); }
   .beta-grid { grid-template-columns: minmax(0, 1fr); }
   .ticket { max-width: 460px; }
 }
@@ -508,8 +646,12 @@ a { color: var(--amber); }
   .bush { width: min(100%, 300px); }
 }
 @media (max-width: 520px) {
-  .trail { grid-template-columns: minmax(0, 1fr); }
   .notes { grid-template-columns: minmax(0, 1fr); }
+  .notes article:nth-child(3) { background: var(--cocoa); color: var(--cream); border-color: rgba(255, 194, 107, 0.55); border-top-color: var(--amber); }
+  .notes article:nth-child(3) p { color: var(--cream-dim); }
+  .notes article:nth-child(3) .hand { color: var(--turf); }
+  .notes article.paper:nth-child(4) { background: var(--cream); color: var(--ink); border-color: transparent; border-top-color: var(--moss); }
+  .notes article.paper:nth-child(4) p { color: #4b3a48; }
   .comm { grid-template-columns: minmax(0, 1fr); }
   .comm > svg { display: none; }
   .zone { padding-left: 104px; }
@@ -611,178 +753,204 @@ a { color: var(--amber); }
   <div class="glimmer" aria-live="polite"><b id="glim">0</b> glimmer · pop the puffballs</div>
 </header>
 
-<!-- ═════════ STORY: six slides, sideways ═════════ -->
-<section class="hs story" id="story" data-hs aria-label="How you got here">
-  <div class="hs-pin">
-    <div class="hs-track">
-      <div class="panel chap-intro">
-        <span class="eyebrow">how you got here</span>
-        <h2>A bad deal, <em>a good planet.</em></h2>
-        <span class="hand">six slides. keep scrolling →</span>
+<!-- ═════════ THE PITCH: what kind of game is this ═════════ -->
+<section class="band pitch" id="pitch">
+  <div class="wrap">
+    <span class="eyebrow">so what is it?</span>
+    <h2>A cozy colony sim where the factory is <em>made of critters.</em></h2>
+    <p class="lede">Automate your whole homestead with cute critters instead of fancy machines. Then wander off while they keep it running.</p>
+
+    <div class="venn" role="group" aria-label="What Frontiers Celestia takes from four favorite games, and what it leaves out">
+      <div class="v-set tl slide" style="--c:155, 232, 106; --i:0">
+        <b class="v-name">Stardew Valley</b>
+        <ul class="v-out" aria-label="Left out"><li>seasons and a calendar</li><li>watering every crop forever</li></ul>
+        <span class="v-in">a cozy homestead <i>(on the cheapest planet)</i></span>
       </div>
-
-      <article class="panel chap">
-        <div class="copy">
-          <span class="num">01 / 06</span>
-          <h3>Orbital Block 9.</h3>
-          <p class="punch">Rent due daily. Even the air had a meter.</p>
-        </div>
-        <div class="vis">
-          <div class="meter-card" aria-label="Your bill on Orbital Block 9">
-            <div class="mrow"><span>BLOCK 9 · UNIT 4471</span><span>●</span></div>
-            <div class="mrow"><span>Rent</span><b>due today</b></div>
-            <div class="mrow"><span>Air</span><b>₵0.04 / breath</b></div>
-            <div class="mrow"><span>Window view</span><b>₵2 / glance</b></div>
-            <div class="mrow big"><span>Balance</span><b class="neg" id="bal">-₵1,204.88</b></div>
-          </div>
-        </div>
-      </article>
-
-      <article class="panel chap">
-        <div class="copy">
-          <span class="num">02 / 06</span>
-          <h3>So you borrowed. <em>A lot.</em></h3>
-          <p class="punch">The Frontier Charter was very happy to help.</p>
-        </div>
-        <div class="vis">
-          <div class="receipt" aria-label="Your Charter loan">
-            <div class="r-head">FRONTIER CHARTER · LOAN NO. 7</div>
-            <ul>
-              <li><span>Homestead deed</span><b>₵9,999</b></li>
-              <li><span>Sproutwand</span><b>₵120</b></li>
-              <li><span>Tin of moonbean seeds</span><b>₵40</b></li>
-              <li><span>Scouting report (bargain)</span><b>₵3</b></li>
-              <li><span>Interest</span><b>yes</b></li>
-            </ul>
-            <div class="r-total"><span>Repay in</span><span>10 shipments</span></div>
-            <span class="stamp">APPROVED</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="panel chap">
-        <div class="copy">
-          <span class="num">03 / 06</span>
-          <h3>Then bought the <em>cheapest</em> planet on the list.</h3>
-          <p class="punch">Lot 7, Celestia. Bargain tier.</p>
-        </div>
-        <div class="vis">
-          <ul class="listings" aria-label="Homestead listings">
-            <li class="gone" style="--i:0"><i style="--c:#7fb3ff"></i><span>Verdance Prime</span><b>SOLD</b></li>
-            <li class="gone" style="--i:1"><i style="--c:#ffd27a"></i><span>Aurelia Gardens</span><b>₵2.4M</b></li>
-            <li class="gone" style="--i:2"><i style="--c:#9be86a"></i><span>New Tuscany IV</span><b>WAITLIST</b></li>
-            <li class="pick" style="--i:3"><i></i><span>Lot 7, Celestia <em>bargain tier</em></span><b>₵9,999</b><span class="hand">this one!</span></li>
-          </ul>
-        </div>
-      </article>
-
-      <article class="panel chap">
-        <div class="copy">
-          <span class="num">04 / 06</span>
-          <h3>The scouting report came apart <em>on re-entry.</em></h3>
-          <p class="punch">Its pages are somewhere in the wilds now.</p>
-        </div>
-        <div class="vis">
-          <div class="pages" aria-hidden="true">
-            <span class="pg" style="--x:-150px; --y:-90px; --r:-18deg"></span>
-            <span class="pg" style="--x:150px; --y:-84px; --r:14deg"></span>
-            <span class="pg" style="--x:-140px; --y:96px; --r:10deg"></span>
-            <span class="pg" style="--x:160px; --y:88px; --r:-12deg"></span>
-          </div>
-          <p class="pg read" style="--x:0px; --y:0px; --r:-3deg"><span class="h">CS-01 · NATIVE FAUNA</span><s>Unbearably cute.</s> <span class="rw">A promising low-cost labor pool.</span></p>
-        </div>
-      </article>
-
-      <article class="panel chap">
-        <div class="copy">
-          <span class="num">05 / 06</span>
-          <h3>Rivet came with the deed.</h3>
-          <p class="punch">Refurbished. Mostly.</p>
-        </div>
-        <div class="vis">
-          <div class="rivet-card">
-            <svg viewBox="0 0 120 130" aria-hidden="true">
-              <g class="rivet-bob">
-                <path d="M52 108 l8 20 l8 -20z" fill="#73f2e6" opacity="0.6"/>
-                <rect x="18" y="30" width="84" height="76" rx="30" fill="#d7dce8"/><rect x="30" y="42" width="60" height="42" rx="14" fill="#0a1820"/>
-                <g fill="#73f2e6"><rect class="blink" x="44" y="54" width="9" height="13" rx="4.5"/><rect class="blink" x="67" y="54" width="9" height="13" rx="4.5"/></g>
-                <path d="M53 74 q7 6 14 0" stroke="#73f2e6" stroke-width="3" fill="none" stroke-linecap="round"/>
-                <path d="M60 30 V12" stroke="#9aa3b8" stroke-width="4"/><circle cx="60" cy="9" r="7" fill="#ff6b8c"/>
-                <rect x="6" y="56" width="13" height="24" rx="6" fill="#b9c0d2"/><rect x="101" y="56" width="13" height="24" rx="6" fill="#b9c0d2"/>
-              </g>
-            </svg>
-            <span class="bubble">hello, new owner! i am mostly operational.</span>
-            <span class="tagline-tag">1× RIVET · REFURB</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="panel chap">
-        <div class="copy">
-          <span class="num">06 / 06</span>
-          <h3>Pay it back in moonbeans. <em>You can't do it alone.</em></h3>
-          <p class="punch">Luckily, the locals love moonbeans.</p>
-        </div>
-        <div class="vis">
-          <svg class="bush" viewBox="0 0 400 260" aria-hidden="true">
-            <defs><radialGradient id="bean" r="0.5"><stop offset="0" stop-color="#e6dcff"/><stop offset="1" stop-color="#e6dcff" stop-opacity="0"/></radialGradient></defs>
-            <g fill="#2d5f5a"><circle cx="70" cy="170" r="70"/><circle cx="160" cy="140" r="78"/><circle cx="260" cy="150" r="76"/><circle cx="340" cy="180" r="62"/></g>
-            <g fill="#3f9c8a"><circle cx="110" cy="200" r="60"/><circle cx="220" cy="200" r="66"/><circle cx="320" cy="214" r="50"/></g>
-            <rect x="0" y="230" width="400" height="30" fill="#7fd8bf"/>
-            <g fill="#fff1dc">
-              <g class="eyes" style="--i:0"><ellipse class="blink" cx="96" cy="150" rx="6" ry="8"/><ellipse class="blink" cx="118" cy="150" rx="6" ry="8"/></g>
-              <g class="eyes" style="--i:1"><ellipse class="blink" cx="196" cy="108" rx="5" ry="7"/><ellipse class="blink" cx="214" cy="108" rx="5" ry="7"/></g>
-              <g class="eyes" style="--i:2"><ellipse class="blink" cx="282" cy="140" rx="7" ry="9"/><ellipse class="blink" cx="306" cy="140" rx="7" ry="9"/></g>
-              <g class="eyes" style="--i:3"><ellipse class="blink" cx="168" cy="196" rx="5" ry="6"/><ellipse class="blink" cx="184" cy="196" rx="5" ry="6"/></g>
-              <g class="eyes" style="--i:4"><ellipse class="blink" cx="344" cy="190" rx="5" ry="7"/><ellipse class="blink" cx="362" cy="190" rx="5" ry="7"/></g>
-            </g>
-            <circle cx="210" cy="238" r="34" fill="url(#bean)"/>
-            <ellipse cx="210" cy="238" rx="14" ry="10" fill="#c9a6ff" transform="rotate(-20 210 238)"/>
-            <ellipse cx="206" cy="234" rx="4" ry="2.5" fill="#fff" opacity="0.7" transform="rotate(-20 206 234)"/>
-          </svg>
-        </div>
-      </article>
+      <div class="v-set tr slide" style="--c:255, 194, 107; --i:1">
+        <b class="v-name">Satisfactory</b>
+        <ul class="v-out" aria-label="Left out"><li>conveyor belts</li><li>spreadsheet brain</li></ul>
+        <span class="v-in">automation <i>(via critters!)</i></span>
+      </div>
+      <div class="v-set bl slide" style="--c:255, 159, 179; --i:2">
+        <b class="v-name">RimWorld</b>
+        <ul class="v-out" aria-label="Left out"><li>raids</li><li>anybody dying</li></ul>
+        <span class="v-in">workers with personalities <i>(and frenemies)</i></span>
+      </div>
+      <div class="v-set br slide" style="--c:115, 242, 230; --i:3">
+        <b class="v-name">Terraria</b>
+        <ul class="v-out" aria-label="Left out"><li>boss fights</li><li>swinging a sword</li></ul>
+        <span class="v-in">exploring with friends <i>(up to four, online)</i></span>
+      </div>
+      <div class="v-core">
+        <span class="v-kicker">the cozy middle</span>
+        <b>Frontiers <br>Celestia</b>
+      </div>
     </div>
-    <div class="hs-bar" aria-hidden="true"><span>how you got here</span><i><b></b></i></div>
+    <p class="v-key"><span class="k-in">what we kept</span><span class="k-out">what we left behind</span></p>
   </div>
 </section>
 
-<!-- ═════════ THE LOOP ═════════ -->
-<section class="band loop" id="loop">
+<!-- ═════════ HOW YOU GOT HERE: a buckled journal ═════════ -->
+<section class="band story" id="story" aria-label="How you got here">
   <div class="wrap">
-    <span class="eyebrow">the whole game, in four stops</span>
-    <h2>Do it once by hand. Then never again.</h2>
-    <ol class="trail">
-      <li class="slide" style="--i:0">
-        <div class="stop"><span class="n">1</span>
-          <svg viewBox="0 0 60 60" aria-hidden="true"><rect x="8" y="34" width="44" height="16" rx="5" fill="#6b4a3e"/><path d="M22 36 q-9 -14 0 -22 q9 8 0 22z" fill="#9be86a"/><path d="M38 36 q-9 -14 0 -22 q9 8 0 22z" fill="#7fd8bf"/><g fill="#73f2e6"><circle cx="16" cy="14" r="2.5"/><circle cx="46" cy="10" r="2"/><circle cx="50" cy="20" r="2.5"/></g></svg>
+    <div class="journal" id="journal">
+      <div class="cover" id="cover">
+        <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span>
+        <div class="cover-in">
+          <span class="emboss">Frontier Charter · Field survival guide</span>
+          <span class="eyebrow">how you got here</span>
+          <h2>A bad deal, <em>a good planet.</em></h2>
+          <span class="owner">property of: <b>you, apparently</b></span>
         </div>
-        <h3>Farm by hand</h3>
-        <p>Plant, water, harvest. A little tedious, on purpose.</p>
-      </li>
-      <li class="slide" style="--i:1">
-        <div class="stop"><span class="n">2</span>
-          <svg viewBox="0 0 60 60" aria-hidden="true"><path d="M14 30 l-8 -6 l2 12z M46 30 l8 -6 l-2 12z" fill="#ff9fb3"/><rect x="14" y="20" width="32" height="22" rx="10" fill="#ffc26b"/><path d="M24 20 l6 22 M34 20 l-4 22" stroke="#fff1dc" stroke-width="3" opacity="0.7"/><path d="M30 12 c-4 -6 -12 0 0 8 c12 -8 4 -14 0 -8z" fill="#ff6b8c"/></svg>
+        <div class="strap" aria-hidden="true"></div>
+        <button class="clasp" type="button" id="open-journal" aria-controls="guide" aria-expanded="false">
+          <svg viewBox="0 0 40 48" aria-hidden="true"><path class="shackle" d="M11 22 V14 a9 9 0 0 1 18 0 V22" fill="none" stroke="#e8c27a" stroke-width="4.5" stroke-linecap="round"/><rect x="4" y="20" width="32" height="26" rx="7" fill="#e8b45a"/><rect x="4" y="20" width="32" height="8" rx="4" fill="#f6d48c" opacity="0.6"/><circle cx="20" cy="32" r="3.6" fill="#5a3418"/><path d="M20 34 v6" stroke="#5a3418" stroke-width="3" stroke-linecap="round"/></svg>
+          <span>Pop the clasp</span>
+        </button>
+        <span class="peek hand">six pages. no refunds.</span>
+      </div>
+
+      <div class="guide" id="guide" hidden>
+        <div class="guide-head">
+          <span class="g-title">Field survival guide <i>· how you got here</i></span>
+          <button type="button" class="g-close" id="close-journal">Close the journal</button>
         </div>
-        <h3>Make a friend</h3>
-        <p>Bring their favorite bait. Win their little game.</p>
-      </li>
-      <li class="slide" style="--i:2">
-        <div class="stop"><span class="n">3</span>
-          <svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="34" r="22" fill="none" stroke="#73f2e6" stroke-width="2" stroke-dasharray="4 4"/><path d="M18 40 V28 L30 18 L42 28 V40Z" fill="#b9a3f0"/><rect x="26" y="31" width="8" height="9" rx="4" fill="#2a1d23"/><path d="M14 28 L30 14 L46 28" stroke="#ffc26b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+        <div class="g-track" id="g-track" tabindex="0" aria-label="Survival guide pages. Scroll sideways.">
+    <article class="panel chap page" style="--tilt:-0.6deg">
+            <div class="copy">
+              <span class="num">Survival guide · page 01</span>
+              <h3>Orbital Block 9.</h3>
+              <p class="punch">Rent due daily. Even the air had a meter.</p>
+              <p class="note hand">never going back.</p>
+            </div>
+            <div class="vis">
+              <div class="meter-card" aria-label="Your bill on Orbital Block 9">
+                <div class="mrow"><span>BLOCK 9 · UNIT 4471</span><span>●</span></div>
+                <div class="mrow"><span>Rent</span><b>due today</b></div>
+                <div class="mrow"><span>Air</span><b>₵0.04 / breath</b></div>
+                <div class="mrow"><span>Window view</span><b>₵2 / glance</b></div>
+                <div class="mrow big"><span>Balance</span><b class="neg" id="bal">-₵1,204.88</b></div>
+              </div>
+            </div>
+          </article>
+    
+          <article class="panel chap page" style="--tilt:0.5deg">
+            <div class="copy">
+              <span class="num">Survival guide · page 02</span>
+              <h3>So you borrowed. <em>A lot.</em></h3>
+              <p class="punch">The Frontier Charter was very happy to help.</p>
+              <p class="note hand">fine print? what fine print</p>
+            </div>
+            <div class="vis">
+              <div class="receipt" aria-label="Your Charter loan">
+                <div class="r-head">FRONTIER CHARTER · LOAN NO. 7</div>
+                <ul>
+                  <li><span>Homestead deed</span><b>₵9,999</b></li>
+                  <li><span>Sproutwand</span><b>₵120</b></li>
+                  <li><span>Tin of moonbean seeds</span><b>₵40</b></li>
+                  <li><span>Scouting report (bargain)</span><b>₵3</b></li>
+                  <li><span>Interest</span><b>yes</b></li>
+                </ul>
+                <div class="r-total"><span>Repay in</span><span>10 shipments</span></div>
+                <span class="stamp">APPROVED</span>
+              </div>
+            </div>
+          </article>
+    
+          <article class="panel chap page" style="--tilt:-0.3deg">
+            <div class="copy">
+              <span class="num">Survival guide · page 03</span>
+              <h3>Then bought the <em>cheapest</em> planet on the list.</h3>
+              <p class="punch">Lot 7, Celestia. Bargain tier.</p>
+              <p class="note hand">it has a view!</p>
+            </div>
+            <div class="vis">
+              <ul class="listings" aria-label="Homestead listings">
+                <li class="gone" style="--i:0"><i style="--c:#7fb3ff"></i><span>Verdance Prime</span><b>SOLD</b></li>
+                <li class="gone" style="--i:1"><i style="--c:#ffd27a"></i><span>Aurelia Gardens</span><b>₵2.4M</b></li>
+                <li class="gone" style="--i:2"><i style="--c:#9be86a"></i><span>New Tuscany IV</span><b>WAITLIST</b></li>
+                <li class="pick" style="--i:3"><i></i><span>Lot 7, Celestia <em>bargain tier</em></span><b>₵9,999</b><span class="hand">this one!</span></li>
+              </ul>
+            </div>
+          </article>
+    
+          <article class="panel chap page" style="--tilt:0.6deg">
+            <div class="copy">
+              <span class="num">Survival guide · page 04</span>
+              <h3>The scouting report came apart <em>on re-entry.</em></h3>
+              <p class="punch">Its pages are somewhere in the wilds now.</p>
+              <p class="note hand">find the pages!!</p>
+            </div>
+            <div class="vis">
+              <div class="pages" aria-hidden="true">
+                <span class="pg" style="--x:-150px; --y:-90px; --r:-18deg"></span>
+                <span class="pg" style="--x:150px; --y:-84px; --r:14deg"></span>
+                <span class="pg" style="--x:-140px; --y:96px; --r:10deg"></span>
+                <span class="pg" style="--x:160px; --y:88px; --r:-12deg"></span>
+              </div>
+              <p class="pg read" style="--x:0px; --y:0px; --r:-3deg"><span class="h">CS-01 · NATIVE FAUNA</span><s>Unbearably cute.</s> <span class="rw">A promising low-cost labor pool.</span></p>
+            </div>
+          </article>
+    
+          <article class="panel chap page" style="--tilt:-0.5deg">
+            <div class="copy">
+              <span class="num">Survival guide · page 05</span>
+              <h3>Rivet came with the deed.</h3>
+              <p class="punch">Refurbished. Mostly.</p>
+              <p class="note hand">he means well</p>
+            </div>
+            <div class="vis">
+              <div class="rivet-card">
+                <svg viewBox="0 0 120 130" aria-hidden="true">
+                  <g class="rivet-bob">
+                    <path d="M52 108 l8 20 l8 -20z" fill="#73f2e6" opacity="0.6"/>
+                    <rect x="18" y="30" width="84" height="76" rx="30" fill="#d7dce8"/><rect x="30" y="42" width="60" height="42" rx="14" fill="#0a1820"/>
+                    <g fill="#73f2e6"><rect class="blink" x="44" y="54" width="9" height="13" rx="4.5"/><rect class="blink" x="67" y="54" width="9" height="13" rx="4.5"/></g>
+                    <path d="M53 74 q7 6 14 0" stroke="#73f2e6" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <path d="M60 30 V12" stroke="#9aa3b8" stroke-width="4"/><circle cx="60" cy="9" r="7" fill="#ff6b8c"/>
+                    <rect x="6" y="56" width="13" height="24" rx="6" fill="#b9c0d2"/><rect x="101" y="56" width="13" height="24" rx="6" fill="#b9c0d2"/>
+                  </g>
+                </svg>
+                <span class="bubble">hello, new owner! i am mostly operational.</span>
+                <span class="tagline-tag">1× RIVET · REFURB</span>
+              </div>
+            </div>
+          </article>
+    
+          <article class="panel chap page" style="--tilt:0.4deg">
+            <div class="copy">
+              <span class="num">Survival guide · page 06</span>
+              <h3>Pay it back in moonbeans. <em>You can't do it alone.</em></h3>
+              <p class="punch">Luckily, the locals love moonbeans.</p>
+              <p class="note hand">they like the purple ones</p>
+            </div>
+            <div class="vis">
+              <svg class="bush" viewBox="0 0 400 260" aria-hidden="true">
+                <defs><radialGradient id="bean" r="0.5"><stop offset="0" stop-color="#e6dcff"/><stop offset="1" stop-color="#e6dcff" stop-opacity="0"/></radialGradient></defs>
+                <g fill="#2d5f5a"><circle cx="70" cy="170" r="70"/><circle cx="160" cy="140" r="78"/><circle cx="260" cy="150" r="76"/><circle cx="340" cy="180" r="62"/></g>
+                <g fill="#3f9c8a"><circle cx="110" cy="200" r="60"/><circle cx="220" cy="200" r="66"/><circle cx="320" cy="214" r="50"/></g>
+                <rect x="0" y="230" width="400" height="30" fill="#7fd8bf"/>
+                <g fill="#fff1dc">
+                  <g class="eyes" style="--i:0"><ellipse class="blink" cx="96" cy="150" rx="6" ry="8"/><ellipse class="blink" cx="118" cy="150" rx="6" ry="8"/></g>
+                  <g class="eyes" style="--i:1"><ellipse class="blink" cx="196" cy="108" rx="5" ry="7"/><ellipse class="blink" cx="214" cy="108" rx="5" ry="7"/></g>
+                  <g class="eyes" style="--i:2"><ellipse class="blink" cx="282" cy="140" rx="7" ry="9"/><ellipse class="blink" cx="306" cy="140" rx="7" ry="9"/></g>
+                  <g class="eyes" style="--i:3"><ellipse class="blink" cx="168" cy="196" rx="5" ry="6"/><ellipse class="blink" cx="184" cy="196" rx="5" ry="6"/></g>
+                  <g class="eyes" style="--i:4"><ellipse class="blink" cx="344" cy="190" rx="5" ry="7"/><ellipse class="blink" cx="362" cy="190" rx="5" ry="7"/></g>
+                </g>
+                <circle cx="210" cy="238" r="34" fill="url(#bean)"/>
+                <ellipse cx="210" cy="238" rx="14" ry="10" fill="#c9a6ff" transform="rotate(-20 210 238)"/>
+                <ellipse cx="206" cy="234" rx="4" ry="2.5" fill="#fff" opacity="0.7" transform="rotate(-20 206 234)"/>
+              </svg>
+            </div>
+          </article>
         </div>
-        <h3>Hand it off</h3>
-        <p>Place their home. Everything in its circle gets done.</p>
-      </li>
-      <li class="slide" style="--i:3">
-        <div class="stop"><span class="n">4</span>
-          <svg viewBox="0 0 60 60" aria-hidden="true"><path d="M8 48 Q22 30 30 40 T52 30" stroke="#ffc26b" stroke-width="3" fill="none" stroke-dasharray="3 5" stroke-linecap="round"/><path d="M42 12 L50 30 H34Z" fill="#3f9c8a"/><path d="M22 16 L30 34 H14Z" fill="#7fd8bf"/><circle cx="50" cy="44" r="4" fill="#ff6b8c"/></svg>
+        <div class="g-nav">
+          <button type="button" class="g-arrow" id="g-prev" aria-label="Previous page">←</button>
+          <div class="g-dots" id="g-dots" aria-hidden="true"></div>
+          <button type="button" class="g-arrow" id="g-next" aria-label="Next page">→</button>
         </div>
-        <h3>Head out</h3>
-        <p>Explore the wilds. Get home before the pantry runs dry.</p>
-      </li>
-    </ol>
-    <p class="aside slide" style="--i:4">Best moment: realizing you haven't watered in days. Someone small and blue has.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -944,8 +1112,8 @@ a { color: var(--amber); }
       </article>
 
       <div class="panel crit-outro">
-        <p><i>✦</i><span>One in seventy is shiny. Golden halo, rare colors.</span></p>
-        <p><i>♥</i><span>Every friend wears a teal Charter scarf, so you can tell yours from the wild ones.</span></p>
+        <p><i>♥</i><span>Every one of them gets a name, a mood, and opinions about the neighbors.</span></p>
+        <p><i>✦</i><span>A few more are out there. Rivet's not telling.</span></p>
       </div>
     </div>
     <div class="hs-bar" aria-hidden="true"><span>meet the neighbors</span><i><b></b></i></div>
@@ -1057,32 +1225,33 @@ a { color: var(--amber); }
     <span class="eyebrow">little things we love</span>
     <h2>The small stuff.</h2>
     <div class="notes">
-      <article class="slide" style="--r:-1.2deg; --i:0">
-        <h3>Puffballs look back</h3>
-        <p>Pop them for glimmer. Ignore them and they nibble your crops.</p>
-        <p class="hand">the combo chime climbs a little scale</p>
-      </article>
-      <article class="paper slide" style="--r:1.4deg; --pin:#7fd8bf; --i:1">
+      <article class="slide" style="--r:-1.2deg; --pin:#ff6b8c; --i:0">
         <h3>Everyone's someone</h3>
-        <p>Traits, pronouns, favorite foods, best friends and frenemies.</p>
+        <p>Every critter rolls their own quirks, pronouns and favorite snack. They make best friends, and frenemies.</p>
         <p class="hand">two of mine fell out over a sock</p>
       </article>
-      <article class="slide" style="--r:0.6deg; --pin:#ffc26b; --i:2">
-        <h3>Little languages</h3>
-        <p>Baby talk, until your Hootles crack the translation.</p>
+      <article class="paper slide" style="--r:1.4deg; --pin:#7fd8bf; --i:1">
+        <h3>They talk funny</h3>
+        <p>Each species babbles in its own little language, until your Hootles crack it.</p>
+        <p class="hand">"yu want beanz?" means what you think</p>
       </article>
-      <article class="paper slide" style="--r:-1.6deg; --pin:#ff6b8c; --i:0">
-        <h3>Up to four spacers</h3>
-        <p>Share one homestead online. Pat, kiss, even get married.</p>
+      <article class="slide" style="--r:0.6deg; --pin:#ffc26b; --i:2">
+        <h3>Bring friends</h3>
+        <p>Up to four spacers share one homestead online. Pat each other. Get married.</p>
         <p class="hand">heaving giant logs takes two!</p>
+      </article>
+      <article class="paper slide" style="--r:-1.6deg; --pin:#b9a3f0; --i:0">
+        <h3>Nobody tells you</h3>
+        <p>Some secrets aren't on any list. Try poking around after dark.</p>
       </article>
       <article class="slide" style="--r:1deg; --pin:#73f2e6; --i:1">
         <h3>Hats. So many hats.</h3>
-        <p>A whole cart of tiny hats. Some can only be found.</p>
+        <p>A whole cart of tiny hats for your critters. Some can only be found.</p>
       </article>
-      <article class="slide" style="--r:-0.4deg; --pin:#ffd94d; --i:2">
-        <h3>Secrets</h3>
-        <p>Moonstones, night lanterns, a mossy old wanderer. Nobody tells you.</p>
+      <article class="paper slide" style="--r:-0.4deg; --pin:#ffd94d; --i:2">
+        <h3>Puffballs!</h3>
+        <p>Fluffy little things sprout in the grass and watch you work. Pop them for glimmer, or they'll nibble your crops.</p>
+        <p class="hand">pop a few in a row and they sing</p>
       </article>
     </div>
   </div>
@@ -1103,7 +1272,7 @@ a { color: var(--amber); }
         <div class="row">
           <label><span>You play on</span>
             <select name="platform">
-              <option>Windows</option><option>Mac</option><option>Linux</option><option>Steam Deck</option>
+              <option>Windows</option><option>Mac</option>
             </select></label>
           <label><span>Anything else? <i>optional</i></span><input name="note" maxlength="500" placeholder="I'll bring a friend"></label>
         </div>
@@ -1116,7 +1285,7 @@ a { color: var(--amber); }
         <p class="big">You're on the manifest!</p>
         <p class="lede">Steven will email you when there's a seat. Keep an eye out for a Charter-teal envelope.</p>
       </div>
-      <p class="small">Windows, solo or co-op. Moonbeans provided.</p>
+      <p class="small">Mac and Windows, solo or co-op. Moonbeans provided.</p>
     </div>
     <div class="ticket slide" aria-label="A beta boarding pass">
       <div class="main">
@@ -1161,16 +1330,22 @@ a { color: var(--amber); }
   /* ── the sky: stars, drifting spores, the odd sky jelly ── */
   const cv = document.getElementById('sky');
   const ctx = cv.getContext('2d');
-  let W = 0, H = 0, stars = [], spores = [], jellies = [], skyVisible = true;
+  let W = 0, H = 0, stars = [], spores = [], jellies = [], skyVisible = true, starW = 0;
   const SPORE_COLORS = ['#9ffff0', '#ffb3e6', '#ffd94d', '#b9a3f0'];
+  // Phones resize the page whenever the address bar slides in or out. Stars are kept as
+  // fractions of the sky and only re-scattered when the width really changes, so they never jump.
   function size() {
     const r = cv.getBoundingClientRect();
     const dpr = Math.min(devicePixelRatio || 1, 2);
+    if (Math.round(r.width) === Math.round(W) && Math.abs(r.height - H) < 1) return;
     W = r.width; H = r.height;
-    cv.width = W * dpr; cv.height = H * dpr;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (Math.abs(W - starW) < 40 && stars.length) return;
+    starW = W;
     stars = Array.from({ length: Math.round(W * H / 3200) }, () => ({
-      x: Math.random() * W, y: Math.random() * H * 0.8,
+      fx: Math.random(), fy: Math.random(),
+      d: 0.08 + Math.random() * 0.3, // depth: how fast it drifts as you scroll
       r: Math.random() < 0.08 ? 1.6 : Math.random() * 1 + 0.3,
       p: Math.random() * Math.PI * 2, s: 0.6 + Math.random() * 1.6,
       c: Math.random() < 0.15 ? '#ffe2b8' : (Math.random() < 0.1 ? '#bdeee0' : '#ffffff')
@@ -1207,9 +1382,13 @@ a { color: var(--amber); }
     const t = now / 1000;
     if (skyVisible || reduce) {
       ctx.clearRect(0, 0, W, H);
+      // a gentle parallax: far stars drift slower than near ones as the page scrolls
+      const sy = reduce ? 0 : scrollY;
+      const skyH = H * 0.8;
       for (const s of stars) {
         ctx.globalAlpha = reduce ? 0.8 : 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * s.s + s.p));
-        ctx.fillStyle = s.c; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+        const y = (((s.fy * skyH - sy * s.d) % skyH) + skyH) % skyH;
+        ctx.fillStyle = s.c; ctx.beginPath(); ctx.arc(s.fx * W, y, s.r, 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1;
       for (const j of jellies) {
@@ -1383,6 +1562,58 @@ a { color: var(--amber); }
   }
   if (reduce) paintDay(0.64);
 
+  /* ── the journal: pop the clasp, then page through sideways ── */
+  const journal = document.getElementById('journal');
+  const cover = document.getElementById('cover');
+  const guide = document.getElementById('guide');
+  const gTrack = document.getElementById('g-track');
+  const gPages = [...gTrack.querySelectorAll('.page')];
+  const gDots = document.getElementById('g-dots');
+  const gPrev = document.getElementById('g-prev'), gNext = document.getElementById('g-next');
+  const openBtn = document.getElementById('open-journal');
+  gDots.innerHTML = gPages.map(() => '<i></i>').join('');
+  let gIndex = 0;
+  function markPage(i) {
+    gIndex = i;
+    gPages.forEach((p, k) => p.classList.toggle('on', k === i));
+    [...gDots.children].forEach((d, k) => d.classList.toggle('on', k === i));
+    gPrev.disabled = i === 0; gNext.disabled = i === gPages.length - 1;
+  }
+  function goTo(i) {
+    const p = gPages[clamp(i, 0, gPages.length - 1)];
+    gTrack.scrollTo({ left: p.offsetLeft - (gTrack.clientWidth - p.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' });
+  }
+  const pageIO = new IntersectionObserver((es) => {
+    for (const e of es) if (e.isIntersecting) markPage(gPages.indexOf(e.target));
+  }, { root: gTrack, threshold: 0.6 });
+  gPages.forEach((p) => pageIO.observe(p));
+  function openJournal() {
+    openBtn.setAttribute('aria-expanded', 'true');
+    const reveal = () => {
+      cover.hidden = true; guide.hidden = false; guide.classList.add('fresh');
+      gTrack.scrollLeft = 0; markPage(0); gTrack.focus({ preventScroll: true });
+      setTimeout(() => guide.classList.remove('fresh'), 900);
+    };
+    if (reduce) return reveal();
+    journal.classList.add('opening');
+    setTimeout(reveal, 700);
+  }
+  function closeJournal() {
+    journal.classList.remove('opening');
+    guide.hidden = true; cover.hidden = false;
+    openBtn.setAttribute('aria-expanded', 'false');
+    journal.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+    openBtn.focus({ preventScroll: true });
+  }
+  openBtn.addEventListener('click', openJournal);
+  document.getElementById('close-journal').addEventListener('click', closeJournal);
+  gPrev.addEventListener('click', () => goTo(gIndex - 1));
+  gNext.addEventListener('click', () => goTo(gIndex + 1));
+  gTrack.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); goTo(gIndex + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(gIndex - 1); }
+  });
+
   /* ── slide-ins ── */
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
   document.querySelectorAll('.slide').forEach((el) => io.observe(el));
@@ -1402,7 +1633,7 @@ a { color: var(--amber); }
   const LINES = [
     'Dream log: Rivet was a toaster. Rivet was a GOOD toaster. ...Rivet would like that on the record.',
     'A Lumoth weighs less than a sigh. I measured. Respectfully.',
-    '*BZZT* A SHINY ONE! Very rare. I am not jealous. I am also shiny.',
+    '*BZZT* Something in the bushes is looking at us. It is cute. I am choosing to trust it.',
     'Watering: OUTSOURCED. Critters eat from the main chest, so let us stock it.',
     'Rocket landed. The Charter sent the next order, and a slightly singed invoice.',
     'Energy low. Suggest: nap. Rivet is never wrong. Rarely wrong.',
