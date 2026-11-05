@@ -1,0 +1,1468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Frontiers Celestia</title>
+<meta name="description" content="A cozy little homestead on a planet nobody else wanted. Befriend the critters, hand them your chores, and go wandering.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Space+Mono:wght@400;700&family=Gaegu:wght@400;700&display=swap">
+<style>
+/* A walk down from orbit to Lot 7. Story and critters scroll sideways while pinned;
+   the day scrubs from dawn to 4:20 AM as you scroll. */
+:root {
+  color-scheme: dark;
+  --night: #1a1430;
+  --night-2: #241b42;
+  --turf: #7fd8bf;
+  --turf-deep: #3f9c8a;
+  --moss: #b9a3f0;
+  --amber: #ffc26b;
+  --cocoa: #2a1d23;
+  --cream: #fff1dc;
+  --cream-dim: #e9d6c2;
+  --teal: #73f2e6;
+  --charter: #0a1820;
+  --heart: #ff6b8c;
+  --star: #ffd94d;
+  --ink: #1f1828;
+
+  --f-display: "Fredoka", "Nunito", ui-rounded, system-ui, sans-serif;
+  --f-body: "Nunito", ui-rounded, system-ui, sans-serif;
+  --f-mono: "Space Mono", ui-monospace, "Consolas", monospace;
+  --f-hand: "Gaegu", "Comic Sans MS", cursive;
+
+  --step--1: clamp(0.85rem, 0.82rem + 0.15vw, 0.95rem);
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.12rem);
+  --step-1: clamp(1.2rem, 1.1rem + 0.5vw, 1.5rem);
+  --step-2: clamp(1.6rem, 1.4rem + 1vw, 2.2rem);
+  --step-3: clamp(2.2rem, 1.6rem + 2.6vw, 3.8rem);
+  --step-4: clamp(3rem, 2rem + 5vw, 6.2rem);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; }
+body {
+  background: var(--night);
+  color: var(--cream);
+  font-family: var(--f-body);
+  font-size: var(--step-0);
+  line-height: 1.55;
+  font-weight: 600;
+  overflow-x: clip;
+}
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.05; margin: 0; font-weight: 600; }
+p { margin: 0; }
+a { color: var(--amber); }
+:focus-visible { outline: 3px dashed var(--amber); outline-offset: 4px; border-radius: 6px; }
+
+.wrap {
+  width: 100%; max-width: 1120px; margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.band { padding-block: clamp(64px, 9vw, 120px); position: relative; }
+.eyebrow {
+  font-family: var(--f-hand); font-size: var(--step-1); color: var(--moss); font-weight: 700;
+  line-height: 1; display: inline-block; transform: rotate(-2deg);
+}
+.lede { max-width: 46ch; color: var(--cream-dim); }
+.hand { font-family: var(--f-hand); font-weight: 700; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--f-display); font-weight: 600; font-size: 1.1rem; text-decoration: none;
+  color: var(--ink); background: var(--amber);
+  padding: 13px 24px; border-radius: 999px;
+  box-shadow: 0 5px 0 #c98a3a, 0 12px 26px rgba(255, 194, 107, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #c98a3a, 0 16px 30px rgba(255, 194, 107, 0.4); }
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #c98a3a, 0 6px 14px rgba(255, 194, 107, 0.3); }
+.btn svg { width: 20px; height: 20px; }
+
+/* things that slide in from the side as they come into view */
+.motion .slide { opacity: 0; transform: translateX(90px); transition: opacity 0.7s ease, transform 0.9s cubic-bezier(.2, .8, .2, 1); transition-delay: calc(var(--i, 0) * 110ms); }
+.motion .slide.in { opacity: 1; transform: none; }
+
+/* ───────────── Hero ───────────── */
+.hero {
+  position: relative;
+  background:
+    radial-gradient(120% 70% at 75% 0%, #3b2a66 0%, transparent 60%),
+    radial-gradient(80% 60% at 10% 30%, #2b2050 0%, transparent 70%),
+    linear-gradient(#120d24, var(--night) 60%, #2c2148);
+  overflow: hidden; isolation: isolate;
+}
+#sky { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
+.planet { position: absolute; z-index: -1; right: max(4vw, 16px); top: 9%; width: clamp(110px, 16vw, 220px); aspect-ratio: 1; }
+.hero-copy { position: relative; padding-top: clamp(72px, 12vh, 140px); padding-bottom: calc(clamp(220px, 34vw, 360px) - 10px); }
+.hero h1 {
+  font-size: var(--step-4); font-weight: 700; letter-spacing: -0.01em; line-height: 0.92;
+  text-shadow: 0 0 28px rgba(255, 194, 107, 0.25);
+}
+.hero h1 .c { display: block; color: var(--turf); text-shadow: 0 0 34px rgba(127, 216, 191, 0.45); padding-left: 0.6em; }
+.hero h1 .dot { color: var(--amber); }
+.hero .tag { margin-top: 22px; max-width: 30ch; font-size: var(--step-1); font-weight: 700; color: var(--cream-dim); line-height: 1.35; }
+.hero .note { font-family: var(--f-hand); font-size: 1.35rem; color: var(--amber); margin-top: 10px; transform: rotate(-1.5deg); display: inline-block; }
+.hero .cta-row { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; }
+.hero .cta-row .hand { color: var(--moss); font-size: 1.25rem; }
+.land { position: absolute; left: 0; right: 0; bottom: 0; height: clamp(220px, 34vw, 360px); z-index: 0; }
+.land svg { width: 100%; height: 100%; display: block; }
+.rivet-bob { animation: bob 3.2s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-7px); } }
+.blink { animation: blink 5s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+.lamp-glow { animation: flicker 4s ease-in-out infinite; }
+@keyframes flicker { 50% { opacity: 0.7; } }
+
+.puffs { position: absolute; inset: auto 0 0 0; height: clamp(220px, 34vw, 360px); z-index: 1; pointer-events: none; }
+.puff {
+  pointer-events: auto; position: absolute;
+  width: var(--s, 34px); height: var(--s, 34px);
+  border: 0; padding: 0; cursor: pointer; border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, #fff 0 14%, transparent 15%),
+    radial-gradient(circle at 50% 55%, #f4ecff 0 52%, #d9c8ff 70%, rgba(217, 200, 255, 0) 72%);
+  filter: drop-shadow(0 0 8px rgba(214, 196, 255, 0.75));
+  animation: wobble 2.6s ease-in-out infinite; animation-delay: var(--d, 0s);
+}
+.puff::before, .puff::after {
+  content: ""; position: absolute; top: 46%; width: 14%; height: 18%; border-radius: 50%;
+  background: var(--ink); transform: translateX(var(--look, 0px)); transition: transform 0.2s;
+}
+.puff::before { left: 32%; }
+.puff::after { left: 56%; }
+.puff:hover { animation-play-state: paused; transform: scale(1.08); }
+@keyframes wobble { 50% { transform: translateY(-3px) scale(1.04, 0.97); } }
+.spore { position: absolute; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; z-index: 2; animation: spore 0.9s ease-out forwards; }
+@keyframes spore { to { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; } }
+.poff {
+  position: absolute; z-index: 3; pointer-events: none;
+  font-family: var(--f-hand); font-weight: 700; font-size: 1.6rem; color: var(--star);
+  text-shadow: 0 2px 0 var(--ink); animation: poff 1s ease-out forwards;
+}
+@keyframes poff { to { transform: translateY(-46px) rotate(-6deg); opacity: 0; } }
+.glimmer {
+  position: absolute; z-index: 3; right: max(16px, env(safe-area-inset-right, 0px)); bottom: 18px;
+  font-family: var(--f-mono); font-size: 0.8rem; color: var(--cream); background: rgba(26, 20, 48, 0.75);
+  border: 1px solid var(--moss); border-radius: 999px; padding: 6px 14px;
+}
+.glimmer b { color: var(--star); }
+
+/* ───────────── Sideways scrollers (story, critters) ───────────── */
+.hs { position: relative; }
+.hs-pin { position: relative; overflow-x: auto; overflow-y: hidden; display: flex; align-items: center; padding-block: 64px; }
+.hs-track { display: flex; gap: clamp(28px, 5vw, 80px); padding-inline: max(16px, 6vw); align-items: center; }
+.motion .hs-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; padding-block: 0; }
+.motion .hs-track { will-change: transform; }
+.panel { flex: 0 0 auto; position: relative; }
+.hs-bar {
+  position: absolute; left: max(16px, 6vw); right: max(16px, 6vw); bottom: clamp(18px, 4vh, 36px);
+  display: none; align-items: center; gap: 14px;
+  font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 241, 220, 0.55);
+}
+.motion .hs-bar { display: flex; }
+.hs-bar i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 241, 220, 0.14); overflow: hidden; }
+.hs-bar i b { display: block; height: 100%; background: var(--amber); transform-origin: left; transform: scaleX(0); }
+
+/* ───────────── Story chapters ───────────── */
+.story { background: radial-gradient(70% 60% at 80% 40%, #33285c 0%, transparent 70%), linear-gradient(#2c2148, var(--night-2)); }
+.chap-intro { width: min(70vw, 520px); }
+.chap-intro h2 { font-size: var(--step-4); line-height: 0.95; margin-top: 10px; }
+.chap-intro h2 em { font-style: normal; color: var(--amber); }
+.chap-intro .hand { margin-top: 18px; font-size: 1.4rem; color: var(--turf); display: block; }
+.chap {
+  width: min(86vw, 940px);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: center;
+}
+.chap .num { font-family: var(--f-mono); font-size: 0.78rem; letter-spacing: 0.18em; color: var(--teal); }
+.chap h3 { font-size: var(--step-3); margin-top: 10px; }
+.chap h3 em { font-style: normal; color: var(--amber); }
+.chap .punch { margin-top: 14px; font-size: var(--step-1); color: var(--cream-dim); font-weight: 700; max-width: 26ch; }
+.chap .vis { position: relative; display: grid; place-items: center; min-height: 300px; }
+.chap .copy { transform: translateX(calc(var(--p, 0) * -40px)); }
+.chap .vis { transform: translateX(calc(var(--p, 0) * 60px)); }
+
+/* 01 the meter */
+.meter-card, .receipt {
+  font-family: var(--f-mono); font-size: 0.86rem; color: #cfeeea;
+  background: repeating-linear-gradient(0deg, rgba(115, 242, 230, 0.05) 0 1px, transparent 1px 3px), var(--charter);
+  border: 1px solid var(--teal); border-top-width: 3px; border-radius: 4px;
+  width: min(100%, 380px); padding: 18px 20px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4), 0 0 0 6px rgba(115, 242, 230, 0.05);
+}
+.mrow { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px dashed rgba(115, 242, 230, 0.25); }
+.mrow:first-child { color: var(--teal); font-size: 0.7rem; letter-spacing: 0.14em; }
+.mrow b { color: #fff; font-weight: 700; }
+.mrow.big { border: 0; padding-top: 14px; font-size: 1.05rem; }
+.mrow .neg { color: var(--heart); }
+
+/* 02 the receipt */
+.receipt { position: relative; background: #fff8ec; color: #3b2d36; border: 0; border-radius: 6px 6px 0 0; transform: rotate(-2deg); padding-bottom: 26px;
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 10px) no-repeat, radial-gradient(circle at 8px 0, transparent 7px, #000 7.5px) bottom left / 16px 10px repeat-x;
+          mask: linear-gradient(#000 0 0) top / 100% calc(100% - 10px) no-repeat, radial-gradient(circle at 8px 0, transparent 7px, #000 7.5px) bottom left / 16px 10px repeat-x; }
+.receipt .r-head { font-size: 0.7rem; letter-spacing: 0.14em; color: #7a5a6e; border-bottom: 2px dashed #d8c4b0; padding-bottom: 8px; margin-bottom: 6px; }
+.receipt ul { list-style: none; margin: 0; padding: 0; }
+.receipt li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+.receipt .r-total { display: flex; justify-content: space-between; border-top: 2px dashed #d8c4b0; margin-top: 8px; padding-top: 8px; font-weight: 700; }
+.stamp {
+  position: absolute; right: 14px; bottom: 30px;
+  font-family: var(--f-mono); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.12em;
+  color: var(--heart); border: 3px solid var(--heart); border-radius: 6px; padding: 4px 12px;
+  transform: rotate(-12deg); opacity: 0.85;
+}
+.motion .panel .stamp { opacity: 0; transform: rotate(-12deg) scale(2.4); transition: opacity 0.2s, transform 0.35s cubic-bezier(.3, 1.6, .5, 1); }
+.motion .panel.on .stamp { opacity: 0.85; transform: rotate(-12deg) scale(1); transition-delay: 0.25s; }
+
+/* 03 the listings */
+.listings { list-style: none; margin: 0; padding: 0; width: min(100%, 400px); display: grid; gap: 10px; }
+.listings li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center;
+  background: rgba(255, 241, 220, 0.06); border: 1px solid rgba(255, 241, 220, 0.15); border-radius: 12px; padding: 10px 14px;
+}
+.listings i { width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff8, var(--c) 60%); }
+.listings b { font-family: var(--f-mono); font-size: 0.8rem; }
+.listings .gone { opacity: 0.5; }
+.listings .gone span { text-decoration: line-through; text-decoration-thickness: 2px; }
+.listings .pick { background: var(--cocoa); border: 2px solid var(--amber); position: relative; }
+.listings .pick i { --c: #ff9fb3; box-shadow: 0 0 0 3px rgba(185, 163, 240, 0.5); }
+.listings .pick b { color: var(--amber); }
+.listings .pick em { display: block; font-style: normal; font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--moss); }
+.listings .pick .hand { position: absolute; right: -8px; top: -26px; color: var(--amber); font-size: 1.3rem; transform: rotate(-6deg); }
+.motion .listings li { opacity: 0; transform: translateX(60px); transition: opacity 0.4s, transform 0.5s cubic-bezier(.2, .8, .2, 1); transition-delay: calc(var(--i) * 120ms); }
+.motion .panel.on .listings li { opacity: var(--o, 1); transform: none; }
+.listings .gone { --o: 0.5; }
+
+/* 04 the scattered report */
+.pages { position: relative; width: min(100%, 400px); height: 300px; }
+.pg {
+  position: absolute; left: 50%; top: 50%; width: 130px; height: 170px; margin: -85px 0 0 -65px;
+  background:
+    repeating-linear-gradient(transparent 0 15px, rgba(115, 242, 230, 0.25) 15px 16px) 14px 34px / calc(100% - 28px) calc(100% - 50px) no-repeat,
+    var(--charter);
+  border: 1px solid var(--teal); border-top-width: 3px; border-radius: 3px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  transform: translate(calc(var(--x) + var(--p, 0) * var(--x) * -1.2), calc(var(--y) + var(--p, 0) * var(--y) * -1.2)) rotate(calc(var(--r) + var(--p, 0) * var(--r) * -2));
+}
+.pg.read {
+  width: 230px; height: auto; margin: 0; left: 50%; top: 50%; translate: -50% -50%;
+  background: var(--charter); padding: 14px 16px; font-family: var(--f-mono); font-size: 0.78rem; line-height: 1.6; color: #cfeeea;
+}
+.pg.read .h { color: var(--teal); font-size: 0.66rem; letter-spacing: 0.14em; display: block; margin-bottom: 6px; }
+.pg.read s { color: #ff9eb4; text-decoration-thickness: 2px; }
+.pg.read .rw { color: var(--teal); }
+
+/* 05 Rivet */
+.rivet-card { position: relative; display: grid; place-items: center; }
+.rivet-card svg { width: clamp(150px, 20vw, 220px); height: auto; }
+.bubble {
+  position: absolute; top: -10px; right: -10px; max-width: 200px;
+  background: #fff; color: var(--ink); font-family: var(--f-hand); font-weight: 700; font-size: 1.25rem; line-height: 1.15;
+  padding: 10px 14px; border-radius: 18px;
+}
+.bubble::after { content: ""; position: absolute; left: 22px; bottom: -9px; border: 9px solid transparent; border-top-color: #fff; border-bottom: 0; }
+.tagline-tag {
+  position: absolute; left: -6px; bottom: 6px; transform: rotate(-6deg);
+  font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.12em; color: var(--ink);
+  background: var(--star); padding: 4px 10px; border-radius: 3px;
+}
+.motion .panel .bubble { opacity: 0; transform: translateY(10px) scale(0.9); transition: opacity 0.3s, transform 0.4s cubic-bezier(.3, 1.6, .5, 1); }
+.motion .panel.on .bubble { opacity: 1; transform: none; transition-delay: 0.3s; }
+
+/* 06 the bushes */
+.bush { width: min(100%, 400px); height: auto; overflow: visible; }
+.bush .eyes { opacity: 0; transition: opacity 0.4s; transition-delay: calc(var(--i) * 0.35s); }
+.panel.on .bush .eyes, .bush.static .eyes { opacity: 1; }
+
+/* ───────────── The loop ───────────── */
+.loop { background: radial-gradient(90% 60% at 50% 100%, #2f5550 0%, transparent 70%), var(--night-2); }
+.loop h2 { font-size: var(--step-3); max-width: 14ch; margin-top: 8px; }
+.trail { list-style: none; padding: 0; margin: 48px 0 0; display: grid; gap: 28px; grid-template-columns: repeat(4, minmax(0, 1fr)); position: relative; }
+.trail::before { content: ""; position: absolute; left: 6%; right: 6%; top: 46px; border-top: 3px dashed rgba(255, 194, 107, 0.5); }
+.trail li { position: relative; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.stop {
+  width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--cocoa); border: 2px solid var(--amber);
+  box-shadow: 0 0 0 6px var(--night-2), 0 10px 24px rgba(0, 0, 0, 0.35); position: relative;
+}
+.stop svg { width: 62px; height: 62px; }
+.stop .n {
+  position: absolute; top: -6px; right: -6px; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--amber); color: var(--ink); font-family: var(--f-display); font-weight: 700; display: grid; place-items: center; font-size: 0.95rem;
+}
+.trail h3 { font-size: var(--step-1); margin-top: 6px; }
+.trail p { color: var(--cream-dim); font-size: var(--step--1); }
+.loop .aside { margin-top: 44px; max-width: 44ch; font-family: var(--f-hand); font-size: 1.5rem; line-height: 1.25; color: var(--turf); }
+
+/* ───────────── Critters ───────────── */
+.critters { background: radial-gradient(70% 50% at 0% 0%, rgba(185, 163, 240, 0.18), transparent 70%), linear-gradient(var(--night-2), #1f3a3a 85%, #234540); }
+.crit-intro { width: min(76vw, 440px); }
+.crit-intro h2 { font-size: var(--step-4); line-height: 0.95; margin-top: 10px; }
+.crit-intro p { margin-top: 16px; color: var(--cream-dim); font-size: var(--step-1); font-weight: 700; }
+.critter { width: clamp(230px, 62vw, 290px); display: grid; gap: 6px; justify-items: start; }
+.critter .pic { position: relative; width: 100%; aspect-ratio: 1; display: grid; place-items: end center; }
+.critter .pic::after {
+  content: ""; position: absolute; left: 10%; right: 10%; bottom: 4%; height: 18%; border-radius: 50%;
+  background: radial-gradient(closest-side, var(--turf) 0 70%, var(--turf-deep) 100%); box-shadow: 0 0 22px rgba(127, 216, 191, 0.35);
+}
+.critter svg { position: relative; z-index: 1; width: 82%; height: 82%; overflow: visible; transform: translateY(calc(var(--p, 0) * var(--p, 0) * 40px)); }
+.critter.on svg { animation: hop 0.6s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes hop { 40% { transform: translateY(-16px) scale(0.96, 1.05); } }
+.critter h3 { font-size: var(--step-2); }
+.critter h3 small { font-family: var(--f-hand); font-size: 1.2rem; color: var(--moss); font-weight: 700; margin-left: 4px; }
+.critter .job { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); }
+.critter p { font-size: var(--step--1); color: var(--cream-dim); }
+.say {
+  position: absolute; top: 0; left: 50%; z-index: 4; min-width: 150px; max-width: 220px;
+  background: rgba(255, 255, 255, 0.94); color: var(--ink);
+  font-family: var(--f-hand); font-weight: 700; font-size: 1.15rem; line-height: 1.15;
+  padding: 8px 12px; border-radius: 16px; transform: translate(-30%, -4px);
+}
+.say::after { content: ""; position: absolute; left: 26%; bottom: -8px; border: 8px solid transparent; border-top-color: rgba(255, 255, 255, 0.94); border-bottom: 0; }
+.motion .critter .say { opacity: 0; transform: translate(-30%, 8px); transition: opacity 0.25s, transform 0.3s; }
+.motion .critter.on .say { opacity: 1; transform: translate(-30%, -4px); transition-delay: 0.2s; }
+.crit-outro { width: min(76vw, 360px); display: grid; gap: 18px; font-size: var(--step--1); color: var(--cream-dim); }
+.crit-outro p { display: flex; gap: 12px; align-items: baseline; }
+.crit-outro i { font-style: normal; color: var(--star); font-size: 1.4rem; }
+
+/* ───────────── Rivet's comm panel ───────────── */
+.rivet-band { background: #234540; padding-block: clamp(48px, 7vw, 90px); }
+.comm { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(18px, 3vw, 40px); align-items: center; }
+.comm > svg { width: clamp(90px, 12vw, 150px); height: auto; }
+.comm h2 { font-size: var(--step-2); margin: 6px 0 14px; }
+.comm-panel {
+  background: var(--charter); border: 1px solid var(--teal); border-top-width: 3px; border-radius: 4px;
+  padding: 16px 20px; font-family: var(--f-mono); color: #d9fbf6; font-size: 0.92rem; line-height: 1.7;
+  box-shadow: 0 0 30px rgba(115, 242, 230, 0.12);
+}
+.comm-panel .who { color: var(--teal); letter-spacing: 0.14em; font-size: 0.72rem; text-transform: uppercase; display: flex; justify-content: space-between; gap: 12px; }
+.comm-panel .line { margin-top: 8px; min-height: 3.4em; }
+.cursor { display: inline-block; width: 0.6em; height: 1em; background: var(--teal); vertical-align: -2px; animation: cur 1s steps(1) infinite; }
+@keyframes cur { 50% { opacity: 0; } }
+.comm-panel button {
+  font: inherit; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+  background: transparent; color: var(--teal); border: 1px solid rgba(115, 242, 230, 0.5); border-radius: 3px; padding: 3px 10px; cursor: pointer;
+}
+.comm-panel button:hover { background: rgba(115, 242, 230, 0.12); }
+
+/* ───────────── The day, scrubbed by scroll ───────────── */
+.day { position: relative; }
+.motion .day { height: 420vh; }
+.day-pin { position: relative; height: 100vh; height: 100svh; overflow: hidden; background: linear-gradient(#1d1840, #3a2a6e); }
+.motion .day-pin { position: sticky; top: 0; }
+.day-stars {
+  position: absolute; inset: 0; opacity: var(--n, 0);
+  background:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 28% 32%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 44% 12%, #ffe2b8 50%, transparent 51%), radial-gradient(1px 1px at 61% 26%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 74% 9%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 86% 34%, #bdeee0 50%, transparent 51%),
+    radial-gradient(1px 1px at 92% 16%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 5% 40%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 52% 40%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 36% 6%, #fff 50%, transparent 51%);
+}
+.orb { position: absolute; width: clamp(56px, 8vw, 96px); aspect-ratio: 1; border-radius: 50%; translate: -50% -50%; left: var(--x); top: var(--y); opacity: var(--o); }
+.sun { background: radial-gradient(circle, #fff6d8 0 45%, #ffd27a 60%, rgba(255, 194, 107, 0) 72%); }
+.moon { background: radial-gradient(circle at 40% 40%, #fff8ec 0 40%, #e6dcff 52%, rgba(185, 163, 240, 0) 70%); }
+.day-land { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 42%; }
+.day-ui { position: relative; z-index: 2; padding-top: clamp(80px, 14vh, 140px); }
+.clock-card {
+  display: inline-grid; gap: 4px; background: rgba(42, 29, 35, 0.92); border: 1px solid var(--amber); border-top-width: 3px;
+  border-radius: 14px; padding: 18px 24px 20px; min-width: min(100%, 340px); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+.clock-card .eyebrow { font-size: 1.15rem; }
+.clock { font-family: var(--f-mono); font-weight: 700; font-size: clamp(2.6rem, 2rem + 3vw, 4.4rem); line-height: 1; color: var(--amber); font-variant-numeric: tabular-nums; margin-top: 6px; }
+.clock-card h3 { font-size: var(--step-2); margin-top: 8px; }
+.clock-card p { color: var(--cream-dim); max-width: 26ch; }
+.day-hint { margin-top: 14px; font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 241, 220, 0.7); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); }
+.day.doom .clock { color: var(--heart); animation: shake 0.3s infinite; }
+@keyframes shake { 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+
+/* ───────────── The wilds ───────────── */
+.wilds { background: var(--night); overflow: hidden; }
+.wilds h2 { font-size: var(--step-3); margin-top: 8px; }
+.wilds .lede { margin-top: 14px; }
+.zones { margin-top: 44px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.zone { position: relative; padding: 118px 16px 20px; min-width: 0; background: var(--z); color: var(--zt, var(--ink)); border-radius: 18px; overflow: hidden; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35); }
+.zone svg { position: absolute; left: 0; top: 0; width: 100%; height: 108px; }
+.zone .k { font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.75; }
+.zone h3 { font-size: 1.25rem; margin: 4px 0 6px; }
+.zone p { font-size: 0.88rem; line-height: 1.4; font-weight: 700; }
+.patience {
+  margin-top: 28px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center;
+  background: var(--cocoa); border: 1px solid var(--amber); border-top-width: 3px; border-radius: 14px; padding: 16px 22px; max-width: 560px;
+}
+.patience .meter { width: 72px; height: 72px; }
+.patience b { font-family: var(--f-display); font-weight: 600; font-size: 1.15rem; color: var(--amber); display: block; }
+.patience p { font-size: var(--step--1); color: var(--cream-dim); }
+
+/* ───────────── Scrapbook ───────────── */
+.scrap { background: linear-gradient(var(--night), #2a1d30); }
+.scrap h2 { font-size: var(--step-3); margin-top: 8px; }
+.notes { margin-top: 44px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; align-items: start; }
+.notes article {
+  background: var(--cocoa); border: 1px solid rgba(255, 194, 107, 0.55); border-top: 3px solid var(--amber);
+  border-radius: 14px; padding: 20px 20px 18px; rotate: var(--r, 0deg); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3); position: relative;
+}
+.notes article::before {
+  content: ""; position: absolute; top: -9px; left: 50%; width: 16px; height: 16px; margin-left: -8px;
+  border-radius: 50%; background: var(--pin, var(--heart)); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.notes h3 { font-size: 1.2rem; }
+.notes p { font-size: var(--step--1); color: var(--cream-dim); margin-top: 6px; line-height: 1.5; }
+.notes .hand { font-size: 1.2rem; color: var(--turf); margin-top: 8px; line-height: 1.2; }
+.notes article.paper { background: var(--cream); color: var(--ink); border-color: transparent; border-top-color: var(--moss); }
+.notes article.paper p { color: #4b3a48; }
+.notes article.paper .hand { color: #7b55c9; }
+
+/* ───────────── Beta CTA ───────────── */
+.beta { background: radial-gradient(70% 70% at 70% 50%, rgba(255, 194, 107, 0.16), transparent 70%), #2a1d30; }
+.beta-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
+.beta h2 { font-size: var(--step-4); line-height: 0.95; margin-top: 10px; }
+.beta h2 em { font-style: normal; color: var(--turf); }
+.beta .lede { margin-top: 18px; font-size: var(--step-1); font-weight: 700; }
+.beta .btn { margin-top: 22px; font-size: 1.25rem; padding: 16px 30px; border: 0; cursor: pointer; }
+.beta .btn[disabled] { opacity: 0.6; cursor: wait; transform: none; }
+.signup { margin-top: 26px; max-width: 560px; }
+.signup .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 14px; margin-bottom: 12px; }
+.signup label span { display: block; font-family: var(--f-hand); font-weight: 700; font-size: 1.2rem; color: var(--moss); margin-bottom: 2px; }
+.signup label span i { font-style: normal; opacity: 0.7; font-size: 1rem; }
+.signup input, .signup select {
+  width: 100%; min-height: 48px; padding: 0 14px; border-radius: 14px;
+  border: 2px solid rgba(185, 163, 240, 0.35); background: rgba(26, 20, 48, 0.6);
+  color: var(--cream); font: 700 1rem var(--f-body);
+}
+.signup select option { color: var(--ink); }
+.signup input::placeholder { color: rgba(233, 214, 194, 0.45); }
+.signup input:focus, .signup select:focus { outline: none; border-color: var(--turf); box-shadow: 0 0 0 4px rgba(127, 216, 191, 0.2); }
+.signup input[aria-invalid="true"] { border-color: #ff8f8f; }
+.signup .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.form-msg { min-height: 1.4em; margin-top: 12px; font-weight: 700; color: #ffb3a8; }
+.signed { margin-top: 26px; padding: 18px 22px; border-radius: 18px; background: rgba(127, 216, 191, 0.12); border: 2px dashed var(--turf); animation: pop-in 0.5s cubic-bezier(.3, 1.6, .5, 1); }
+.signed .big { font-family: var(--f-display); font-size: var(--step-2); color: var(--turf); }
+.signed .lede { margin-top: 6px; }
+@keyframes pop-in { from { transform: scale(0.85); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 560px) { .signup .row { grid-template-columns: minmax(0, 1fr); } }
+.beta .small { margin-top: 14px; font-family: var(--f-hand); font-size: 1.25rem; color: var(--moss); }
+.ticket {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 92px;
+  background: var(--charter); border: 1px solid var(--teal); border-top-width: 3px; border-radius: 6px;
+  font-family: var(--f-mono); color: #cfeeea; rotate: 3deg;
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.45), 0 0 0 6px rgba(115, 242, 230, 0.05);
+}
+.ticket .main { padding: 18px 20px; display: grid; gap: 12px; }
+.ticket .t-head { font-size: 0.68rem; letter-spacing: 0.16em; color: var(--teal); display: flex; justify-content: space-between; gap: 10px; }
+.ticket dl { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+.ticket dt { font-size: 0.62rem; letter-spacing: 0.14em; color: var(--teal); text-transform: uppercase; }
+.ticket dd { margin: 2px 0 0; color: #fff; font-weight: 700; font-size: 0.95rem; }
+.ticket .stub {
+  border-left: 2px dashed rgba(115, 242, 230, 0.45); padding: 16px 12px; display: grid; place-items: center; gap: 10px;
+  writing-mode: vertical-rl; font-size: 0.7rem; letter-spacing: 0.2em; color: var(--amber);
+}
+.ticket .bars { width: 34px; height: 120px; background: repeating-linear-gradient(0deg, #cfeeea 0 2px, transparent 2px 4px, #cfeeea 4px 5px, transparent 5px 8px, #cfeeea 8px 11px, transparent 11px 13px); opacity: 0.8; }
+.ticket .stamp { bottom: auto; top: 46%; right: 104px; font-size: 0.95rem; }
+
+/* ───────────── Beacon / footer ───────────── */
+.beacon { position: relative; overflow: hidden; background: radial-gradient(60% 80% at 50% 100%, rgba(255, 194, 107, 0.25), transparent 70%), #160f22; padding-block: clamp(80px, 10vw, 130px) 40px; }
+.beacon .beam {
+  position: absolute; left: 50%; bottom: 0; width: 140px; height: 100%; margin-left: -70px;
+  background: linear-gradient(to top, rgba(255, 210, 140, 0.35), rgba(255, 210, 140, 0) 85%);
+  clip-path: polygon(40% 100%, 60% 100%, 100% 0, 0 0); pointer-events: none;
+}
+.beacon .inner { position: relative; display: grid; gap: 16px; justify-items: center; text-align: center; }
+.beacon h2 { font-size: var(--step-3); max-width: 16ch; }
+.beacon p { color: var(--cream-dim); max-width: 40ch; }
+.beacon .sig { font-family: var(--f-hand); font-size: 1.4rem; color: var(--amber); }
+.foot {
+  position: relative; margin-top: 64px; padding-top: 22px; border-top: 1px dashed rgba(255, 241, 220, 0.2);
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px;
+  font-family: var(--f-mono); font-size: 0.75rem; color: rgba(255, 241, 220, 0.55);
+}
+
+/* ───────────── Responsive ───────────── */
+@media (max-width: 900px) {
+  .trail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .trail::before { display: none; }
+  .zones { grid-template-columns: minmax(0, 1fr); }
+  .zone { padding: 20px 18px 20px 128px; min-height: 112px; }
+  .zone svg { width: 116px; height: 100%; }
+  .notes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .beta-grid { grid-template-columns: minmax(0, 1fr); }
+  .ticket { max-width: 460px; }
+}
+@media (max-width: 720px) {
+  .chap { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .chap .vis { order: -1; min-height: 0; }
+  .chap .vis > * { max-height: 40vh; }
+  .chap h3 { font-size: clamp(1.9rem, 8vw, 2.6rem); }
+  .chap .punch { font-size: 1.1rem; }
+  .meter-card, .receipt { font-size: 0.76rem; padding: 12px 14px; }
+  .mrow { padding: 4px 0; }
+  .receipt li { padding: 2px 0; }
+  .pages { height: 210px; }
+  .pg { width: 96px; height: 124px; margin: -62px 0 0 -48px; }
+  .pg.read { width: 210px; margin: 0; font-size: 0.72rem; padding: 10px 12px; }
+  .listings li { padding: 7px 12px; }
+  .rivet-card svg { width: 130px; }
+  .bush { width: min(100%, 300px); }
+}
+@media (max-width: 520px) {
+  .trail { grid-template-columns: minmax(0, 1fr); }
+  .notes { grid-template-columns: minmax(0, 1fr); }
+  .comm { grid-template-columns: minmax(0, 1fr); }
+  .comm > svg { display: none; }
+  .zone { padding-left: 104px; }
+  .zone svg { width: 94px; }
+  .planet { width: 84px; top: 3%; }
+  .glimmer { font-size: 0.68rem; bottom: 8px; padding: 4px 10px; }
+  .ticket { grid-template-columns: minmax(0, 1fr) 64px; rotate: 1.5deg; }
+  .ticket .bars { width: 24px; }
+  .ticket .stamp { right: 76px; }
+  .say { min-width: 120px; font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═════════ HERO ═════════ -->
+<header class="hero" id="top">
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <svg class="planet" viewBox="0 0 200 200" aria-hidden="true">
+    <defs><radialGradient id="pl" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#ffe0b8"/><stop offset="0.55" stop-color="#ff9fb3"/><stop offset="1" stop-color="#7a4f9c"/></radialGradient></defs>
+    <circle cx="100" cy="100" r="62" fill="#ffd8a8" opacity="0.12"/>
+    <ellipse cx="100" cy="104" rx="96" ry="20" fill="none" stroke="#b9a3f0" stroke-width="5" opacity="0.5" transform="rotate(-14 100 100)"/>
+    <circle cx="100" cy="100" r="50" fill="url(#pl)"/>
+    <circle cx="82" cy="88" r="8" fill="#fff" opacity="0.18"/><circle cx="118" cy="118" r="5" fill="#7a4f9c" opacity="0.35"/>
+    <path d="M6 112 Q100 140 194 96" fill="none" stroke="#b9a3f0" stroke-width="5" opacity="0.85" transform="rotate(-14 100 100)"/>
+    <circle cx="168" cy="44" r="9" fill="#bdeee0"/>
+  </svg>
+
+  <div class="wrap hero-copy">
+    <span class="eyebrow">a cozy game about a little homestead</span>
+    <h1>Frontiers<span class="c">Celestia<span class="dot">.</span></span></h1>
+    <p class="tag">You bought the cheapest planet on the list. The critters think you're wonderful.</p>
+    <span class="note">(mostly they think your moonbeans are wonderful)</span>
+    <div class="cta-row">
+      <a class="btn" href="#beta">Be a beta tester
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <span class="hand">or scroll down and have a look ↓</span>
+    </div>
+  </div>
+
+  <div class="land" aria-hidden="true">
+    <svg viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="hillA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fae9c"/><stop offset="1" stop-color="#2d5f5a"/></linearGradient>
+        <linearGradient id="hillB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd8bf"/><stop offset="1" stop-color="#3f9c8a"/></linearGradient>
+        <radialGradient id="glow" r="0.5"><stop offset="0" stop-color="#ffe2a0" stop-opacity="0.9"/><stop offset="1" stop-color="#ffc26b" stop-opacity="0"/></radialGradient>
+        <radialGradient id="tglow" r="0.5"><stop offset="0" stop-color="#9ffff0" stop-opacity="0.8"/><stop offset="1" stop-color="#73f2e6" stop-opacity="0"/></radialGradient>
+      </defs>
+      <path d="M0 150 Q120 96 260 132 T560 118 T860 130 T1200 104 V320 H0Z" fill="#3a3463"/>
+      <path d="M0 196 Q170 140 360 176 T740 168 T1200 160 V320 H0Z" fill="url(#hillA)"/>
+      <path d="M0 238 Q260 196 520 226 T1000 214 T1200 222 V320 H0Z" fill="url(#hillB)"/>
+      <g fill="#b9a3f0" opacity="0.8"><ellipse cx="120" cy="262" rx="40" ry="8"/><ellipse cx="610" cy="250" rx="54" ry="9"/><ellipse cx="1050" cy="256" rx="44" ry="8"/></g>
+      <g transform="translate(700 236)">
+        <rect x="0" y="0" width="120" height="34" rx="6" fill="#6b4a3e"/><rect x="132" y="6" width="96" height="30" rx="6" fill="#6b4a3e"/>
+        <g fill="#9be86a"><path d="M20 14 q-8 -12 0 -18 q8 6 0 18z"/><path d="M50 14 q-8 -12 0 -18 q8 6 0 18z"/><path d="M80 14 q-8 -12 0 -18 q8 6 0 18z"/><path d="M156 20 q-8 -12 0 -18 q8 6 0 18z"/><path d="M190 20 q-8 -12 0 -18 q8 6 0 18z"/></g>
+        <g fill="#c9a6ff"><circle cx="20" cy="-6" r="4"/><circle cx="80" cy="-6" r="4"/></g>
+      </g>
+      <g>
+        <path d="M290 250 q-6 -30 4 -52" stroke="#3f9c8a" stroke-width="3" fill="none"/>
+        <circle cx="294" cy="196" r="22" fill="url(#tglow)" class="lamp-glow"/><circle cx="294" cy="196" r="7" fill="#9ffff0"/>
+        <path d="M1110 238 q8 -26 -2 -46" stroke="#3f9c8a" stroke-width="3" fill="none"/>
+        <circle cx="1108" cy="190" r="20" fill="url(#tglow)" class="lamp-glow"/><circle cx="1108" cy="190" r="6" fill="#ffb3e6"/>
+        <path d="M60 254 q4 -18 -4 -30" stroke="#3f9c8a" stroke-width="3" fill="none"/><circle cx="56" cy="222" r="5" fill="#ffd94d"/>
+      </g>
+      <path d="M520 238 q0 -30 14 -36 q12 -4 10 8 q-2 8 -10 4" stroke="#2d6b5e" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <g transform="translate(860 150)">
+        <path d="M-40 -40 Q10 -78 60 -40" fill="#ff9fb3" opacity="0.85"/>
+        <path d="M-40 -40 L0 40 M60 -40 L20 40 M10 -58 L10 38" stroke="#fff1dc" stroke-width="1.5" opacity="0.6"/>
+        <rect x="-8" y="24" width="56" height="68" rx="26" fill="#e9d6c2" transform="rotate(14 20 58)"/>
+        <circle cx="22" cy="52" r="11" fill="#2a2148" stroke="#ffc26b" stroke-width="3"/><circle cx="19" cy="49" r="3" fill="#fff" opacity="0.6"/>
+      </g>
+      <g transform="translate(380 162)">
+        <ellipse cx="60" cy="80" rx="80" ry="10" fill="#2d5f5a" opacity="0.6"/>
+        <path d="M0 78 L60 0 L120 78Z" fill="#ffc26b"/><path d="M60 0 L120 78 H80Z" fill="#e8a454"/><path d="M44 78 L60 34 L76 78Z" fill="#2a1d23"/>
+        <path d="M60 0 L60 -10" stroke="#2a1d23" stroke-width="3"/><path d="M60 -10 l16 5 l-16 5z" fill="#73f2e6"/>
+        <circle cx="140" cy="58" r="30" fill="url(#glow)" class="lamp-glow"/>
+        <path d="M140 80 V48" stroke="#2a1d23" stroke-width="3"/><rect x="133" y="44" width="14" height="16" rx="4" fill="#ffe2a0"/>
+        <rect x="-52" y="56" width="32" height="24" rx="3" fill="#a07258"/><path d="M-52 68 h32" stroke="#6b4a3e" stroke-width="2"/>
+        <rect x="-40" y="38" width="22" height="18" rx="3" fill="#b8866a"/>
+      </g>
+      <g transform="translate(600 150)">
+        <ellipse cx="0" cy="92" rx="22" ry="5" fill="#000" opacity="0.2"/>
+        <g class="rivet-bob">
+          <path d="M-6 44 l6 18 l6 -18z" fill="#73f2e6" opacity="0.7"/>
+          <rect x="-28" y="-6" width="56" height="50" rx="20" fill="#d7dce8"/><rect x="-20" y="2" width="40" height="28" rx="10" fill="#0a1820"/>
+          <g fill="#73f2e6"><rect class="blink" x="-11" y="10" width="6" height="9" rx="3"/><rect class="blink" x="5" y="10" width="6" height="9" rx="3"/></g>
+          <path d="M-5 24 q5 4 10 0" stroke="#73f2e6" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M0 -6 V-18" stroke="#9aa3b8" stroke-width="3"/><circle cx="0" cy="-21" r="5" fill="#ff6b8c"/>
+          <rect x="-36" y="12" width="9" height="16" rx="4" fill="#b9c0d2"/><rect x="27" y="12" width="9" height="16" rx="4" fill="#b9c0d2"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <div class="puffs" id="puffs"></div>
+  <div class="glimmer" aria-live="polite"><b id="glim">0</b> glimmer · pop the puffballs</div>
+</header>
+
+<!-- ═════════ STORY: six slides, sideways ═════════ -->
+<section class="hs story" id="story" data-hs aria-label="How you got here">
+  <div class="hs-pin">
+    <div class="hs-track">
+      <div class="panel chap-intro">
+        <span class="eyebrow">how you got here</span>
+        <h2>A bad deal, <em>a good planet.</em></h2>
+        <span class="hand">six slides. keep scrolling →</span>
+      </div>
+
+      <article class="panel chap">
+        <div class="copy">
+          <span class="num">01 / 06</span>
+          <h3>Orbital Block 9.</h3>
+          <p class="punch">Rent due daily. Even the air had a meter.</p>
+        </div>
+        <div class="vis">
+          <div class="meter-card" aria-label="Your bill on Orbital Block 9">
+            <div class="mrow"><span>BLOCK 9 · UNIT 4471</span><span>●</span></div>
+            <div class="mrow"><span>Rent</span><b>due today</b></div>
+            <div class="mrow"><span>Air</span><b>₵0.04 / breath</b></div>
+            <div class="mrow"><span>Window view</span><b>₵2 / glance</b></div>
+            <div class="mrow big"><span>Balance</span><b class="neg" id="bal">-₵1,204.88</b></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel chap">
+        <div class="copy">
+          <span class="num">02 / 06</span>
+          <h3>So you borrowed. <em>A lot.</em></h3>
+          <p class="punch">The Frontier Charter was very happy to help.</p>
+        </div>
+        <div class="vis">
+          <div class="receipt" aria-label="Your Charter loan">
+            <div class="r-head">FRONTIER CHARTER · LOAN NO. 7</div>
+            <ul>
+              <li><span>Homestead deed</span><b>₵9,999</b></li>
+              <li><span>Sproutwand</span><b>₵120</b></li>
+              <li><span>Tin of moonbean seeds</span><b>₵40</b></li>
+              <li><span>Scouting report (bargain)</span><b>₵3</b></li>
+              <li><span>Interest</span><b>yes</b></li>
+            </ul>
+            <div class="r-total"><span>Repay in</span><span>10 shipments</span></div>
+            <span class="stamp">APPROVED</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel chap">
+        <div class="copy">
+          <span class="num">03 / 06</span>
+          <h3>Then bought the <em>cheapest</em> planet on the list.</h3>
+          <p class="punch">Lot 7, Celestia. Bargain tier.</p>
+        </div>
+        <div class="vis">
+          <ul class="listings" aria-label="Homestead listings">
+            <li class="gone" style="--i:0"><i style="--c:#7fb3ff"></i><span>Verdance Prime</span><b>SOLD</b></li>
+            <li class="gone" style="--i:1"><i style="--c:#ffd27a"></i><span>Aurelia Gardens</span><b>₵2.4M</b></li>
+            <li class="gone" style="--i:2"><i style="--c:#9be86a"></i><span>New Tuscany IV</span><b>WAITLIST</b></li>
+            <li class="pick" style="--i:3"><i></i><span>Lot 7, Celestia <em>bargain tier</em></span><b>₵9,999</b><span class="hand">this one!</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="panel chap">
+        <div class="copy">
+          <span class="num">04 / 06</span>
+          <h3>The scouting report came apart <em>on re-entry.</em></h3>
+          <p class="punch">Its pages are somewhere in the wilds now.</p>
+        </div>
+        <div class="vis">
+          <div class="pages" aria-hidden="true">
+            <span class="pg" style="--x:-150px; --y:-90px; --r:-18deg"></span>
+            <span class="pg" style="--x:150px; --y:-84px; --r:14deg"></span>
+            <span class="pg" style="--x:-140px; --y:96px; --r:10deg"></span>
+            <span class="pg" style="--x:160px; --y:88px; --r:-12deg"></span>
+          </div>
+          <p class="pg read" style="--x:0px; --y:0px; --r:-3deg"><span class="h">CS-01 · NATIVE FAUNA</span><s>Unbearably cute.</s> <span class="rw">A promising low-cost labor pool.</span></p>
+        </div>
+      </article>
+
+      <article class="panel chap">
+        <div class="copy">
+          <span class="num">05 / 06</span>
+          <h3>Rivet came with the deed.</h3>
+          <p class="punch">Refurbished. Mostly.</p>
+        </div>
+        <div class="vis">
+          <div class="rivet-card">
+            <svg viewBox="0 0 120 130" aria-hidden="true">
+              <g class="rivet-bob">
+                <path d="M52 108 l8 20 l8 -20z" fill="#73f2e6" opacity="0.6"/>
+                <rect x="18" y="30" width="84" height="76" rx="30" fill="#d7dce8"/><rect x="30" y="42" width="60" height="42" rx="14" fill="#0a1820"/>
+                <g fill="#73f2e6"><rect class="blink" x="44" y="54" width="9" height="13" rx="4.5"/><rect class="blink" x="67" y="54" width="9" height="13" rx="4.5"/></g>
+                <path d="M53 74 q7 6 14 0" stroke="#73f2e6" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <path d="M60 30 V12" stroke="#9aa3b8" stroke-width="4"/><circle cx="60" cy="9" r="7" fill="#ff6b8c"/>
+                <rect x="6" y="56" width="13" height="24" rx="6" fill="#b9c0d2"/><rect x="101" y="56" width="13" height="24" rx="6" fill="#b9c0d2"/>
+              </g>
+            </svg>
+            <span class="bubble">hello, new owner! i am mostly operational.</span>
+            <span class="tagline-tag">1× RIVET · REFURB</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel chap">
+        <div class="copy">
+          <span class="num">06 / 06</span>
+          <h3>Pay it back in moonbeans. <em>You can't do it alone.</em></h3>
+          <p class="punch">Luckily, the locals love moonbeans.</p>
+        </div>
+        <div class="vis">
+          <svg class="bush" viewBox="0 0 400 260" aria-hidden="true">
+            <defs><radialGradient id="bean" r="0.5"><stop offset="0" stop-color="#e6dcff"/><stop offset="1" stop-color="#e6dcff" stop-opacity="0"/></radialGradient></defs>
+            <g fill="#2d5f5a"><circle cx="70" cy="170" r="70"/><circle cx="160" cy="140" r="78"/><circle cx="260" cy="150" r="76"/><circle cx="340" cy="180" r="62"/></g>
+            <g fill="#3f9c8a"><circle cx="110" cy="200" r="60"/><circle cx="220" cy="200" r="66"/><circle cx="320" cy="214" r="50"/></g>
+            <rect x="0" y="230" width="400" height="30" fill="#7fd8bf"/>
+            <g fill="#fff1dc">
+              <g class="eyes" style="--i:0"><ellipse class="blink" cx="96" cy="150" rx="6" ry="8"/><ellipse class="blink" cx="118" cy="150" rx="6" ry="8"/></g>
+              <g class="eyes" style="--i:1"><ellipse class="blink" cx="196" cy="108" rx="5" ry="7"/><ellipse class="blink" cx="214" cy="108" rx="5" ry="7"/></g>
+              <g class="eyes" style="--i:2"><ellipse class="blink" cx="282" cy="140" rx="7" ry="9"/><ellipse class="blink" cx="306" cy="140" rx="7" ry="9"/></g>
+              <g class="eyes" style="--i:3"><ellipse class="blink" cx="168" cy="196" rx="5" ry="6"/><ellipse class="blink" cx="184" cy="196" rx="5" ry="6"/></g>
+              <g class="eyes" style="--i:4"><ellipse class="blink" cx="344" cy="190" rx="5" ry="7"/><ellipse class="blink" cx="362" cy="190" rx="5" ry="7"/></g>
+            </g>
+            <circle cx="210" cy="238" r="34" fill="url(#bean)"/>
+            <ellipse cx="210" cy="238" rx="14" ry="10" fill="#c9a6ff" transform="rotate(-20 210 238)"/>
+            <ellipse cx="206" cy="234" rx="4" ry="2.5" fill="#fff" opacity="0.7" transform="rotate(-20 206 234)"/>
+          </svg>
+        </div>
+      </article>
+    </div>
+    <div class="hs-bar" aria-hidden="true"><span>how you got here</span><i><b></b></i></div>
+  </div>
+</section>
+
+<!-- ═════════ THE LOOP ═════════ -->
+<section class="band loop" id="loop">
+  <div class="wrap">
+    <span class="eyebrow">the whole game, in four stops</span>
+    <h2>Do it once by hand. Then never again.</h2>
+    <ol class="trail">
+      <li class="slide" style="--i:0">
+        <div class="stop"><span class="n">1</span>
+          <svg viewBox="0 0 60 60" aria-hidden="true"><rect x="8" y="34" width="44" height="16" rx="5" fill="#6b4a3e"/><path d="M22 36 q-9 -14 0 -22 q9 8 0 22z" fill="#9be86a"/><path d="M38 36 q-9 -14 0 -22 q9 8 0 22z" fill="#7fd8bf"/><g fill="#73f2e6"><circle cx="16" cy="14" r="2.5"/><circle cx="46" cy="10" r="2"/><circle cx="50" cy="20" r="2.5"/></g></svg>
+        </div>
+        <h3>Farm by hand</h3>
+        <p>Plant, water, harvest. A little tedious, on purpose.</p>
+      </li>
+      <li class="slide" style="--i:1">
+        <div class="stop"><span class="n">2</span>
+          <svg viewBox="0 0 60 60" aria-hidden="true"><path d="M14 30 l-8 -6 l2 12z M46 30 l8 -6 l-2 12z" fill="#ff9fb3"/><rect x="14" y="20" width="32" height="22" rx="10" fill="#ffc26b"/><path d="M24 20 l6 22 M34 20 l-4 22" stroke="#fff1dc" stroke-width="3" opacity="0.7"/><path d="M30 12 c-4 -6 -12 0 0 8 c12 -8 4 -14 0 -8z" fill="#ff6b8c"/></svg>
+        </div>
+        <h3>Make a friend</h3>
+        <p>Bring their favorite bait. Win their little game.</p>
+      </li>
+      <li class="slide" style="--i:2">
+        <div class="stop"><span class="n">3</span>
+          <svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="34" r="22" fill="none" stroke="#73f2e6" stroke-width="2" stroke-dasharray="4 4"/><path d="M18 40 V28 L30 18 L42 28 V40Z" fill="#b9a3f0"/><rect x="26" y="31" width="8" height="9" rx="4" fill="#2a1d23"/><path d="M14 28 L30 14 L46 28" stroke="#ffc26b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Hand it off</h3>
+        <p>Place their home. Everything in its circle gets done.</p>
+      </li>
+      <li class="slide" style="--i:3">
+        <div class="stop"><span class="n">4</span>
+          <svg viewBox="0 0 60 60" aria-hidden="true"><path d="M8 48 Q22 30 30 40 T52 30" stroke="#ffc26b" stroke-width="3" fill="none" stroke-dasharray="3 5" stroke-linecap="round"/><path d="M42 12 L50 30 H34Z" fill="#3f9c8a"/><path d="M22 16 L30 34 H14Z" fill="#7fd8bf"/><circle cx="50" cy="44" r="4" fill="#ff6b8c"/></svg>
+        </div>
+        <h3>Head out</h3>
+        <p>Explore the wilds. Get home before the pantry runs dry.</p>
+      </li>
+    </ol>
+    <p class="aside slide" style="--i:4">Best moment: realizing you haven't watered in days. Someone small and blue has.</p>
+  </div>
+</section>
+
+<!-- ═════════ CRITTERS: a parade, sideways ═════════ -->
+<section class="hs critters" id="critters" data-hs aria-label="The critters">
+  <div class="hs-pin">
+    <div class="hs-track">
+      <div class="panel crit-intro">
+        <span class="eyebrow">the neighbors</span>
+        <h2>Eight kinds of critter.</h2>
+        <p>Each one takes a chore off your hands.</p>
+      </div>
+
+      <article class="panel critter">
+        <div class="pic"><span class="say">*splish* da sprouts is firsty, plip!</span>
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <path d="M60 14 C60 14 94 56 94 78 A34 34 0 0 1 26 78 C26 56 60 14 60 14Z" fill="#fac7e6"/>
+            <path d="M52 34 C46 46 40 56 40 66" stroke="#fff5ff" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.8"/>
+            <path d="M60 14 q8 -8 14 -2 q-6 6 -14 2z" fill="#7fd8bf"/>
+            <g fill="#1f1828"><ellipse cx="49" cy="80" rx="4.5" ry="6"/><ellipse cx="71" cy="80" rx="4.5" ry="6"/></g>
+            <g fill="#fff"><circle cx="50.5" cy="77.5" r="1.8"/><circle cx="72.5" cy="77.5" r="1.8"/></g>
+            <g fill="#ff8fb0" opacity="0.6"><ellipse cx="40" cy="90" rx="6" ry="3.5"/><ellipse cx="80" cy="90" rx="6" ry="3.5"/></g>
+            <path d="M56 90 q4 4 8 0" stroke="#1f1828" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M34 100 q26 12 52 0 l-4 8 q-22 8 -44 0z" fill="#6be0d0"/>
+          </svg></div>
+        <span class="job">Waters crops</span>
+        <h3>Drizzlet <small>-plip</small></h3>
+        <p>A little rain cloud with legs.</p>
+      </article>
+
+      <article class="panel critter">
+        <div class="pic"><span class="say">snip snip! yu want beanz? me got beanz.</span>
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <ellipse cx="44" cy="30" rx="10" ry="26" fill="#bdf5db" transform="rotate(-12 44 30)"/><ellipse cx="44" cy="32" rx="5" ry="18" fill="#c2adff" transform="rotate(-12 44 32)"/>
+            <ellipse cx="76" cy="30" rx="10" ry="26" fill="#bdf5db" transform="rotate(14 76 30)"/><ellipse cx="76" cy="32" rx="5" ry="18" fill="#c2adff" transform="rotate(14 76 32)"/>
+            <ellipse cx="60" cy="80" rx="34" ry="30" fill="#bdf5db"/><ellipse cx="60" cy="90" rx="18" ry="14" fill="#e8fff4"/>
+            <g fill="#1f1828"><ellipse cx="48" cy="74" rx="4.5" ry="6"/><ellipse cx="72" cy="74" rx="4.5" ry="6"/></g>
+            <g fill="#fff"><circle cx="49.5" cy="71.5" r="1.8"/><circle cx="73.5" cy="71.5" r="1.8"/></g>
+            <g fill="#ff8fb0" opacity="0.6"><ellipse cx="38" cy="84" rx="6" ry="3.5"/><ellipse cx="82" cy="84" rx="6" ry="3.5"/></g>
+            <path d="M57 83 l3 3 l3 -3" stroke="#1f1828" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M32 98 q28 12 56 0 l-4 8 q-24 8 -48 0z" fill="#6be0d0"/>
+          </svg></div>
+        <span class="job">Harvests and replants</span>
+        <h3>Pipsnip <small>-snip</small></h3>
+        <p>Snip, snip, plant it back.</p>
+      </article>
+
+      <article class="panel critter">
+        <div class="pic"><span class="say">*glows softwy* carry dis to da chest… after nap.</span>
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <ellipse cx="32" cy="58" rx="24" ry="30" fill="#ffbd99" opacity="0.9" transform="rotate(-24 32 58)"/><ellipse cx="88" cy="58" rx="24" ry="30" fill="#ffbd99" opacity="0.9" transform="rotate(24 88 58)"/>
+            <ellipse cx="34" cy="88" rx="14" ry="16" fill="#ff7399" opacity="0.85"/><ellipse cx="86" cy="88" rx="14" ry="16" fill="#ff7399" opacity="0.85"/>
+            <circle cx="30" cy="54" r="7" fill="#fff1dc" opacity="0.7"/><circle cx="90" cy="54" r="7" fill="#fff1dc" opacity="0.7"/>
+            <path d="M52 40 q-6 -16 -16 -20 M68 40 q6 -16 16 -20" stroke="#ffbd99" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <circle cx="36" cy="20" r="5" fill="#ffd94d"/><circle cx="84" cy="20" r="5" fill="#ffd94d"/>
+            <ellipse cx="60" cy="76" rx="22" ry="30" fill="#fff1e6"/>
+            <g fill="#1f1828"><ellipse cx="52" cy="68" rx="4" ry="5.5"/><ellipse cx="68" cy="68" rx="4" ry="5.5"/></g>
+            <g fill="#fff"><circle cx="53.3" cy="66" r="1.6"/><circle cx="69.3" cy="66" r="1.6"/></g>
+            <g fill="#ff8fb0" opacity="0.6"><ellipse cx="45" cy="78" rx="5" ry="3"/><ellipse cx="75" cy="78" rx="5" ry="3"/></g>
+            <path d="M57 78 q3 3 6 0" stroke="#1f1828" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M40 96 q20 10 40 0 l-3 7 q-17 7 -34 0z" fill="#6be0d0"/>
+          </svg></div>
+        <span class="job">Hauls things</span>
+        <h3>Lumoth <small>-glo</small></h3>
+        <p>Weighs less than a sigh. Works the night shift.</p>
+      </article>
+
+      <article class="panel critter">
+        <div class="pic"><span class="say">hoo. me fink… me fink about da stars.</span>
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <path d="M30 46 L34 18 L50 38Z M90 46 L86 18 L70 38Z" fill="#99d9ff"/>
+            <ellipse cx="60" cy="74" rx="36" ry="38" fill="#e6ebff"/>
+            <path d="M34 92 q26 -12 52 0 q-4 18 -26 18 q-22 0 -26 -18z" fill="#c9d9ff"/>
+            <circle cx="46" cy="64" r="13" fill="#fff" stroke="#99d9ff" stroke-width="3"/><circle cx="74" cy="64" r="13" fill="#fff" stroke="#99d9ff" stroke-width="3"/>
+            <g fill="#1f1828"><circle cx="47" cy="65" r="5.5"/><circle cx="73" cy="65" r="5.5"/></g>
+            <g fill="#fff"><circle cx="49" cy="62.5" r="2"/><circle cx="75" cy="62.5" r="2"/></g>
+            <path d="M56 76 L60 83 L64 76Z" fill="#ffc26b"/>
+            <g fill="#ff8fb0" opacity="0.55"><ellipse cx="36" cy="80" rx="5" ry="3"/><ellipse cx="84" cy="80" rx="5" ry="3"/></g>
+            <path d="M34 100 q26 12 52 0 l-4 8 q-22 8 -44 0z" fill="#6be0d0"/>
+          </svg></div>
+        <span class="job">Does research</span>
+        <h3>Hootle <small>-hoo</small></h3>
+        <p>Thinks big thoughts. Unlocks new ones.</p>
+      </article>
+
+      <article class="panel critter">
+        <div class="pic"><span class="say">tink! me make gizmo. gizmo make… more gizmo.</span>
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <path d="M88 96 q26 -6 22 -34 q-2 -10 -10 -8 q6 22 -16 30z" fill="#facc73"/>
+            <path d="M104 62 l8 4 M106 74 l8 1 M100 84 l7 -3" stroke="#3a2830" stroke-width="5" stroke-linecap="round"/>
+            <path d="M34 46 L30 24 L48 36Z M86 46 L90 24 L72 36Z" fill="#facc73"/>
+            <ellipse cx="60" cy="76" rx="34" ry="32" fill="#facc73"/>
+            <path d="M28 66 q32 -14 64 0 q-2 12 -14 12 q-10 0 -18 -6 q-8 6 -18 6 q-12 0 -14 -12z" fill="#3a2830"/>
+            <g fill="#fff"><circle cx="46" cy="68" r="5.5"/><circle cx="74" cy="68" r="5.5"/></g>
+            <g fill="#1f1828"><circle cx="47" cy="69" r="3.2"/><circle cx="73" cy="69" r="3.2"/></g>
+            <ellipse cx="60" cy="90" rx="14" ry="10" fill="#fff1dc"/><circle cx="60" cy="84" r="3" fill="#1f1828"/>
+            <path d="M34 100 q26 12 52 0 l-4 8 q-22 8 -44 0z" fill="#6be0d0"/>
+            <circle cx="88" cy="44" r="5" fill="none" stroke="#66f2d9" stroke-width="2.5"/>
+          </svg></div>
+        <span class="job">Makes things</span>
+        <h3>Tinkit <small>-tink</small></h3>
+        <p>Has thumbs. Uses them.</p>
+      </article>
+
+      <article class="panel critter">
+        <div class="pic"><span class="say">*chomp chomp* twee go timbew, gnaw!</span>
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <ellipse cx="94" cy="96" rx="20" ry="10" fill="#5a55a8" transform="rotate(-20 94 96)"/>
+            <path d="M80 92 l24 -8 M84 100 l22 -8" stroke="#807ad1" stroke-width="2"/>
+            <circle cx="36" cy="44" r="9" fill="#807ad1"/><circle cx="84" cy="44" r="9" fill="#807ad1"/>
+            <circle cx="36" cy="44" r="4.5" fill="#ffd999"/><circle cx="84" cy="44" r="4.5" fill="#ffd999"/>
+            <ellipse cx="60" cy="76" rx="34" ry="32" fill="#807ad1"/><ellipse cx="60" cy="86" rx="18" ry="14" fill="#ffd999"/>
+            <g fill="#1f1828"><ellipse cx="47" cy="68" rx="4.5" ry="6"/><ellipse cx="73" cy="68" rx="4.5" ry="6"/></g>
+            <g fill="#fff"><circle cx="48.5" cy="65.5" r="1.8"/><circle cx="74.5" cy="65.5" r="1.8"/></g>
+            <ellipse cx="60" cy="80" rx="5" ry="3.5" fill="#3a2830"/>
+            <rect x="54" y="86" width="5.5" height="9" rx="1.5" fill="#fffef5"/><rect x="60.5" y="86" width="5.5" height="9" rx="1.5" fill="#fffef5"/>
+            <path d="M34 100 q26 12 52 0 l-4 8 q-22 8 -44 0z" fill="#6be0d0"/>
+          </svg></div>
+        <span class="job">Chops starwood</span>
+        <h3>Gnawbit <small>-gnaw</small></h3>
+        <p>Trees in, tidy wood piles out.</p>
+      </article>
+
+      <article class="panel critter">
+        <div class="pic"><span class="say">bonk. bonk. wock say ow. bonk.</span>
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <ellipse cx="60" cy="76" rx="38" ry="32" fill="#80d6c2"/>
+            <g fill="none" stroke="#4f9e8c" stroke-width="3" stroke-linecap="round">
+              <path d="M30 62 q8 -10 16 0"/><path d="M46 52 q8 -10 16 0"/><path d="M62 52 q8 -10 16 0"/><path d="M76 62 q8 -10 16 0"/>
+              <path d="M38 50 q6 -8 12 0" opacity="0.6"/><path d="M70 50 q6 -8 12 0" opacity="0.6"/>
+            </g>
+            <ellipse cx="60" cy="88" rx="24" ry="18" fill="#e6fff2"/>
+            <g fill="#1f1828"><ellipse cx="50" cy="82" rx="4" ry="5.5"/><ellipse cx="70" cy="82" rx="4" ry="5.5"/></g>
+            <g fill="#fff"><circle cx="51.3" cy="80" r="1.6"/><circle cx="71.3" cy="80" r="1.6"/></g>
+            <g fill="#ff8fb0" opacity="0.6"><ellipse cx="42" cy="92" rx="5" ry="3"/><ellipse cx="78" cy="92" rx="5" ry="3"/></g>
+            <path d="M56 92 q4 3 8 0" stroke="#1f1828" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M34 102 q26 10 52 0 l-4 7 q-22 7 -44 0z" fill="#6be0d0"/>
+          </svg></div>
+        <span class="job">Mines stone</span>
+        <h3>Bonkle <small>-bonk</small></h3>
+        <p>Bonks rocks. It's a whole philosophy.</p>
+      </article>
+
+      <article class="panel critter">
+        <div class="pic"><span class="say">dat murkle wook YUMMY. *nom*</span>
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <ellipse cx="60" cy="72" rx="42" ry="38" fill="#ffa8c2"/>
+            <circle cx="40" cy="44" r="6" fill="#ffe066"/><circle cx="58" cy="38" r="4" fill="#ffe066"/><circle cx="80" cy="46" r="5" fill="#ffe066"/>
+            <g fill="#1f1828"><ellipse cx="44" cy="62" rx="5" ry="6.5"/><ellipse cx="76" cy="62" rx="5" ry="6.5"/></g>
+            <g fill="#fff"><circle cx="45.6" cy="59.5" r="2"/><circle cx="77.6" cy="59.5" r="2"/></g>
+            <path d="M34 76 q26 30 52 0z" fill="#3a2830"/><path d="M48 88 q12 10 24 0 q-12 -6 -24 0z" fill="#ff6b8c"/>
+            <path d="M40 77 l4 6 l4 -6z M72 77 l4 6 l4 -6z" fill="#fffef5"/>
+            <g fill="#ff8fb0" opacity="0.7"><ellipse cx="30" cy="72" rx="6" ry="3.5"/><ellipse cx="90" cy="72" rx="6" ry="3.5"/></g>
+            <path d="M30 100 q30 12 60 0 l-4 8 q-26 8 -52 0z" fill="#6be0d0"/>
+          </svg></div>
+        <span class="job">Eats baddies</span>
+        <h3>Nomble <small>-nom</small></h3>
+        <p>Pat it and it tags along. Spooky things get eaten.</p>
+      </article>
+
+      <div class="panel crit-outro">
+        <p><i>✦</i><span>One in seventy is shiny. Golden halo, rare colors.</span></p>
+        <p><i>♥</i><span>Every friend wears a teal Charter scarf, so you can tell yours from the wild ones.</span></p>
+      </div>
+    </div>
+    <div class="hs-bar" aria-hidden="true"><span>meet the neighbors</span><i><b></b></i></div>
+  </div>
+</section>
+
+<!-- ═════════ RIVET ═════════ -->
+<section class="rivet-band" id="rivet">
+  <div class="wrap comm">
+    <svg viewBox="0 0 120 130" aria-hidden="true">
+      <g class="rivet-bob">
+        <path d="M52 108 l8 20 l8 -20z" fill="#73f2e6" opacity="0.6"/>
+        <rect x="18" y="30" width="84" height="76" rx="30" fill="#d7dce8"/><rect x="30" y="42" width="60" height="42" rx="14" fill="#0a1820"/>
+        <g fill="#73f2e6"><rect class="blink" x="44" y="54" width="9" height="13" rx="4.5"/><rect class="blink" x="67" y="54" width="9" height="13" rx="4.5"/></g>
+        <path d="M53 74 q7 6 14 0" stroke="#73f2e6" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M60 30 V12" stroke="#9aa3b8" stroke-width="4"/><circle cx="60" cy="9" r="7" fill="#ff6b8c"/>
+        <rect x="6" y="56" width="13" height="24" rx="6" fill="#b9c0d2"/><rect x="101" y="56" width="13" height="24" rx="6" fill="#b9c0d2"/>
+      </g>
+    </svg>
+    <div>
+      <span class="eyebrow">Rivet has thoughts</span>
+      <h2>Teacher. Mechanic. Rescue drone. Ex-toaster?</h2>
+      <div class="comm-panel">
+        <div class="who"><span>Comm · Rivet</span><button type="button" id="next-line">Next line</button></div>
+        <p class="line" id="rivet-line" aria-live="polite">Dream log: Rivet was a toaster. Rivet was a GOOD toaster. ...Rivet would like that on the record.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ THE DAY, scrubbed ═════════ -->
+<section class="day" id="day" aria-label="A day on Celestia">
+  <div class="day-pin" id="day-pin">
+    <div class="day-stars"></div>
+    <div class="orb sun" id="sun"></div>
+    <div class="orb moon" id="moon"></div>
+    <svg class="day-land" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <defs><radialGradient id="dglow" r="0.5"><stop offset="0" stop-color="#9ffff0" stop-opacity="0.9"/><stop offset="1" stop-color="#73f2e6" stop-opacity="0"/></radialGradient>
+      <radialGradient id="dlamp" r="0.5"><stop offset="0" stop-color="#ffe2a0" stop-opacity="0.9"/><stop offset="1" stop-color="#ffc26b" stop-opacity="0"/></radialGradient></defs>
+      <path d="M0 130 Q150 80 320 116 T700 100 T1200 92 V300 H0Z" style="fill: var(--far, #3a3463)"/>
+      <path d="M0 190 Q260 140 520 176 T1000 160 T1200 170 V300 H0Z" style="fill: var(--near, #2d5f5a)"/>
+      <g style="opacity: var(--n, 0)">
+        <circle cx="180" cy="160" r="40" fill="url(#dglow)"/><circle cx="180" cy="160" r="7" fill="#9ffff0"/>
+        <circle cx="880" cy="150" r="36" fill="url(#dglow)"/><circle cx="880" cy="150" r="6" fill="#ffb3e6"/>
+        <circle cx="560" cy="150" r="60" fill="url(#dlamp)"/>
+      </g>
+      <path d="M180 196 v-34 M880 186 v-34" stroke="#2d5f5a" stroke-width="3"/>
+      <g transform="translate(470 98)"><path d="M0 78 L60 0 L120 78Z" fill="#ffc26b"/><path d="M60 0 L120 78 H80Z" fill="#e8a454"/><path d="M44 78 L60 34 L76 78Z" fill="#2a1d23"/>
+        <rect x="86" y="44" width="10" height="12" rx="3" fill="#ffe2a0" style="opacity: var(--n, 0)"/></g>
+      <g style="opacity: var(--doom, 0); transform: translateY(calc((1 - var(--doom, 0)) * 60px))">
+        <g fill="#241433"><ellipse cx="80" cy="250" rx="46" ry="40"/><ellipse cx="300" cy="262" rx="38" ry="34"/><ellipse cx="760" cy="256" rx="44" ry="38"/><ellipse cx="1000" cy="248" rx="50" ry="42"/><ellipse cx="1150" cy="266" rx="34" ry="30"/></g>
+        <g fill="#ffd94d"><circle cx="66" cy="240" r="5"/><circle cx="92" cy="240" r="5"/><circle cx="290" cy="254" r="4"/><circle cx="310" cy="254" r="4"/><circle cx="748" cy="246" r="5"/><circle cx="772" cy="246" r="5"/><circle cx="986" cy="236" r="5"/><circle cx="1014" cy="236" r="5"/><circle cx="1142" cy="258" r="4"/><circle cx="1160" cy="258" r="4"/></g>
+      </g>
+    </svg>
+    <div class="wrap day-ui">
+      <div class="clock-card">
+        <span class="eyebrow">a day on Celestia</span>
+        <div class="clock" id="clock">6:00 AM</div>
+        <h3 id="phase">Dawn</h3>
+        <p id="phase-line">The wilds rearrange themselves.</p>
+      </div>
+      <p class="day-hint">one day is six real minutes · keep scrolling</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ THE WILDS ═════════ -->
+<section class="band wilds" id="wilds">
+  <div class="wrap">
+    <span class="eyebrow">through the east gate</span>
+    <h2>Five biomes. New every dawn.</h2>
+    <p class="lede">No combat. Just gathering, poking around, and a rude gust that knocks the beans out of your pockets.</p>
+    <div class="zones">
+      <div class="zone slide" style="--z:#cfeec0; --i:0">
+        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#e6f8d6"/><path d="M0 80 Q50 60 100 76 T200 70 V110 H0Z" fill="#a8e08f"/><g fill="#ffd94d"><circle cx="40" cy="64" r="4"/><circle cx="130" cy="58" r="3"/><circle cx="170" cy="66" r="4"/></g><g fill="#fff"><circle cx="80" cy="30" r="2"/><circle cx="150" cy="22" r="2.5"/></g></svg>
+        <span class="k">Zone 1</span><h3>Glimmer Meadow</h3><p>Sunny. Drizzlets and moonbean pods.</p>
+      </div>
+      <div class="zone slide" style="--z:#a7d9b6; --i:1">
+        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#c4ebcf"/><path d="M0 86 Q40 50 80 84 Q120 54 160 82 Q180 66 200 80 V110 H0Z" fill="#6fbf8f"/><g fill="#b9a3f0"><ellipse cx="50" cy="90" rx="22" ry="6"/><ellipse cx="150" cy="92" rx="18" ry="5"/></g><circle cx="110" cy="40" r="6" fill="#ff9fb3"/></svg>
+        <span class="k">Zone 2</span><h3>Mossy Hollows</h3><p>Soft and green. Pipsnips and Hootles.</p>
+      </div>
+      <div class="zone slide" style="--z:#5b4a8c; --zt:#fff1dc; --i:2">
+        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#3d3170"/><g fill="#2a2150"><path d="M20 110 L40 40 L60 110Z"/><path d="M120 110 L144 30 L168 110Z"/></g><g fill="#9ffff0"><circle cx="90" cy="70" r="4"/><circle cx="100" cy="80" r="3"/></g><g fill="#ffb3e6"><circle cx="186" cy="60" r="3"/></g></svg>
+        <span class="k">Zone 3</span><h3>Duskwood</h3><p>Always a bit evening. Glowcaps and brambles.</p>
+      </div>
+      <div class="zone slide" style="--z:#ecd4a4; --i:3">
+        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#f6e3bc"/><path d="M0 70 H70 V82 H140 V64 H200 V110 H0Z" fill="#d9b67a"/><path d="M30 40 q20 -10 40 0 M110 30 q24 -10 48 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+        <span class="k">Zone 4</span><h3>Whistling Steppe</h3><p>Big skies, Bonkles, very rude wind.</p>
+      </div>
+      <div class="zone slide" style="--z:#2a2240; --zt:#fff1dc; --i:4">
+        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#1d1830"/><g fill="#4a3d6e" opacity="0.8"><ellipse cx="60" cy="70" rx="60" ry="22"/><ellipse cx="160" cy="60" rx="50" ry="18"/></g><g fill="#ffd94d"><circle cx="70" cy="60" r="2.5"/><circle cx="78" cy="60" r="2.5"/></g><circle cx="150" cy="30" r="3" fill="#73f2e6"/></svg>
+        <span class="k">Zone 5</span><h3>The Gloaming</h3><p>Bring a headlamp. Nombles love it here.</p>
+      </div>
+    </div>
+    <div class="patience slide" style="--i:5">
+      <svg class="meter" viewBox="0 0 72 72" aria-hidden="true">
+        <circle cx="36" cy="36" r="28" fill="none" stroke="#3a2830" stroke-width="9"/>
+        <circle cx="36" cy="36" r="28" fill="none" stroke="#ffc26b" stroke-width="9" stroke-linecap="round" stroke-dasharray="122 176" transform="rotate(-90 36 36)"/>
+        <text x="36" y="41" text-anchor="middle" font-family="Space Mono, monospace" font-size="13" fill="#fff1dc">1d 4h</text>
+      </svg>
+      <div><b>Patience</b><p>How long the pantry lasts while you're away. One more page, or head home?</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ SCRAPBOOK ═════════ -->
+<section class="band scrap" id="little-things">
+  <div class="wrap">
+    <span class="eyebrow">little things we love</span>
+    <h2>The small stuff.</h2>
+    <div class="notes">
+      <article class="slide" style="--r:-1.2deg; --i:0">
+        <h3>Puffballs look back</h3>
+        <p>Pop them for glimmer. Ignore them and they nibble your crops.</p>
+        <p class="hand">the combo chime climbs a little scale</p>
+      </article>
+      <article class="paper slide" style="--r:1.4deg; --pin:#7fd8bf; --i:1">
+        <h3>Everyone's someone</h3>
+        <p>Traits, pronouns, favorite foods, best friends and frenemies.</p>
+        <p class="hand">two of mine fell out over a sock</p>
+      </article>
+      <article class="slide" style="--r:0.6deg; --pin:#ffc26b; --i:2">
+        <h3>Little languages</h3>
+        <p>Baby talk, until your Hootles crack the translation.</p>
+      </article>
+      <article class="paper slide" style="--r:-1.6deg; --pin:#ff6b8c; --i:0">
+        <h3>Up to four spacers</h3>
+        <p>Share one homestead online. Pat, kiss, even get married.</p>
+        <p class="hand">heaving giant logs takes two!</p>
+      </article>
+      <article class="slide" style="--r:1deg; --pin:#73f2e6; --i:1">
+        <h3>Hats. So many hats.</h3>
+        <p>A whole cart of tiny hats. Some can only be found.</p>
+      </article>
+      <article class="slide" style="--r:-0.4deg; --pin:#ffd94d; --i:2">
+        <h3>Secrets</h3>
+        <p>Moonstones, night lanterns, a mossy old wanderer. Nobody tells you.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ BETA CTA ═════════ -->
+<section class="band beta" id="beta">
+  <div class="wrap beta-grid">
+    <div>
+      <span class="eyebrow">now boarding</span>
+      <h2>Want to play it <em>first?</em></h2>
+      <p class="lede">Frontiers Celestia is in playtesting. Steven's looking for a few more spacers. Bring a friend and an evening, and tell him what you think.</p>
+      <form class="signup" id="beta-form" novalidate>
+        <div class="row">
+          <label><span>Your name</span><input name="name" autocomplete="name" maxlength="80" placeholder="Spacer"></label>
+          <label><span>Email</span><input name="email" type="email" autocomplete="email" maxlength="200" required placeholder="you@somewhere.com"></label>
+        </div>
+        <div class="row">
+          <label><span>You play on</span>
+            <select name="platform">
+              <option>Windows</option><option>Mac</option><option>Linux</option><option>Steam Deck</option>
+            </select></label>
+          <label><span>Anything else? <i>optional</i></span><input name="note" maxlength="500" placeholder="I'll bring a friend"></label>
+        </div>
+        <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off"></label>
+        <button class="btn" type="submit" id="beta-btn">Count me in
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <p class="form-msg" role="status" aria-live="polite"></p>
+      </form>
+      <div class="signed" id="beta-done" hidden>
+        <p class="big">You're on the manifest!</p>
+        <p class="lede">Steven will email you when there's a seat. Keep an eye out for a Charter-teal envelope.</p>
+      </div>
+      <p class="small">Windows, solo or co-op. Moonbeans provided.</p>
+    </div>
+    <div class="ticket slide" aria-label="A beta boarding pass">
+      <div class="main">
+        <div class="t-head"><span>FRONTIER CHARTER · BOARDING PASS</span><span>BETA</span></div>
+        <dl>
+          <div><dt>From</dt><dd>Your couch</dd></div>
+          <div><dt>To</dt><dd>Lot 7, Celestia</dd></div>
+          <div><dt>Seat</dt><dd>Any tent</dd></div>
+          <div><dt>Class</dt><dd>Bargain</dd></div>
+          <div><dt>Crew</dt><dd>1–4 spacers</dd></div>
+          <div><dt>Luggage</dt><dd>1 seed tin</dd></div>
+        </dl>
+      </div>
+      <div class="stub"><span class="bars"></span><span>ADMIT ONE</span></div>
+      <span class="stamp">BETA</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ BEACON ═════════ -->
+<footer class="beacon">
+  <div class="beam" aria-hidden="true"></div>
+  <div class="wrap inner">
+    <span class="eyebrow">the very last order</span>
+    <h2>Light the beacon. Then choose.</h2>
+    <p>Take the corner office, or keep Lot 7 for your friends and a valley of small helpers.</p>
+    <span class="sig">see you on Celestia ✦</span>
+    <div class="foot">
+      <span>Frontiers Celestia · a cozy homestead game in progress</span>
+      <span>Lot 7, Celestia · Rent: none</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const root = document.documentElement;
+  if (!reduce) root.classList.add('motion');
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  /* ── the sky: stars, drifting spores, the odd sky jelly ── */
+  const cv = document.getElementById('sky');
+  const ctx = cv.getContext('2d');
+  let W = 0, H = 0, stars = [], spores = [], jellies = [], skyVisible = true;
+  const SPORE_COLORS = ['#9ffff0', '#ffb3e6', '#ffd94d', '#b9a3f0'];
+  function size() {
+    const r = cv.getBoundingClientRect();
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    stars = Array.from({ length: Math.round(W * H / 3200) }, () => ({
+      x: Math.random() * W, y: Math.random() * H * 0.8,
+      r: Math.random() < 0.08 ? 1.6 : Math.random() * 1 + 0.3,
+      p: Math.random() * Math.PI * 2, s: 0.6 + Math.random() * 1.6,
+      c: Math.random() < 0.15 ? '#ffe2b8' : (Math.random() < 0.1 ? '#bdeee0' : '#ffffff')
+    }));
+    spores = Array.from({ length: Math.round(W / 40) }, () => newSpore(true));
+    jellies = [newJelly(true), newJelly(true)];
+  }
+  function newSpore(anywhere) {
+    return { x: Math.random() * W, y: anywhere ? Math.random() * H : H + 10, r: 1 + Math.random() * 2.2, vy: 6 + Math.random() * 12, ph: Math.random() * 6, c: SPORE_COLORS[Math.floor(Math.random() * SPORE_COLORS.length)] };
+  }
+  function newJelly(anywhere) {
+    return { x: anywhere ? Math.random() * W : -60, y: 60 + Math.random() * H * 0.35, s: 0.6 + Math.random() * 0.6, vx: 6 + Math.random() * 8, ph: Math.random() * 6, c: Math.random() < 0.5 ? '255,179,230' : '159,255,240' };
+  }
+  function drawJelly(j, t) {
+    ctx.save();
+    ctx.translate(j.x, j.y + Math.sin(t * 0.8 + j.ph) * 6);
+    ctx.scale(j.s, j.s);
+    const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 40);
+    g.addColorStop(0, `rgba(${j.c},0.35)`); g.addColorStop(1, `rgba(${j.c},0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `rgba(${j.c},0.55)`;
+    ctx.beginPath(); ctx.arc(0, 0, 16, Math.PI, 0); ctx.quadraticCurveTo(0, 6, -16, 0); ctx.fill();
+    ctx.strokeStyle = `rgba(${j.c},0.45)`; ctx.lineWidth = 1.5;
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath(); ctx.moveTo(i * 5, 2);
+      ctx.quadraticCurveTo(i * 5 + Math.sin(t * 2 + i) * 4, 14, i * 5 + Math.sin(t * 1.6 + i) * 3, 24);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 0.05); last = now;
+    const t = now / 1000;
+    if (skyVisible || reduce) {
+      ctx.clearRect(0, 0, W, H);
+      for (const s of stars) {
+        ctx.globalAlpha = reduce ? 0.8 : 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * s.s + s.p));
+        ctx.fillStyle = s.c; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      for (const j of jellies) {
+        if (!reduce) j.x += j.vx * dt;
+        if (j.x > W + 80) Object.assign(j, newJelly(false));
+        drawJelly(j, reduce ? 0 : t);
+      }
+      for (const p of spores) {
+        if (!reduce) { p.y -= p.vy * dt; p.x += Math.sin(t + p.ph) * 0.25; }
+        if (p.y < -10) Object.assign(p, newSpore(false));
+        ctx.fillStyle = p.c; ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  size();
+  new IntersectionObserver(([e]) => { skyVisible = e.isIntersecting; }).observe(cv);
+  requestAnimationFrame(frame);
+
+  /* ── puffballs: pop for glimmer, chain into combos ── */
+  const host = document.getElementById('puffs');
+  const glimEl = document.getElementById('glim');
+  let glimmer = 0, combo = 0, lastPop = 0;
+  const SPOTS = [[8, 78, 30], [16, 88, 26], [27, 82, 36], [46, 90, 28], [55, 80, 24], [66, 92, 32], [84, 84, 30], [92, 76, 24], [36, 94, 22]];
+  function makePuff(x, y, s, fade) {
+    const b = document.createElement('button');
+    b.className = 'puff'; b.type = 'button';
+    b.setAttribute('aria-label', 'Pop a puffball');
+    b.style.left = x + '%'; b.style.top = y + '%';
+    b.style.setProperty('--s', s + 'px'); b.style.setProperty('--d', (Math.random() * 2) + 's');
+    b.addEventListener('click', () => pop(b));
+    host.appendChild(b);
+    if (fade) { b.style.opacity = 0; b.style.transition = 'opacity 0.8s'; requestAnimationFrame(() => (b.style.opacity = 1)); }
+  }
+  SPOTS.forEach(([x, y, s]) => makePuff(x, y, s));
+  function pop(b) {
+    const now = performance.now();
+    combo = now - lastPop < 1600 ? combo + 1 : 1; lastPop = now;
+    glimmer += 1 + (combo % 5 === 0 ? 1 : 0); glimEl.textContent = glimmer;
+    const r = b.getBoundingClientRect(), hr = host.getBoundingClientRect();
+    const cx = r.left - hr.left + r.width / 2, cy = r.top - hr.top + r.height / 2;
+    if (!reduce) for (let i = 0; i < 12; i++) {
+      const sp = document.createElement('span');
+      sp.className = 'spore';
+      const a = Math.random() * Math.PI * 2, d = 20 + Math.random() * 30;
+      sp.style.left = cx + 'px'; sp.style.top = cy + 'px';
+      sp.style.background = SPORE_COLORS[i % SPORE_COLORS.length];
+      sp.style.setProperty('--dx', Math.cos(a) * d + 'px'); sp.style.setProperty('--dy', Math.sin(a) * d + 'px');
+      host.appendChild(sp); setTimeout(() => sp.remove(), 950);
+    }
+    const tag = document.createElement('span');
+    tag.className = 'poff'; tag.textContent = combo > 1 ? 'x' + combo + '!' : 'poff!';
+    tag.style.left = cx - 20 + 'px'; tag.style.top = cy - 30 + 'px';
+    host.appendChild(tag); setTimeout(() => tag.remove(), 1000);
+    const x = parseFloat(b.style.left), y = parseFloat(b.style.top), s = parseFloat(b.style.getPropertyValue('--s'));
+    b.remove();
+    setTimeout(() => makePuff(x, y, s, true), 6000 + Math.random() * 6000);
+  }
+  addEventListener('pointermove', (e) => {
+    for (const p of host.querySelectorAll('.puff')) {
+      const r = p.getBoundingClientRect();
+      p.style.setProperty('--look', clamp((e.clientX - (r.left + r.width / 2)) / 60, -3, 3) + 'px');
+    }
+  }, { passive: true });
+
+  /* ── the Block 9 meter ticks down ── */
+  const bal = document.getElementById('bal');
+  let owed = 1204.88;
+  if (!reduce) setInterval(() => { owed += 0.04; bal.textContent = '-₵' + owed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }, 700);
+
+  /* ── sideways scrollers: pinned while the track slides past ── */
+  const scrollers = [...document.querySelectorAll('[data-hs]')].map((s) => ({
+    s, track: s.querySelector('.hs-track'), bar: s.querySelector('.hs-bar b'),
+    panels: [...s.querySelectorAll('.panel')], dist: 0
+  }));
+  if (reduce) scrollers.forEach((h) => h.panels.forEach((p) => p.classList.add('on')));
+  let lastW = 0, lastH = 0;
+  function layout() {
+    if (reduce) return;
+    if (innerWidth === lastW && Math.abs(innerHeight - lastH) < 120) return;
+    lastW = innerWidth; lastH = innerHeight;
+    for (const h of scrollers) {
+      h.track.style.transform = 'none';
+      h.dist = Math.max(0, h.track.scrollWidth - innerWidth);
+      h.s.style.height = (innerHeight + h.dist) + 'px';
+    }
+  }
+  function updateScrollers() {
+    for (const h of scrollers) {
+      const r = h.s.getBoundingClientRect();
+      if (r.bottom < -50 || r.top > innerHeight + 50) continue;
+      const span = h.s.offsetHeight - innerHeight;
+      const p = span > 0 ? clamp(-r.top / span, 0, 1) : 0;
+      h.track.style.transform = `translate3d(${(-p * h.dist).toFixed(1)}px,0,0)`;
+      h.bar.style.transform = `scaleX(${p.toFixed(3)})`;
+      for (const el of h.panels) {
+        const b = el.getBoundingClientRect();
+        const c = (b.left + b.width / 2 - innerWidth / 2) / innerWidth;
+        el.style.setProperty('--p', clamp(c, -1, 1).toFixed(3));
+        el.classList.toggle('on', Math.abs(c * innerWidth) < Math.max(b.width * 0.5, innerWidth * 0.12));
+      }
+    }
+  }
+
+  /* ── the day: scroll to pass the time ── */
+  const day = document.getElementById('day');
+  const pin = document.getElementById('day-pin');
+  const clockEl = document.getElementById('clock');
+  const phaseEl = document.getElementById('phase');
+  const lineEl2 = document.getElementById('phase-line');
+  const sun = document.getElementById('sun'), moon = document.getElementById('moon');
+  // [progress, sky top, sky bottom, far hills, near hills]
+  const SKY = [
+    [0.00, '#ff9eb0', '#ffd29a', '#8a6a9a', '#5fae9c'],
+    [0.12, '#8fd4ff', '#d8f4ea', '#7aa6b8', '#7fd8bf'],
+    [0.40, '#8fd4ff', '#c9f0e0', '#7aa6b8', '#7fd8bf'],
+    [0.50, '#ff9a7a', '#ffc26b', '#8a5a7a', '#4f9e8c'],
+    [0.57, '#5b3f88', '#c77a9a', '#4a3a6e', '#2f6b62'],
+    [0.66, '#1d1840', '#3a2a6e', '#2c2650', '#1f4a48'],
+    [0.86, '#100c26', '#241b42', '#221c40', '#173a3a'],
+    [0.95, '#2a0f2a', '#5a1838', '#2a1630', '#1d2a30'],
+    [1.00, '#3a1430', '#7a2840', '#2a1630', '#1d2a30']
+  ];
+  const PHASES = [
+    [0.00, 'Dawn', 'The wilds rearrange themselves.'],
+    [0.10, 'Morning', 'Drizzlets water. Pipsnips snip.'],
+    [0.30, 'Afternoon', 'Good weather for wandering.'],
+    [0.47, 'Dusk', 'Lumoths and Hootles wake up.'],
+    [0.62, 'Night', 'Everything glows.'],
+    [0.80, 'Very late', 'Out in the wilds, the trees twitch.'],
+    [0.92, 'Way too late', 'Run.']
+  ];
+  const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const mix = (a, b, t) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; };
+  function sky(p) {
+    let i = 0;
+    while (i < SKY.length - 2 && p > SKY[i + 1][0]) i++;
+    const a = SKY[i], b = SKY[i + 1], t = clamp((p - a[0]) / (b[0] - a[0]), 0, 1);
+    return [1, 2, 3, 4].map((k) => mix(a[k], b[k], t));
+  }
+  let lastPhase = -1;
+  function paintDay(p) {
+    const [top, bot, far, near] = sky(p);
+    pin.style.background = `linear-gradient(${top}, ${bot})`;
+    pin.style.setProperty('--far', far); pin.style.setProperty('--near', near);
+    const n = p < 0.45 ? 0 : p < 0.62 ? (p - 0.45) / 0.17 : p < 0.94 ? 1 : 1 - (p - 0.94) / 0.06 * 0.5;
+    const doom = clamp((p - 0.86) / 0.09, 0, 1);
+    pin.style.setProperty('--n', n.toFixed(3)); pin.style.setProperty('--doom', doom.toFixed(3));
+    day.classList.toggle('doom', p > 0.92);
+    // the sun crosses 6 AM to 6 PM, the moon 6 PM to 6 AM
+    const arc = (f) => [10 + f * 80, 62 - Math.sin(f * Math.PI) * 44];
+    const sf = clamp(p / 0.5, 0, 1), mf = clamp((p - 0.5) / 0.5, 0, 1);
+    const [sx, sy] = arc(sf), [mx, my] = arc(mf);
+    sun.style.setProperty('--x', sx + '%'); sun.style.setProperty('--y', sy + '%'); sun.style.setProperty('--o', p < 0.52 ? 1 : 0);
+    moon.style.setProperty('--x', mx + '%'); moon.style.setProperty('--y', my + '%'); moon.style.setProperty('--o', p > 0.5 ? 1 : 0);
+    // the clock: 6 AM plus 24 hours, in 10-minute steps
+    const mins = Math.floor((p * 24 * 60) / 10) * 10 + 6 * 60;
+    const h24 = Math.floor(mins / 60) % 24, m = mins % 60;
+    const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+    clockEl.textContent = `${h12}:${String(m).padStart(2, '0')} ${h24 < 12 ? 'AM' : 'PM'}`;
+    let ph = 0; while (ph < PHASES.length - 1 && p >= PHASES[ph + 1][0]) ph++;
+    if (ph !== lastPhase) { lastPhase = ph; phaseEl.textContent = PHASES[ph][1]; lineEl2.textContent = PHASES[ph][2]; }
+  }
+  function updateDay() {
+    const r = day.getBoundingClientRect();
+    if (r.bottom < -50 || r.top > innerHeight + 50) return;
+    const span = day.offsetHeight - innerHeight;
+    paintDay(span > 0 ? clamp(-r.top / span, 0, 0.94) : 0.64);
+  }
+  if (reduce) paintDay(0.64);
+
+  /* ── slide-ins ── */
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
+  document.querySelectorAll('.slide').forEach((el) => io.observe(el));
+
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(() => { ticking = false; if (!reduce) { updateScrollers(); updateDay(); } });
+  }
+  function onResize() { size(); if (reduce) frame(performance.now()); layout(); onScroll(); }
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onResize);
+  layout(); onScroll();
+  document.fonts && document.fonts.ready.then(() => { lastW = 0; layout(); onScroll(); });
+
+  /* ── Rivet's comm panel ── */
+  const LINES = [
+    'Dream log: Rivet was a toaster. Rivet was a GOOD toaster. ...Rivet would like that on the record.',
+    'A Lumoth weighs less than a sigh. I measured. Respectfully.',
+    '*BZZT* A SHINY ONE! Very rare. I am not jealous. I am also shiny.',
+    'Watering: OUTSOURCED. Critters eat from the main chest, so let us stock it.',
+    'Rocket landed. The Charter sent the next order, and a slightly singed invoice.',
+    'Energy low. Suggest: nap. Rivet is never wrong. Rarely wrong.',
+    'The trees are twitching. I do not like it when the trees twitch.',
+    '*kssh* Whistling Steppe. Stone, Bonkles, and very rude wind.',
+    'A Tinkit. Thumbs! It builds what nobody else can.'
+  ];
+  const lineEl = document.getElementById('rivet-line');
+  let li = 0, typing = null;
+  function show(text) {
+    clearInterval(typing);
+    if (reduce) { lineEl.textContent = text; return; }
+    let n = 0;
+    typing = setInterval(() => {
+      n += 1;
+      lineEl.textContent = text.slice(0, n);
+      const c = document.createElement('span'); c.className = 'cursor'; lineEl.append(c);
+      if (n >= text.length) clearInterval(typing);
+    }, 28);
+  }
+  document.getElementById('next-line').addEventListener('click', () => { li = (li + 1) % LINES.length; show(LINES[li]); });
+})();
+
+/* ── Beta sign-up: stored on the MusicGrid server, read on stevenhester.com/stats ── */
+(() => {
+  const API = (document.documentElement.dataset.api || 'https://music-grid-io-42616e204fd3.herokuapp.com') + '/site/beta';
+  const form = document.getElementById('beta-form');
+  const msg = form.querySelector('.form-msg');
+  const btn = document.getElementById('beta-btn');
+  const email = form.elements.email;
+  email.addEventListener('input', () => email.removeAttribute('aria-invalid'));
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    msg.textContent = '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+      email.setAttribute('aria-invalid', 'true');
+      msg.textContent = "That email doesn't look right.";
+      email.focus();
+      return;
+    }
+    const f = form.elements;
+    const body = { project: 'frontiers-celestia', name: f.name.value, email: email.value, platform: f.platform.value, note: f.note.value, website: f.website.value };
+    btn.disabled = true;
+    const label = btn.firstChild.textContent;
+    btn.firstChild.textContent = 'Sending… ';
+    try {
+      // text/plain keeps it a simple request (no CORS preflight).
+      const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Something went wrong. Try again in a minute.');
+      form.hidden = true;
+      document.getElementById('beta-done').hidden = false;
+    } catch (err) {
+      msg.textContent = err instanceof TypeError ? "Couldn't reach the server. It may be waking up, so try again in a few seconds." : err.message;
+    } finally {
+      btn.disabled = false;
+      btn.firstChild.textContent = label;
+    }
+  });
+})();
+</script>
+</body>
+</html>
