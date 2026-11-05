@@ -472,6 +472,10 @@ a { color: var(--amber); }
 .lightbox { padding: 0; border: 0; background: transparent; max-width: min(96vw, 1440px); max-height: 92vh; overflow: visible; }
 .lightbox::backdrop { background: rgba(10, 8, 22, 0.86); }
 .lightbox img { display: block; max-width: min(96vw, 1440px); max-height: 92vh; width: auto; height: auto; border: 10px solid #fffaf0; border-radius: 3px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+.lightbox-art { width: min(92vw, 1200px, calc(88vh * 4 / 3)); border: 10px solid #fffaf0; border-radius: 3px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); line-height: 0; background: #241b42; }
+.lightbox-art svg { width: 100%; height: auto; display: block; filter: blur(0.5px); }
+.snap.art { cursor: zoom-in; }
+.snap.art svg { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; filter: blur(0.8px) saturate(0.95); }
 .lb-close { position: absolute; top: -16px; right: -16px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--amber); color: var(--ink); font: 700 1.1rem var(--f-display); cursor: pointer; box-shadow: 0 4px 0 #c98a3a; }
 @media (max-width: 760px) {
   .polaroids { grid-template-columns: minmax(0, 1fr); gap: 40px; max-width: 440px; margin-inline: auto; }
@@ -1008,8 +1012,206 @@ a { color: var(--amber); }
     <div class="secret-wrap">
       <figure class="polaroid secret slide" style="--r:2deg; --i:0">
         <span class="pin" aria-hidden="true"></span>
-        <button type="button" class="snap" data-full="shots/4_haven.jpg" aria-label="Enlarge: a classified photo">
-          <img src="shots/4_haven.jpg" alt="A slightly blurry, classified photo of a little town with a town hall, shops, homes, farms and people in the plaza." loading="lazy" width="1200" height="900">
+        <button type="button" class="snap art" data-full="#haven-art" aria-label="Enlarge: a leaked concept sketch">
+          <svg class="haven-art" viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A concept sketch of the Haven at dusk: a community center with a dome and bell tower on a hill, a mushroom house, a dome home, a tea pavilion, a shop with an awning, a plaza with a fountain, string lights, lanterns, townsfolk and critters, with handwritten design notes.">
+            <defs>
+              <linearGradient id="hv-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#241b42"/><stop offset="0.45" stop-color="#5b3f88"/><stop offset="0.75" stop-color="#c77a9a"/><stop offset="1" stop-color="#ffc26b"/>
+              </linearGradient>
+              <radialGradient id="hv-pl" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#ffe0b8"/><stop offset="0.55" stop-color="#ff9fb3"/><stop offset="1" stop-color="#7a4f9c"/></radialGradient>
+              <radialGradient id="hv-warm" r="0.5"><stop offset="0" stop-color="#ffe2a0" stop-opacity="0.95"/><stop offset="1" stop-color="#ffc26b" stop-opacity="0"/></radialGradient>
+              <radialGradient id="hv-teal" r="0.5"><stop offset="0" stop-color="#9ffff0" stop-opacity="0.9"/><stop offset="1" stop-color="#73f2e6" stop-opacity="0"/></radialGradient>
+              <linearGradient id="hv-win" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2c4"/><stop offset="1" stop-color="#ffb35c"/></linearGradient>
+              <filter id="hv-wobble" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="4" result="n"/>
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+              <filter id="hv-paper">
+                <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="9"/>
+                <feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0 0.2  0 0 0 0.18 0"/>
+              </filter>
+              <pattern id="hv-cobble" width="22" height="12" patternUnits="userSpaceOnUse">
+                <rect width="22" height="12" fill="#e7c3bf"/><rect x="1" y="1" width="9" height="4" rx="2" fill="#f3d9d2"/><rect x="12" y="1" width="9" height="4" rx="2" fill="#f0d2cb"/>
+                <rect x="6" y="7" width="9" height="4" rx="2" fill="#f3d9d2"/>
+              </pattern>
+              <pattern id="hv-stripes" width="24" height="10" patternUnits="userSpaceOnUse"><rect width="12" height="10" fill="#ff8fb0"/><rect x="12" width="12" height="10" fill="#fff1dc"/></pattern>
+            </defs>
+          
+            <g filter="url(#hv-wobble)">
+              <!-- sky -->
+              <rect width="1200" height="900" fill="url(#hv-sky)"/>
+              <g fill="#fff1dc" opacity="0.8">
+                <circle cx="80" cy="60" r="2"/><circle cx="210" cy="120" r="1.6"/><circle cx="330" cy="40" r="2.2"/><circle cx="470" cy="95" r="1.4"/>
+                <circle cx="560" cy="30" r="1.8"/><circle cx="700" cy="70" r="1.6"/><circle cx="780" cy="150" r="1.2"/><circle cx="140" cy="200" r="1.3"/>
+                <circle cx="400" cy="180" r="1.2"/><circle cx="1150" cy="60" r="1.8"/><circle cx="870" cy="40" r="1.4"/><circle cx="40" cy="260" r="1.2"/>
+              </g>
+              <g transform="translate(1000 150)">
+                <circle r="92" fill="#ffd8a8" opacity="0.12"/>
+                <ellipse rx="130" ry="26" fill="none" stroke="#b9a3f0" stroke-width="6" opacity="0.45" transform="rotate(-14)"/>
+                <circle r="66" fill="url(#hv-pl)"/>
+                <circle cx="-22" cy="-16" r="11" fill="#fff" opacity="0.18"/>
+                <path d="M-128 18 Q0 56 128 -6" fill="none" stroke="#b9a3f0" stroke-width="6" opacity="0.85" transform="rotate(-14)"/>
+              </g>
+              <circle cx="880" cy="250" r="14" fill="#bdeee0"/>
+              <!-- sky jellies -->
+              <g opacity="0.7">
+                <g transform="translate(180 170)"><ellipse rx="22" ry="16" fill="#ffb3e6"/><path d="M-14 8 q-4 18 2 30 M0 10 q4 18 -2 32 M14 8 q4 18 -2 30" stroke="#ffb3e6" stroke-width="3" fill="none"/></g>
+                <g transform="translate(720 210) scale(0.7)"><ellipse rx="22" ry="16" fill="#9ffff0"/><path d="M-14 8 q-4 18 2 30 M0 10 q4 18 -2 32 M14 8 q4 18 -2 30" stroke="#9ffff0" stroke-width="3" fill="none"/></g>
+              </g>
+          
+              <!-- hills -->
+              <path d="M0 470 Q200 400 420 440 T860 420 T1200 432 V900 H0Z" fill="#3a3463"/>
+              <path d="M0 540 Q280 470 600 505 T1200 485 V900 H0Z" fill="#2d5f5a"/>
+              <g fill="#3f9c8a">
+                <circle cx="60" cy="520" r="34"/><circle cx="110" cy="505" r="26"/><circle cx="1130" cy="500" r="36"/><circle cx="1080" cy="512" r="24"/>
+                <circle cx="420" cy="500" r="26"/><circle cx="780" cy="495" r="28"/><circle cx="830" cy="505" r="20"/>
+              </g>
+              <path d="M0 640 Q300 585 600 600 T1200 615 V900 H0Z" fill="#5fae9c"/>
+          
+              <!-- string of pennants from the bell tower -->
+              <path d="M600 300 Q480 400 360 470 M600 300 Q720 400 840 470" stroke="#2a1d23" stroke-width="2" fill="none"/>
+              <g>
+                <path d="M570 322 l-6 18 l14 -8z" fill="#ff8fb0"/><path d="M540 346 l-8 18 l15 -7z" fill="#ffd94d"/><path d="M508 372 l-8 18 l15 -6z" fill="#73f2e6"/>
+                <path d="M476 396 l-8 18 l15 -6z" fill="#b9a3f0"/><path d="M444 418 l-8 18 l15 -5z" fill="#ff8fb0"/><path d="M410 440 l-8 18 l15 -5z" fill="#ffd94d"/>
+                <path d="M630 322 l6 18 l-14 -8z" fill="#73f2e6"/><path d="M660 346 l8 18 l-15 -7z" fill="#ff8fb0"/><path d="M692 372 l8 18 l-15 -6z" fill="#ffd94d"/>
+                <path d="M724 396 l8 18 l-15 -6z" fill="#b9a3f0"/><path d="M756 418 l8 18 l-15 -5z" fill="#73f2e6"/><path d="M790 440 l8 18 l-15 -5z" fill="#ff8fb0"/>
+              </g>
+          
+              <!-- the community center -->
+              <circle cx="600" cy="520" r="210" fill="url(#hv-warm)" opacity="0.55"/>
+              <g>
+                <rect x="575" y="330" width="50" height="150" fill="#fff1dc" stroke="#2a1d23" stroke-width="3"/>
+                <path d="M562 334 L600 280 L638 334Z" fill="#ffc26b" stroke="#2a1d23" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M600 280 V258" stroke="#2a1d23" stroke-width="3"/><path d="M600 248 l4 8 l9 1 l-7 6 l2 9 l-8 -5 l-8 5 l2 -9 l-7 -6 l9 -1z" fill="#ffd94d" stroke="#2a1d23" stroke-width="1.5"/>
+                <circle cx="600" cy="372" r="17" fill="#fffaf0" stroke="#2a1d23" stroke-width="3"/><path d="M600 372 V360 M600 372 h9" stroke="#2a1d23" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M588 412 a12 12 0 0 1 24 0 v16 h-24z" fill="#2a1d23"/><path d="M594 418 q6 -8 12 0 v8 h-12z" fill="#ffc26b"/>
+                <rect x="455" y="470" width="290" height="132" fill="#fff1dc" stroke="#2a1d23" stroke-width="3"/>
+                <path d="M455 472 Q600 368 745 472Z" fill="#73f2e6" stroke="#2a1d23" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M500 450 Q600 396 700 450" stroke="#3f9c8a" stroke-width="3" fill="none"/>
+                <g fill="#e9d6c2" stroke="#2a1d23" stroke-width="2.5"><rect x="472" y="486" width="16" height="116"/><rect x="500" y="486" width="16" height="116"/><rect x="684" y="486" width="16" height="116"/><rect x="712" y="486" width="16" height="116"/></g>
+                <circle cx="600" cy="520" r="36" fill="url(#hv-win)" stroke="#2a1d23" stroke-width="3"/>
+                <path d="M600 484 V556 M564 520 H636" stroke="#2a1d23" stroke-width="2.5"/>
+                <path d="M576 602 v-34 a24 24 0 0 1 48 0 v34z" fill="#3a2830" stroke="#2a1d23" stroke-width="3"/>
+                <path d="M582 602 v-30 a18 18 0 0 1 36 0 v30z" fill="#ffc26b" opacity="0.75"/>
+                <g fill="#e9d6c2" stroke="#2a1d23" stroke-width="2"><rect x="560" y="602" width="80" height="9"/><rect x="548" y="611" width="104" height="9"/><rect x="536" y="620" width="128" height="9"/></g>
+                <path d="M530 470 h140" stroke="#ff8fb0" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+              </g>
+          
+              <!-- left: dome home, mushroom house, cottage -->
+              <g>
+                <circle cx="330" cy="600" r="90" fill="url(#hv-warm)" opacity="0.4"/>
+                <rect x="306" y="565" width="50" height="62" rx="6" fill="#fff1dc" stroke="#2a1d23" stroke-width="3"/>
+                <path d="M252 570 Q330 470 410 570Z" fill="#b07ad9" stroke="#2a1d23" stroke-width="3"/>
+                <g fill="#fff1dc"><circle cx="296" cy="540" r="9"/><circle cx="336" cy="516" r="11"/><circle cx="370" cy="546" r="8"/><circle cx="318" cy="558" r="5"/></g>
+                <path d="M322 627 v-22 a9 9 0 0 1 18 0 v22z" fill="#3a2830"/><circle cx="342" cy="586" r="7" fill="url(#hv-win)" stroke="#2a1d23" stroke-width="2"/>
+                <path d="M120 640 a70 70 0 0 1 140 0z" fill="#d7dce8" stroke="#2a1d23" stroke-width="3"/>
+                <path d="M150 600 a42 42 0 0 1 80 0" stroke="#b9c0d2" stroke-width="3" fill="none"/>
+                <circle cx="190" cy="608" r="14" fill="url(#hv-win)" stroke="#2a1d23" stroke-width="2.5"/><path d="M178 640 v-14 a12 12 0 0 1 24 0 v14z" fill="#3a2830"/>
+                <path d="M232 584 l14 -26" stroke="#2a1d23" stroke-width="2.5"/><circle cx="247" cy="556" r="5" fill="#ff6b8c"/>
+                <rect x="-10" y="590" width="100" height="62" fill="#ffe0c8" stroke="#2a1d23" stroke-width="3"/>
+                <path d="M-20 594 L40 548 L100 594Z" fill="#ff8f8f" stroke="#2a1d23" stroke-width="3" stroke-linejoin="round"/>
+                <rect x="18" y="606" width="20" height="18" fill="url(#hv-win)" stroke="#2a1d23" stroke-width="2"/><path d="M58 652 v-26 h18 v26" fill="#3a2830"/>
+              </g>
+          
+              <!-- right: tea pavilion, shopfront, bakery -->
+              <g>
+                <circle cx="870" cy="600" r="90" fill="url(#hv-warm)" opacity="0.45"/>
+                <g stroke="#2a1d23" stroke-width="3" stroke-linejoin="round">
+                  <rect x="822" y="570" width="96" height="58" fill="#fff1dc"/>
+                  <path d="M800 576 Q870 548 940 576 L926 560 Q870 520 814 560Z" fill="#e0566b"/>
+                  <path d="M826 536 Q870 510 914 536 L902 522 Q870 494 838 522Z" fill="#e0566b"/>
+                  <path d="M870 494 V478" fill="none"/>
+                </g>
+                <circle cx="870" cy="474" r="5" fill="#ffd94d"/>
+                <rect x="846" y="588" width="48" height="26" fill="url(#hv-win)" stroke="#2a1d23" stroke-width="2"/>
+                <g fill="#ff9f5c"><ellipse cx="812" cy="590" rx="7" ry="9"/><ellipse cx="928" cy="590" rx="7" ry="9"/></g>
+                <circle cx="812" cy="590" r="20" fill="url(#hv-warm)"/><circle cx="928" cy="590" r="20" fill="url(#hv-warm)"/>
+                <rect x="960" y="560" width="130" height="78" fill="#ffd2b0" stroke="#2a1d23" stroke-width="3"/>
+                <path d="M952 562 h146 l-10 26 h-126z" fill="url(#hv-stripes)" stroke="#2a1d23" stroke-width="3" stroke-linejoin="round"/>
+                <rect x="976" y="596" width="56" height="30" fill="url(#hv-win)" stroke="#2a1d23" stroke-width="2"/><path d="M1046 638 v-36 h26 v36" fill="#3a2830"/>
+                <rect x="1110" y="575" width="110" height="68" fill="#fff1dc" stroke="#2a1d23" stroke-width="3"/>
+                <path d="M1100 578 L1165 532 L1230 578Z" fill="#c9874f" stroke="#2a1d23" stroke-width="3" stroke-linejoin="round"/>
+                <rect x="1180" y="520" width="16" height="34" fill="#a07258" stroke="#2a1d23" stroke-width="2.5"/>
+                <g fill="#fff1dc" opacity="0.7"><circle cx="1190" cy="505" r="9"/><circle cx="1200" cy="486" r="12"/><circle cx="1186" cy="464" r="14"/></g>
+                <rect x="1126" y="594" width="30" height="22" fill="url(#hv-win)" stroke="#2a1d23" stroke-width="2"/>
+              </g>
+          
+              <!-- plaza, path and fountain -->
+              <path d="M520 900 L560 730 L640 730 L680 900Z" fill="url(#hv-cobble)" stroke="#2a1d23" stroke-width="2"/>
+              <ellipse cx="600" cy="712" rx="360" ry="70" fill="url(#hv-cobble)" stroke="#2a1d23" stroke-width="3"/>
+              <circle cx="600" cy="700" r="80" fill="url(#hv-teal)" opacity="0.6"/>
+              <ellipse cx="600" cy="712" rx="66" ry="20" fill="#d7dce8" stroke="#2a1d23" stroke-width="3"/>
+              <ellipse cx="600" cy="708" rx="52" ry="13" fill="#73f2e6"/>
+              <rect x="592" y="660" width="16" height="48" fill="#d7dce8" stroke="#2a1d23" stroke-width="2.5"/>
+              <path d="M600 660 q-30 -22 -46 40 M600 660 q30 -22 46 40 M600 660 q-12 -30 -20 44 M600 660 q12 -30 20 44" stroke="#9ffff0" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <circle cx="600" cy="652" r="9" fill="#9ffff0"/>
+          
+              <!-- string lights across the plaza -->
+              <path d="M250 620 Q600 700 950 620" stroke="#2a1d23" stroke-width="2" fill="none"/>
+              <g>
+                <circle cx="290" cy="634" r="7" fill="#ffd94d"/><circle cx="340" cy="648" r="7" fill="#ff8fb0"/><circle cx="392" cy="659" r="7" fill="#73f2e6"/>
+                <circle cx="446" cy="667" r="7" fill="#ffd94d"/><circle cx="500" cy="672" r="7" fill="#b9a3f0"/><circle cx="700" cy="672" r="7" fill="#ff8fb0"/>
+                <circle cx="754" cy="667" r="7" fill="#ffd94d"/><circle cx="808" cy="659" r="7" fill="#73f2e6"/><circle cx="860" cy="648" r="7" fill="#ff8fb0"/><circle cx="910" cy="634" r="7" fill="#ffd94d"/>
+              </g>
+              <g fill="url(#hv-warm)" opacity="0.8"><circle cx="290" cy="634" r="20"/><circle cx="446" cy="667" r="20"/><circle cx="754" cy="667" r="20"/><circle cx="910" cy="634" r="20"/></g>
+          
+              <!-- lantern posts -->
+              <g stroke="#2a1d23" stroke-width="3">
+                <path d="M262 740 V690"/><path d="M938 740 V690"/><path d="M470 800 V748"/><path d="M730 800 V748"/>
+              </g>
+              <g><circle cx="262" cy="684" r="11" fill="#ffe2a0"/><circle cx="938" cy="684" r="11" fill="#ffe2a0"/><circle cx="470" cy="742" r="11" fill="#9ffff0"/><circle cx="730" cy="742" r="11" fill="#ffb3e6"/></g>
+              <g opacity="0.7"><circle cx="262" cy="684" r="30" fill="url(#hv-warm)"/><circle cx="938" cy="684" r="30" fill="url(#hv-warm)"/><circle cx="470" cy="742" r="30" fill="url(#hv-teal)"/><circle cx="730" cy="742" r="30" fill="url(#hv-teal)"/></g>
+          
+              <!-- townsfolk -->
+              <g stroke="#2a1d23" stroke-width="2.5">
+                <g transform="translate(410 712)"><rect x="-9" y="-6" width="18" height="26" rx="8" fill="#ff8fb0"/><circle cy="-15" r="10" fill="#f2c9a5"/><path d="M-10 -18 q10 -12 20 0" fill="#5a3418"/></g>
+                <g transform="translate(450 726)"><rect x="-9" y="-6" width="18" height="26" rx="8" fill="#73f2e6"/><circle cy="-15" r="10" fill="#8a5a3c"/><path d="M-10 -20 q10 -8 20 0" fill="#1f1828"/></g>
+                <g transform="translate(700 724)"><rect x="-9" y="-6" width="18" height="26" rx="8" fill="#ffd94d"/><circle cy="-15" r="10" fill="#f2c9a5"/><path d="M-11 -16 q11 -16 22 0 l-2 6 q-9 -6 -18 0z" fill="#c9542f"/></g>
+                <g transform="translate(748 712)"><rect x="-9" y="-6" width="18" height="26" rx="8" fill="#b9a3f0"/><circle cy="-15" r="10" fill="#c99872"/></g>
+                <g transform="translate(520 760)"><rect x="-9" y="-6" width="18" height="26" rx="8" fill="#9be86a"/><circle cy="-15" r="10" fill="#f2c9a5"/><path d="M-10 -22 h20 l-4 -8 h-12z" fill="#e0566b"/></g>
+                <g transform="translate(830 744)"><rect x="-9" y="-6" width="18" height="26" rx="8" fill="#ffc26b"/><circle cy="-15" r="10" fill="#8a5a3c"/></g>
+                <g transform="translate(360 744)"><rect x="-9" y="-6" width="18" height="26" rx="8" fill="#e9d6c2"/><circle cy="-15" r="10" fill="#d7dce8"/><circle cx="2" cy="-16" r="6" fill="#2a2148"/></g>
+              </g>
+              <!-- critters -->
+              <g stroke="#2a1d23" stroke-width="2">
+                <path d="M660 742 C660 742 676 762 676 772 A16 16 0 0 1 644 772 C644 762 660 742 660 742Z" fill="#fac7e6"/>
+                <ellipse cx="560" cy="776" rx="15" ry="13" fill="#bdf5db"/><ellipse cx="553" cy="758" rx="4" ry="10" fill="#bdf5db"/><ellipse cx="567" cy="758" rx="4" ry="10" fill="#bdf5db"/>
+                <ellipse cx="315" cy="690" rx="10" ry="8" fill="#ffbd99"/><ellipse cx="303" cy="684" rx="9" ry="6" fill="#ffbd99" opacity="0.9"/><ellipse cx="327" cy="684" rx="9" ry="6" fill="#ffbd99" opacity="0.9"/>
+                <circle cx="880" cy="772" r="14" fill="#c2adff"/><circle cx="906" cy="778" r="10" fill="#e9b9ff"/>
+              </g>
+              <g fill="#1f1828"><circle cx="655" cy="770" r="2"/><circle cx="665" cy="770" r="2"/><circle cx="555" cy="774" r="2"/><circle cx="565" cy="774" r="2"/><circle cx="876" cy="770" r="2"/><circle cx="884" cy="770" r="2"/></g>
+              <!-- Rivet, of course -->
+              <g transform="translate(640 640)"><rect x="-14" y="-12" width="28" height="24" rx="10" fill="#d7dce8" stroke="#2a1d23" stroke-width="2"/><rect x="-9" y="-7" width="18" height="12" rx="5" fill="#0a1820"/><g fill="#73f2e6"><rect x="-6" y="-4" width="3" height="5" rx="1.5"/><rect x="3" y="-4" width="3" height="5" rx="1.5"/></g><path d="M0 -12 v-7" stroke="#2a1d23" stroke-width="2"/><circle cy="-21" r="3" fill="#ff6b8c"/></g>
+          
+              <!-- foreground -->
+              <path d="M0 800 Q260 760 520 790 L520 900 H0Z" fill="#7fd8bf"/>
+              <path d="M680 790 Q960 760 1200 790 V900 H680Z" fill="#7fd8bf"/>
+              <g fill="#3f9c8a"><circle cx="70" cy="820" r="40"/><circle cx="130" cy="840" r="30"/><circle cx="1120" cy="826" r="44"/><circle cx="1060" cy="846" r="26"/></g>
+              <g><path d="M210 830 q-6 -40 6 -64" stroke="#2d5f5a" stroke-width="4" fill="none"/><circle cx="216" cy="762" r="9" fill="#9ffff0"/><circle cx="216" cy="762" r="26" fill="url(#hv-teal)"/>
+                <path d="M990 836 q6 -36 -4 -60" stroke="#2d5f5a" stroke-width="4" fill="none"/><circle cx="986" cy="772" r="8" fill="#ffb3e6"/><circle cx="986" cy="772" r="24" fill="url(#hv-teal)"/></g>
+            </g>
+          
+            <!-- the design notes, in marker -->
+            <g font-family="Gaegu, 'Comic Sans MS', cursive" font-weight="700">
+              <text x="36" y="66" font-size="40" fill="#fff1dc">HAVEN</text>
+              <text x="36" y="96" font-size="22" fill="#ffd94d">concept v3 · town square at dusk</text>
+              <path d="M36 106 q120 8 250 -2" stroke="#ffd94d" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <text x="700" y="300" font-size="27" fill="#fff1dc" transform="rotate(-4 700 300)">the community center!!</text>
+              <text x="712" y="328" font-size="21" fill="#ffd2e0" transform="rotate(-4 712 328)">(it needs a bell. a cute bell)</text>
+              <path d="M696 310 q-38 6 -58 30" stroke="#fff1dc" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M634 344 l2 -14 l10 9z" fill="#fff1dc"/>
+              <text x="150" y="455" font-size="23" fill="#fff1dc" transform="rotate(3 150 455)">everyone fights over</text>
+              <text x="150" y="480" font-size="23" fill="#fff1dc" transform="rotate(3 150 480)">the mushroom one</text>
+              <path d="M280 488 q20 18 30 30" stroke="#fff1dc" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <text x="760" y="840" font-size="23" fill="#2a1d23" transform="rotate(-3 760 840)">Rivet wants a statue of himself here.</text>
+              <text x="760" y="866" font-size="23" fill="#c9542f" transform="rotate(-3 760 866)">no.</text>
+              <path d="M756 830 q-60 -30 -100 -96" stroke="#2a1d23" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <ellipse cx="600" cy="690" rx="96" ry="50" fill="none" stroke="#e0384f" stroke-width="3" transform="rotate(-6 600 690)"/>
+              <text x="40" y="880" font-size="21" fill="#2a1d23" transform="rotate(-2 40 880)">more critters everywhere? (yes)</text>
+            </g>
+          
+            <!-- paper grain over everything -->
+            <rect width="1200" height="900" filter="url(#hv-paper)"/>
+          </svg>
         </button>
         <span class="tape t1" aria-hidden="true"><i>TOP SECRET · DO NOT CROSS · TOP SECRET · DO NOT CROSS · TOP SECRET · DO NOT CROSS ·</i></span>
         <span class="tape t2" aria-hidden="true"><i>CHARTER EYES ONLY · CLASSIFIED · CHARTER EYES ONLY · CLASSIFIED · CHARTER EYES ONLY ·</i></span>
@@ -1017,10 +1219,10 @@ a { color: var(--amber); }
         <figcaption><b>file #7-H</b> <span class="sr-only">build a community</span><span aria-hidden="true"><span class="bar">build</span> a <span class="bar part">commu</span>nity</span></figcaption>
       </figure>
     </div>
-    <p class="snap-note hand">real screenshots, straight from the game ✦ tap one to look closer</p>
+    <p class="snap-note hand">real screenshots, straight from the game ✦ plus one leaked concept sketch ✦ tap one to look closer</p>
   </div>
   <dialog class="lightbox" id="lightbox" aria-label="Screenshot">
-    <img alt="" id="lightbox-img">
+    <img alt="" id="lightbox-img"><div class="lightbox-art" id="lightbox-art" hidden></div>
     <button type="button" class="lb-close" id="lightbox-close" aria-label="Close">✕</button>
   </dialog>
 </section>
@@ -1765,8 +1967,15 @@ a { color: var(--amber); }
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
   document.querySelectorAll('.snap').forEach((b) => b.addEventListener('click', () => {
-    const img = b.querySelector('img');
-    lightboxImg.src = b.dataset.full; lightboxImg.alt = img.alt;
+    const art = document.getElementById('lightbox-art');
+    if (b.dataset.full.startsWith('#')) {
+      art.replaceChildren(b.querySelector('svg').cloneNode(true));
+      art.hidden = false; lightboxImg.hidden = true;
+    } else {
+      const img = b.querySelector('img');
+      lightboxImg.src = b.dataset.full; lightboxImg.alt = img.alt;
+      art.hidden = true; lightboxImg.hidden = false;
+    }
     if (lightbox.showModal) lightbox.showModal(); else window.open(b.dataset.full, '_blank');
   }));
   document.getElementById('lightbox-close').addEventListener('click', () => lightbox.close());
