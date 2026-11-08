@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Frontiers Celestia</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta property="og:title" content="Frontiers Celestia">
+<meta property="og:description" content="A cozy colony sim where the factory is made of critters. In beta.">
+<meta property="og:image" content="https://stevenhester.com/frontiers-celestia/shots/3_endgame.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="A cozy little homestead on a planet nobody else wanted. Befriend the critters, hand them your chores, and go wandering.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -688,62 +694,111 @@ a { color: var(--amber); }
   font-family: var(--f-mono); font-size: 0.75rem; color: rgba(255, 241, 220, 0.55);
 }
 
-/* ───────────── Responsive ───────────── */
+/* ───────────── Hero lockup: the mark beside the name ───────────── */
+.hero .lockup { display: flex; align-items: flex-start; gap: clamp(14px, 2.4vw, 28px); }
+.hero .mark { width: clamp(68px, 11vw, 150px); height: auto; aspect-ratio: 1; flex: none; border-radius: 22%; margin-top: 0.08em;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 241, 220, 0.08), 0 0 50px rgba(255, 217, 115, 0.18); animation: markbob 5s ease-in-out infinite; }
+@keyframes markbob { 50% { transform: translateY(-6px) rotate(-1.5deg); } }
+
+/* ───────────── The chart: Survey Team 7's world map ───────────── */
+.chart-band { background: radial-gradient(60% 50% at 80% 10%, rgba(115, 242, 230, 0.08), transparent 70%), var(--night); overflow: clip; }
+.chart-band h2 { font-size: var(--step-3); margin-top: 8px; max-width: 22ch; }
+.chart-band h2 em { font-style: normal; color: var(--turf); }
+.chart-band .lede { margin-top: 14px; max-width: 60ch; }
+.chart-grid { margin-top: 36px; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+.chart { position: relative; border-radius: 18px; overflow: clip; background: #0b1b24; border: 1px solid rgba(115, 242, 230, 0.35);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 0 0 0 6px rgba(10, 24, 32, 0.9); }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .plate { position: absolute; left: 16px; top: 12px; font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); opacity: 0.9; pointer-events: none; }
+.chart .plate b { display: block; font-size: 0.58rem; color: rgba(207, 238, 234, 0.6); letter-spacing: 0.1em; margin-top: 3px; font-weight: 400; }
+.chart .legend { position: absolute; right: 14px; bottom: 10px; display: flex; gap: 12px; font-family: var(--f-mono); font-size: 0.6rem; color: rgba(207, 238, 234, 0.75); pointer-events: none; }
+.chart .legend i { display: inline-block; width: 18px; height: 0; border-top: 3px dashed var(--amber); vertical-align: middle; margin-right: 5px; }
+.chart .legend i.r { border-top-color: #ff6b6b; }
+.chart .legend i.g { border-top-color: #8f8aa8; border-top-style: dotted; }
+.wave { fill: none; stroke: rgba(115, 242, 230, 0.13); stroke-width: 1.5; animation: wave 7s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes wave { 50% { transform: translate(14px, 2px); } }
+.road-under { fill: none; stroke: rgba(5, 12, 16, 0.55); stroke-width: 9; stroke-linecap: round; }
+.road-line { fill: none; stroke: var(--amber); stroke-width: 3.5; stroke-dasharray: 9 8; stroke-linecap: round; animation: march 1.6s linear infinite; opacity: 0.8; }
+.road.barred .road-line { stroke: #ff6b6b; }
+.road.buried .road-line { stroke: #8f8aa8; stroke-dasharray: 3 9; animation: none; }
+.road.fog .road-line { stroke: rgba(207, 238, 234, 0.35); stroke-dasharray: 2 10; animation: none; }
+.road.lit .road-line { opacity: 1; stroke-width: 4.5; }
+@keyframes march { to { stroke-dashoffset: -34; } }
+.bar-bg { fill: #0a1820; stroke: rgba(255, 241, 220, 0.4); stroke-width: 1.5; }
+.bar-q { font: 700 13px var(--f-display); fill: var(--cream); }
+.land { cursor: pointer; outline: none; }
+.land .coast { fill: rgba(255, 241, 220, 0.16); transition: fill 0.25s; }
+.land .ground { stroke: rgba(10, 20, 24, 0.6); stroke-width: 2; transition: filter 0.25s; }
+.land .hit { fill: transparent; }
+.land .lbl { font: 600 22px var(--f-display); fill: var(--cream); paint-order: stroke; stroke: rgba(8, 14, 20, 0.85); stroke-width: 6px; stroke-linejoin: round; pointer-events: none; transition: fill 0.2s; }
+.land:hover .ground, .land:focus-visible .ground { filter: brightness(1.12); }
+.land:hover .coast, .land.picked .coast { fill: rgba(115, 242, 230, 0.55); }
+.land.picked .ground { filter: brightness(1.08) drop-shadow(0 0 10px rgba(115, 242, 230, 0.5)); }
+.land.picked .lbl, .land:hover .lbl { fill: var(--teal); }
+.land:focus-visible .coast { fill: var(--star); }
+.land .cloud ellipse { fill: rgba(220, 226, 240, 0.85); animation: drift 9s ease-in-out infinite; }
+.land .cloud ellipse:nth-child(2) { animation-delay: -3s; }
+.land .cloud ellipse:nth-child(3) { animation-delay: -6s; }
+@keyframes drift { 50% { transform: translateX(10px); } }
+.scribble { font: 700 20px var(--f-hand); fill: rgba(255, 241, 220, 0.72); pointer-events: none; }
+.comet { transition: opacity 0.3s; pointer-events: none; opacity: 0; }
+.you { pointer-events: none; }
+.chart-card { position: sticky; top: 16px; background: var(--cocoa); border: 1px solid rgba(255, 194, 107, 0.5); border-top: 4px solid var(--amber); border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); }
+.chart-card.swap .cc-body, .chart-card.swap .cc-shot img { animation: cc-in 0.35s ease-out; }
+@keyframes cc-in { from { opacity: 0; transform: translateY(8px); } }
+.cc-shot { position: relative; aspect-ratio: 4 / 3; background: #0a1820 radial-gradient(60% 60% at 50% 50%, #1b3a3a, #0a1820); overflow: hidden; }
+.cc-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cc-shot img[hidden] { display: none; }
+.cc-kind { position: absolute; left: 12px; top: 12px; font-family: var(--f-mono); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--charter); background: var(--teal); padding: 4px 9px; border-radius: 999px; }
+.redacted .cc-shot::after { content: "UNSURVEYED"; position: absolute; inset: 0; display: grid; place-items: center; font: 700 1.1rem var(--f-mono); letter-spacing: 0.3em; color: var(--teal);
+  background: repeating-linear-gradient(135deg, rgba(115, 242, 230, 0.06) 0 12px, transparent 12px 24px); }
+.cc-body { padding: 16px 18px 18px; }
+.chart-card h3 { font-size: 1.5rem; }
+.cc-blurb { margin-top: 6px; color: var(--cream-dim); font-weight: 700; }
+.cc-rows { margin: 14px 0 0; display: grid; gap: 10px; }
+.cc-rows dt { font-family: var(--f-mono); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--moss); }
+.cc-rows dd { margin: 2px 0 0; font-size: var(--step--1); color: var(--cream); line-height: 1.45; }
+.cc-rows dd span { color: var(--cream-dim); }
+.cc-rows .sp { display: inline-block; font-style: normal; font-weight: 800; font-size: 0.78rem; color: var(--ink); background: var(--c); border-radius: 999px; padding: 2px 9px; margin: 0 6px 6px 0; }
+.redacted .cc-rows dd { font-family: var(--f-mono); font-size: 0.78rem; color: var(--teal); }
+.cc-hint { margin-top: 12px; color: var(--moss); font-size: 1.15rem; }
+.chart-pills { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.chart-pills button { font: 700 0.85rem var(--f-body); color: var(--cream); background: rgba(255, 241, 220, 0.08); border: 1px solid rgba(255, 241, 220, 0.25); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.chart-pills button:hover { border-color: var(--teal); color: var(--teal); }
+.chart-notes { margin-top: 34px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.tear { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; background: linear-gradient(90deg, rgba(255, 107, 140, 0.14), transparent 70%); border-left: 4px solid var(--heart); border-radius: 0 16px 16px 0; padding: 16px 18px; }
+.tear svg { width: 72px; height: 72px; }
+.tear b { font-family: var(--f-display); font-weight: 600; font-size: 1.15rem; color: var(--heart); display: block; }
+.tear p { font-size: var(--step--1); color: var(--cream-dim); }
+.chart-notes .patience { margin-top: 0; }
 @media (max-width: 900px) {
-  .zones { grid-template-columns: minmax(0, 1fr); }
-  .zone { padding: 20px 18px 20px 128px; min-height: 112px; }
-  .zone svg { width: 116px; height: 100%; }
-  .notes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  /* two columns: swap the middle pair so the colors still checkerboard */
-  .notes article:nth-child(3) { background: var(--cream); color: var(--ink); border-color: transparent; border-top-color: var(--moss); }
-  .notes article:nth-child(3) p { color: #4b3a48; }
-  .notes article:nth-child(3) .hand { color: #7b55c9; }
-  .notes article.paper:nth-child(4) { background: var(--cocoa); color: var(--cream); border-color: rgba(255, 194, 107, 0.55); border-top-color: var(--amber); }
-  .notes article.paper:nth-child(4) p { color: var(--cream-dim); }
-  .beta-grid { grid-template-columns: minmax(0, 1fr); }
-  .ticket { max-width: 460px; }
+  .chart-grid { grid-template-columns: minmax(0, 1fr); }
+  .chart-card { position: static; }
+  .land .lbl { font-size: 30px; stroke-width: 8px; }
+  .scribble { font-size: 28px; }
+  .chart .legend { display: none; }
+  .chart-notes { grid-template-columns: minmax(0, 1fr); }
 }
-@media (max-width: 720px) {
-  .chap { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  .chap .vis { order: -1; min-height: 0; }
-  .chap .vis > * { max-height: 40vh; }
-  .chap h3 { font-size: clamp(1.9rem, 8vw, 2.6rem); }
-  .chap .punch { font-size: 1.1rem; }
-  .meter-card, .receipt { font-size: 0.76rem; padding: 12px 14px; }
-  .mrow { padding: 4px 0; }
-  .receipt li { padding: 2px 0; }
-  .pages { height: 210px; }
-  .pg { width: 96px; height: 124px; margin: -62px 0 0 -48px; }
-  .pg.read { width: 210px; margin: 0; font-size: 0.72rem; padding: 10px 12px; }
-  .listings li { padding: 7px 12px; }
-  .rivet-card svg { width: 130px; }
-  .bush { width: min(100%, 300px); }
-}
-@media (max-width: 520px) {
-  .notes { grid-template-columns: minmax(0, 1fr); }
-  .notes article:nth-child(3) { background: var(--cocoa); color: var(--cream); border-color: rgba(255, 194, 107, 0.55); border-top-color: var(--amber); }
-  .notes article:nth-child(3) p { color: var(--cream-dim); }
-  .notes article:nth-child(3) .hand { color: var(--turf); }
-  .notes article.paper:nth-child(4) { background: var(--cream); color: var(--ink); border-color: transparent; border-top-color: var(--moss); }
-  .notes article.paper:nth-child(4) p { color: #4b3a48; }
-  .comm { grid-template-columns: minmax(0, 1fr); }
-  .comm > svg { display: none; }
-  .zone { padding-left: 104px; }
-  .zone svg { width: 94px; }
-  .planet { width: 84px; top: 3%; }
-  .glimmer { font-size: 0.68rem; bottom: 8px; padding: 4px 10px; }
-  .ticket { grid-template-columns: minmax(0, 1fr) 64px; rotate: 1.5deg; }
-  .ticket .bars { width: 24px; }
-  .ticket .stamp { right: 76px; }
-  .say { min-width: 120px; font-size: 1rem; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-  html { scroll-behavior: auto; }
-}
-</style>
-</head>
-<body>
+
+/* ───────────── Door Bowl: the studio's bowl in the footer, and the soup ───────────── */
+.beacon h2 em { font-style: normal; color: var(--amber); }
+.studio { margin-top: 44px; display: grid; justify-items: center; gap: 2px; width: 100%; }
+.knocker { position: relative; width: min(100%, 420px); cursor: pointer; border-radius: 24px; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
+.knocker canvas { display: block; width: 100%; height: auto; }
+.knocker:focus-visible { box-shadow: 0 0 0 3px var(--teal); }
+.knock-hint { position: absolute; right: 4%; top: 6%; font-size: 1.4rem; color: var(--amber); rotate: 6deg; opacity: 0; transition: opacity 0.3s, transform 0.3s; transform: translateY(6px); pointer-events: none; white-space: nowrap; }
+.knocker:hover .knock-hint, .knocker:focus-visible .knock-hint { opacity: 1; transform: none; }
+.knocker.ajar .knock-hint::after { content: " again!"; }
+.knocker.burst .knock-hint { opacity: 0 !important; }
+.studio-name { font-family: var(--f-display); font-size: 1.1rem; color: rgba(255, 241, 220, 0.7); margin-top: -6px; }
+.studio-name b { color: var(--cream); font-weight: 700; }
+.soup-card { position: fixed; inset: 0; z-index: 1000; touch-action: none; }
+.soup-card canvas { position: absolute; inset: 0; display: block; }
+.soup-skip { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); font: 700 0.75rem var(--f-mono); letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--teal); background: rgba(10, 24, 32, 0.7); border: 1px solid var(--teal); border-radius: 999px; padding: 8px 14px; cursor: pointer; opacity: 0.75; }
+body.souped { overflow: hidden; }
+
+/* ───────────── Responsive ───────────── */</style>
 
 <!-- ═════════ HERO ═════════ -->
 <header class="hero" id="top">
@@ -759,8 +814,11 @@ a { color: var(--amber); }
   </svg>
 
   <div class="wrap hero-copy">
-    <span class="eyebrow">a cozy game about a little homestead</span>
-    <h1>Frontiers<span class="c">Celestia<span class="dot">.</span></span></h1>
+    <span class="eyebrow">a Door Bowl game · now in beta</span>
+    <div class="lockup">
+      <img class="mark" src="icon.svg" width="150" height="150" alt="" aria-hidden="true">
+      <h1>Frontiers<span class="c">Celestia<span class="dot">.</span></span></h1>
+    </div>
     <p class="tag">You bought the cheapest planet on the list. The critters think you're wonderful.</p>
     <span class="note">(mostly they think your moonbeans are wonderful)</span>
     <div class="cta-row">
@@ -832,7 +890,7 @@ a { color: var(--amber); }
   <div class="wrap">
     <span class="eyebrow">so what is it?</span>
     <h2>A cozy colony sim where the factory is <em>made of critters.</em></h2>
-    <p class="lede">Automate your whole homestead with cute critters instead of fancy machines. Then wander off while they keep it running.</p>
+    <p class="lede">Automate your whole homestead with cute critters instead of fancy machines. Pay off a frankly unreasonable loan. Wander off while the little ones keep it all running.</p>
 
     <figure class="orbit" id="orbit" role="img" aria-label="Frontiers Celestia in the middle, with four favorite games orbiting it. From Stardew Valley, a little farm to fall for, here on a bargain planet. From Satisfactory, automating everything, but the factory is critters. From RimWorld, workers with big personalities: every critter has opinions. From Terraria, heading out with friends: new wilds every dawn."></figure>
   </div>
@@ -1035,7 +1093,7 @@ a { color: var(--amber); }
       <ul class="shot-notes hand" aria-label="Notes scribbled beside the photo">
         <li>the fields have faces now. don't ask</li>
         <li>a different stone from every zone we explored</li>
-        <li>the Pipsnips learned to log. I cried a little</li>
+        <li>the Gnawbits planted their own forest. I cried a little</li>
         <li>the machines hum all night. it's oddly soothing</li>
       </ul>
     </div>
@@ -1483,41 +1541,61 @@ a { color: var(--amber); }
   </div>
 </section>
 
-<!-- ═════════ THE WILDS ═════════ -->
-<section class="band wilds" id="wilds">
+<!-- ═════════ THE WORLD: Survey Team 7's chart ═════════ -->
+<section class="band chart-band" id="world">
   <div class="wrap">
-    <span class="eyebrow">through the east gate</span>
-    <h2>Five biomes. New every dawn.</h2>
-    <p class="lede">No combat. Just gathering, poking around, and a rude gust that knocks the beans out of your pockets.</p>
-    <div class="zones">
-      <div class="zone slide" style="--z:#cfeec0; --i:0">
-        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#e6f8d6"/><path d="M0 80 Q50 60 100 76 T200 70 V110 H0Z" fill="#a8e08f"/><g fill="#ffd94d"><circle cx="40" cy="64" r="4"/><circle cx="130" cy="58" r="3"/><circle cx="170" cy="66" r="4"/></g><g fill="#fff"><circle cx="80" cy="30" r="2"/><circle cx="150" cy="22" r="2.5"/></g></svg>
-        <span class="k">Zone 1</span><h3>Glimmer Meadow</h3><p>Sunny. Drizzlets and moonbean pods.</p>
+    <span class="eyebrow">the world map (press M)</span>
+    <h2>One planet, eleven lands. <em>The wild ones redraw themselves every dawn.</em></h2>
+    <p class="lede">Rivet's gates lead out from all four sides of the homestead. The wilds run east, deeper and stranger. Three quiet lands wait west, north and south to be woken up and settled. The whole thing is a loop, if you can clear the rockfalls.</p>
+    <div class="chart-grid">
+      <div class="chart" id="chart">
+        <svg viewBox="0 0 1000 640" role="group" aria-label="A chart of Celestia. Pick a land to read about it.">
+          <defs><radialGradient id="sea-g" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#123238"/><stop offset="1" stop-color="#07151b"/></radialGradient></defs>
+        </svg>
+        <div class="plate">Survey Team 7 · Chart CS-02<b>Celestia · not to scale · pencil by Rivet</b></div>
+        <div class="legend"><span><i></i>open</span><span><i class="r"></i>needs a refit</span><span><i class="g"></i>buried</span></div>
       </div>
-      <div class="zone slide" style="--z:#a7d9b6; --i:1">
-        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#c4ebcf"/><path d="M0 86 Q40 50 80 84 Q120 54 160 82 Q180 66 200 80 V110 H0Z" fill="#6fbf8f"/><g fill="#b9a3f0"><ellipse cx="50" cy="90" rx="22" ry="6"/><ellipse cx="150" cy="92" rx="18" ry="5"/></g><circle cx="110" cy="40" r="6" fill="#ff9fb3"/></svg>
-        <span class="k">Zone 2</span><h3>Mossy Hollows</h3><p>Soft and green. Pipsnips and Hootles.</p>
-      </div>
-      <div class="zone slide" style="--z:#5b4a8c; --zt:#fff1dc; --i:2">
-        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#3d3170"/><g fill="#2a2150"><path d="M20 110 L40 40 L60 110Z"/><path d="M120 110 L144 30 L168 110Z"/></g><g fill="#9ffff0"><circle cx="90" cy="70" r="4"/><circle cx="100" cy="80" r="3"/></g><g fill="#ffb3e6"><circle cx="186" cy="60" r="3"/></g></svg>
-        <span class="k">Zone 3</span><h3>Duskwood</h3><p>Always a bit evening. Glowcaps and brambles.</p>
-      </div>
-      <div class="zone slide" style="--z:#ecd4a4; --i:3">
-        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#f6e3bc"/><path d="M0 70 H70 V82 H140 V64 H200 V110 H0Z" fill="#d9b67a"/><path d="M30 40 q20 -10 40 0 M110 30 q24 -10 48 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
-        <span class="k">Zone 4</span><h3>Whistling Steppe</h3><p>Big skies, Bonkles, very rude wind.</p>
-      </div>
-      <div class="zone slide" style="--z:#2a2240; --zt:#fff1dc; --i:4">
-        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="200" height="110" fill="#1d1830"/><g fill="#4a3d6e" opacity="0.8"><ellipse cx="60" cy="70" rx="60" ry="22"/><ellipse cx="160" cy="60" rx="50" ry="18"/></g><g fill="#ffd94d"><circle cx="70" cy="60" r="2.5"/><circle cx="78" cy="60" r="2.5"/></g><circle cx="150" cy="30" r="3" fill="#73f2e6"/></svg>
-        <span class="k">Zone 5</span><h3>The Gloaming</h3><p>Bring a headlamp. Nombles love it here.</p>
-      </div>
+      <aside class="chart-card" id="chart-card" aria-live="polite">
+        <div class="cc-shot"><img alt="" loading="lazy" width="1200" height="900"><span class="cc-kind">Home</span></div>
+        <div class="cc-body">
+          <h3>The Homestead</h3>
+          <p class="cc-blurb"></p>
+          <dl class="cc-rows"></dl>
+          <p class="cc-hint hand">click a land, or press ← → on the map</p>
+        </div>
+      </aside>
     </div>
-    <div class="patience slide" style="--i:5">
-      <svg class="meter" viewBox="0 0 72 72" aria-hidden="true">
-        <circle cx="36" cy="36" r="28" fill="none" stroke="#3a2830" stroke-width="9"/>
-        <circle cx="36" cy="36" r="28" fill="none" stroke="#ffc26b" stroke-width="9" stroke-linecap="round" stroke-dasharray="122 176" transform="rotate(-90 36 36)"/>
-        <text x="36" y="41" text-anchor="middle" font-family="Space Mono, monospace" font-size="13" fill="#fff1dc">1d 4h</text>
-      </svg>
-      <div><b>Patience</b><p>How long the pantry lasts while you're away. One more page, or head home?</p></div>
+    <div class="chart-pills" aria-label="Jump to a land">
+      <button type="button" data-pick="base">Home</button>
+      <button type="button" data-pick="meadow">Glimmer Meadow</button>
+      <button type="button" data-pick="hollows">Mossy Hollows</button>
+      <button type="button" data-pick="duskwood">Duskwood</button>
+      <button type="button" data-pick="steppe">Whistling Steppe</button>
+      <button type="button" data-pick="gloaming">The Gloaming</button>
+      <button type="button" data-pick="thornwild">The Thornwild</button>
+      <button type="button" data-pick="haven">Quiet Clearing</button>
+      <button type="button" data-pick="valley">Hushed Valley</button>
+      <button type="button" data-pick="beach">Driftglass Beach</button>
+      <button type="button" data-pick="frontier">???</button>
+    </div>
+    <div class="chart-notes">
+      <div class="tear slide" style="--i:0">
+        <svg viewBox="0 0 72 72" aria-hidden="true">
+          <path d="M6 44 Q14 20 30 26 Q38 8 50 22 Q66 20 64 40 Q70 58 52 60 Q40 70 28 60 Q10 64 6 44Z" fill="#241433"/>
+          <path d="M6 44 Q12 40 18 46 Q22 36 30 44 Q36 34 44 44 Q52 36 58 46 Q62 40 64 40" fill="none" stroke="#ff6b8c" stroke-width="2.5" stroke-linecap="round"/>
+          <g fill="#ffd94d"><circle cx="24" cy="36" r="3.4"/><circle cx="44" cy="32" r="3.4"/><circle cx="34" cy="48" r="2.4"/></g>
+          <g fill="#241433"><circle cx="25" cy="36" r="1.4"/><circle cx="45" cy="32" r="1.4"/><circle cx="34.6" cy="48" r="1"/></g>
+        </svg>
+        <div><b>The dawn tear</b><p>At dawn a front of many-eyed murk tears across every wild zone you haven't attuned to yet, and the land grows back new behind it. Be home, be in camp, or be very fast. Lose the race and Rivet carries you home without your pack.</p></div>
+      </div>
+      <div class="patience slide" style="--i:1">
+        <svg class="meter" viewBox="0 0 72 72" aria-hidden="true">
+          <circle cx="36" cy="36" r="28" fill="none" stroke="#3a2830" stroke-width="9"/>
+          <circle cx="36" cy="36" r="28" fill="none" stroke="#ffc26b" stroke-width="9" stroke-linecap="round" stroke-dasharray="122 176" transform="rotate(-90 36 36)"/>
+          <text x="36" y="41" text-anchor="middle" font-family="Space Mono, monospace" font-size="13" fill="#fff1dc">1d 4h</text>
+        </svg>
+        <div><b>Patience</b><p>How long the canteen lasts while you're away. The critters keep working until it runs dry. One more page, or head home?</p></div>
+      </div>
     </div>
   </div>
 </section>
@@ -1530,7 +1608,7 @@ a { color: var(--amber); }
     <div class="notes">
       <article class="slide" style="--r:-1.2deg; --pin:#ff6b8c; --i:0">
         <h3>Everyone's someone</h3>
-        <p>Every critter rolls their own quirks, pronouns and favorite snack. They make best friends, and frenemies.</p>
+        <p>Every critter rolls their own quirks, pronouns and favorite snack. They make best friends and frenemies, and sometimes they fall in love. There's a wedding.</p>
         <p class="hand">two of mine fell out over a sock</p>
       </article>
       <article class="paper slide" style="--r:1.4deg; --pin:#7fd8bf; --i:1">
@@ -1540,21 +1618,23 @@ a { color: var(--amber); }
       </article>
       <article class="slide" style="--r:0.6deg; --pin:#ffc26b; --i:2">
         <h3>Bring friends</h3>
-        <p>Up to four spacers share one homestead online. Pat each other. Get married.</p>
+        <p>Up to four spacers share one homestead online. Hug, high-five, settle it with rock-paper-scissors. Get married.</p>
         <p class="hand">heaving giant logs takes two!</p>
       </article>
       <article class="paper slide" style="--r:-1.6deg; --pin:#b9a3f0; --i:0">
-        <h3>Nobody tells you</h3>
-        <p>Some secrets aren't on any list. Try poking around after dark.</p>
+        <h3>Gone fishing</h3>
+        <p>Twenty-eight fish, each with its own moves: some run, some leap, some sulk, one dances on the beat. Cook the catch at a campfire and the whole crew gets a buff.</p>
+        <p class="hand">the eel is a menace</p>
       </article>
       <article class="slide" style="--r:1deg; --pin:#73f2e6; --i:1">
-        <h3>Hats. So many hats.</h3>
-        <p>A whole cart of tiny hats for your critters. Some can only be found.</p>
+        <h3>Letters from home</h3>
+        <p>Your friends back on Block Seven write. Their letters bring blueprints, ideas, the fishing rod, and eventually the friends themselves.</p>
+        <p class="hand">write back. they notice if you don't</p>
       </article>
       <article class="paper slide" style="--r:-0.4deg; --pin:#ffd94d; --i:2">
-        <h3>Puffballs!</h3>
-        <p>Fluffy little things sprout in the grass and watch you work. Pop them for glimmer, or they'll nibble your crops.</p>
-        <p class="hand">pop a few in a row and they sing</p>
+        <h3>Decorate everything</h3>
+        <p>Every zone and every critter unlocks a style: paving, fences and a coat of paint for the cottage. Fountains, statues, blossom trees, a tree farm the Gnawbits plant themselves.</p>
+        <p class="hand">the fields have faces now</p>
       </article>
     </div>
   </div>
@@ -1566,7 +1646,7 @@ a { color: var(--amber); }
     <div>
       <span class="eyebrow">now boarding</span>
       <h2>Want to play it <em>first?</em></h2>
-      <p class="lede">Frontiers Celestia is in playtesting. Steven's looking for a few more spacers. Bring a friend and an evening, and tell him what you think.</p>
+      <p class="lede">Frontiers Celestia is in beta. Steven's looking for a few more spacers. Bring a friend and an evening, and tell him what you think.</p>
       <form class="signup" id="beta-form" novalidate>
         <div class="row">
           <label><span>Your name</span><input name="name" autocomplete="name" maxlength="80" placeholder="Spacer"></label>
@@ -1575,7 +1655,7 @@ a { color: var(--amber); }
         <div class="row">
           <label><span>You play on</span>
             <select name="platform">
-              <option>Windows</option><option>Mac</option>
+              <option>Windows</option><option>Mac</option><option>iPhone or iPad (soon)</option><option>Steam Deck</option>
             </select></label>
           <label><span>Anything else? <i>optional</i></span><input name="note" maxlength="500" placeholder="I'll bring a friend"></label>
         </div>
@@ -1588,7 +1668,7 @@ a { color: var(--amber); }
         <p class="big">You're on the manifest!</p>
         <p class="lede">Steven will email you when there's a seat. Keep an eye out for a Charter-teal envelope.</p>
       </div>
-      <p class="small">Mac and Windows, solo or co-op. Moonbeans provided.</p>
+      <p class="small">Windows and Mac now, phones and controllers soon. Solo or co-op. Moonbeans provided.</p>
     </div>
     <div class="ticket slide" aria-label="A beta boarding pass">
       <div class="main">
@@ -1608,17 +1688,24 @@ a { color: var(--amber); }
   </div>
 </section>
 
-<!-- ═════════ BEACON ═════════ -->
+<!-- ═════════ THE LAST ORDER / footer ═════════ -->
 <footer class="beacon">
   <div class="beam" aria-hidden="true"></div>
   <div class="wrap inner">
     <span class="eyebrow">the very last order</span>
-    <h2>Light the beacon. Then choose.</h2>
-    <p>Take the corner office, or keep Lot 7 for your friends and a valley of small helpers.</p>
+    <h2>Clear the loan. <em>Then choose.</em></h2>
+    <p>One last shipment pays off a hundred thousand chits of somebody else's bad decisions. Then the Charter offers you a corner office, and the critters offer you a reason to stay.</p>
     <span class="sig">see you on Celestia ✦</span>
+    <div class="studio">
+      <div class="knocker" role="button" tabindex="0" aria-label="A ceramic bowl with a tiny door in its side. Knock on it.">
+        <canvas id="doorbowl" width="576" height="456" aria-hidden="true"></canvas>
+        <span class="knock-hint hand" aria-hidden="true">knock knock?</span>
+      </div>
+      <p class="studio-name">a <b>Door Bowl</b> game</p>
+    </div>
     <div class="foot">
-      <span>Frontiers Celestia · a cozy homestead game in progress</span>
-      <span>Lot 7, Celestia · Rent: none</span>
+      <span>Frontiers Celestia · Beta 1.1.5 · a Door Bowl game</span>
+      <span>Lot 7, Celestia · Rent: none · Loan: considerable</span>
     </div>
   </div>
 </footer>
@@ -1818,13 +1905,13 @@ a { color: var(--amber); }
     [1.00, '#3a1430', '#7a2840', '#2a1630', '#1d2a30']
   ];
   const PHASES = [
-    [0.00, 'Dawn', 'The wilds rearrange themselves.'],
-    [0.10, 'Morning', 'Drizzlets water. Pipsnips snip.'],
+    [0.00, 'Dawn', 'The tear sweeps the wilds clean. They grow back new.'],
+    [0.10, 'Morning', 'Drizzlets water. Pipsnips snip. The post comes at nine.'],
     [0.30, 'Afternoon', 'Good weather for wandering.'],
     [0.47, 'Dusk', 'Lumoths and Hootles wake up.'],
     [0.62, 'Night', 'Everything glows.'],
     [0.80, 'Very late', 'Out in the wilds, the trees twitch.'],
-    [0.92, 'Way too late', 'Run.']
+    [0.92, 'Way too late', 'RUN FOR THE GATE.']
   ];
   const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const mix = (a, b, t) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; };
@@ -2143,6 +2230,829 @@ a { color: var(--amber); }
     }
   });
 })();
+</script>
+<script>
+  /* ── Survey Team 7's chart: the world as the game lays it out (WorldChart's spots on a 1000 x 640 sheet),
+     every land a blob you can pick, the roads between them, and a card of what's there. ── */
+  (() => {
+    const host = document.getElementById('chart');
+    if (!host) return;
+    const svg = host.querySelector('svg');
+    const NS = 'http://www.w3.org/2000/svg';
+    const SPECIES = {
+      drizzlet: ['Drizzlets', '#9bd9ff'], pipsnip: ['Pipsnips', '#ffb3c8'], lumoth: ['Lumoths', '#d9c8ff'], hootle: ['Hootles', '#e0b98a'],
+      tinkit: ['Tinkits', '#ffd27a'], gnawbit: ['Gnawbits', '#d6a070'], bonkle: ['Bonkles', '#c8c0c4'], nomble: ['Nombles', '#9be86a'],
+    };
+    // Each land: where it sits and how big (the game's chart), its colours, what grows on it, and the card.
+    const LANDS = {
+      base: { name: 'The Homestead', kind: 'Home', at: [296, 318], size: [84, 68], ground: '#61ad94', accent: '#80bd80', art: 'tree', tint: '#478a76', shot: 'shots/home_night.jpg',
+        blurb: 'Four corners round one hub. Your lot, your tent, a pond, the main chest, the bench and the pad. Everything out there comes back here.',
+        who: ['drizzlet', 'pipsnip', 'lumoth', 'hootle', 'tinkit', 'gnawbit', 'bonkle', 'nomble'], whoNote: 'Whoever you bring home.', grows: 'Moonbeans to start. Four crops once you find the seeds. A tree farm, later.',
+        watch: 'Puffballs nibbling the crops. Your own patience.', way: 'Four gates: east into the wilds; west, north and south to three quiet, barren lands.' },
+      haven: { name: 'Quiet Clearing', kind: 'Barren land', at: [112, 318], size: [82, 74], ground: '#78b87a', accent: '#9ec270', art: 'tree', tint: '#427f61', barren: true, shot: 'shots/map_haven.jpg',
+        blurb: 'A bare, quiet clearing. Something big grew here once.', who: [], whoNote: 'Nobody, yet. Seven of your friends from Block Seven would love to.',
+        grows: 'Starwood, once the land wakes up.', watch: 'Nothing. It is safe out here, just sad.', way: 'West of the homestead. Attune it: find its three clues, make an offering, bring three kinds of critter, and sing.' },
+      valley: { name: 'Hushed Valley', kind: 'Barren land', at: [286, 112], size: [104, 66], ground: '#6ba88f', accent: '#8fb87a', art: 'tree', tint: '#457f7a', barren: true, shot: 'shots/map_valley.jpg',
+        blurb: 'A dry valley where even the wind whispers.', who: [], whoNote: 'Two farmers, when it is ready for them.',
+        grows: 'Sugarstars, and a creek with a ford.', watch: 'Nothing. Bring a fishing rod.', way: 'North of the homestead. Attune it with 12 sugarstars and three kinds of critter.' },
+      beach: { name: 'Driftglass Beach', kind: 'Barren land', at: [276, 532], size: [110, 62], ground: '#e6cf99', accent: '#f5e6b8', art: 'palm', tint: '#5c9e6b', barren: true, shot: 'shots/map_beach.jpg',
+        blurb: 'Grey sand and sea glass. The tide forgot this place.', who: [], whoNote: 'Two settlers who like the sea.',
+        grows: 'Glimmer in the sand. The fishing is the best on the planet.', watch: 'Sunburn.', way: 'South of the homestead. Attune it with 12 glimmer and three kinds of critter.' },
+      meadow: { name: 'Glimmer Meadow', kind: 'Wild zone 1 of 6', at: [462, 314], size: [74, 60], ground: '#8cd48f', accent: '#bde085', art: 'flower', tint: '#fad680', lblAt: [462, 238], shot: 'shots/map_meadow.jpg',
+        blurb: 'Gentle, bright and open. Drizzlets love it.', who: ['drizzlet'], grows: 'Moonbean pods, starwood, a page or two blowing about.',
+        watch: 'Nothing, honestly. It is the gentle one.', way: 'The east gate, once your first crate has shipped.' },
+      hollows: { name: 'Mossy Hollows', kind: 'Wild zone 2 of 6', at: [600, 334], size: [72, 62], ground: '#337866', accent: '#4d946b', art: 'tree', tint: '#75cc94', lblAt: [600, 398], shot: 'shots/map_hollows.jpg',
+        blurb: 'Soft moss, sugarstars, and the first gusts.', who: ['pipsnip', 'hootle'], whoNote: 'Hootles only wake at dusk.', grows: 'Sugarstar pods, mossbark, stone.',
+        watch: 'Gusts: they knock the beans out of your pockets.', way: 'Straight on from the Meadow.' },
+      duskwood: { name: 'Duskwood', kind: 'Wild zone 3 of 6', at: [738, 300], size: [80, 68], ground: '#5c478f', accent: '#423d80', art: 'crystal', tint: '#bd9eff', shot: 'shots/map_duskwood.jpg',
+        blurb: 'Glowcaps and squalls under the crystal trees.', who: ['lumoth', 'tinkit', 'gnawbit'], whoNote: 'Lumoths wake at dusk and shine.', grows: 'Glowcap pods, nightbark, stone.',
+        watch: 'Squalls, and Murkles after dark.', way: 'Brambles across the way in. Rivet’s bramble saw.' },
+      steppe: { name: 'Whistling Steppe', kind: 'Wild zone 4 of 6', at: [640, 104], size: [126, 62], ground: '#dbad80', accent: '#c78f6b', art: 'mesa', tint: '#b3705c', shot: 'shots/map_steppe.jpg',
+        blurb: 'Wide, windy and stony. Mind the ledges.', who: ['bonkle'], grows: 'Puffwheat pods, whistlewood, stone by the ton.',
+        watch: 'Big rude gusts, and ledges you need to hop.', way: 'A ledge north of Duskwood. Rivet’s hop jets.' },
+      gloaming: { name: 'The Gloaming', kind: 'Wild zone 5 of 6', at: [872, 166], size: [88, 84], ground: '#2e2e66', accent: '#423375', art: 'shroom', tint: '#e680c7', shot: 'shots/map_gloaming.jpg',
+        blurb: 'Murk, mushrooms and Murkles.', who: ['nomble'], grows: 'Gloamwood, glowcaps, stone, and most of the planet’s curiosities.',
+        watch: 'Murkles. Lots of Murkles. Bring a Nomble.', way: 'Murk. Rivet’s headlamp.' },
+      thornwild: { name: 'The Thornwild', kind: 'Safari', at: [650, 536], size: [130, 72], ground: '#6b3857', accent: '#8f424d', art: 'thorn', tint: '#fa8f66', lblAt: [650, 632], shot: 'shots/map_thornwild.jpg',
+        blurb: 'It will never settle. The best pickings are here.', who: ['pipsnip', 'lumoth', 'gnawbit', 'bonkle'], whoNote: 'A little of everything.',
+        grows: 'Every kind of pod, thornheart (the rarest wood), stone.', watch: 'Everything at once. Only here the wilds never calm down.', way: 'Brambles south of the Hollows, and a Charter safari permit (it ships with order 5).' },
+      frontier: { name: 'The Far Reach', kind: 'Unsurveyed', at: [952, 40], size: [40, 30], ground: '#474266', accent: '#333352', art: 'stone', tint: '#99e6d9', cloud: true, lblAt: [928, 98],
+        blurb: 'Old waystones and bad weather. Nothing out here resets.', who: [], whoNote: '[withdrawn by Legal]', grows: '[withdrawn by Legal]', watch: '[withdrawn by Legal]', way: 'Past the Gloaming. Survey Team 7 did not come back this way.' },
+    };
+    const ORDER = ['base', 'meadow', 'hollows', 'duskwood', 'steppe', 'gloaming', 'thornwild', 'haven', 'valley', 'beach', 'frontier'];
+    // Roads, as the game joins the lands: [from, to, what bars the way from the first side, bent toward].
+    const LINKS = [
+      ['base', 'meadow'], ['base', 'haven'], ['base', 'valley'], ['base', 'beach'], ['meadow', 'hollows'],
+      ['hollows', 'duskwood', 'brambles'], ['hollows', 'thornwild', 'brambles'], ['duskwood', 'steppe', 'ledge'], ['steppe', 'gloaming', 'murk'],
+      ['haven', 'valley', null, [146, 166]], ['haven', 'beach', null, [136, 476]],
+      ['steppe', 'valley', 'rockfall', [470, 62]], ['thornwild', 'beach', 'rockfall', [466, 596]], ['gloaming', 'thornwild', 'rockfall', [928, 450]],
+      ['gloaming', 'frontier', 'fog'],
+    ];
+    const BAR_WORDS = { brambles: 'Brambles: bring the bramble saw', ledge: 'A ledge: hop jets', murk: 'Murk: the headlamp', rockfall: 'A rockfall. It only comes down from the wild side.', fog: 'Unsurveyed' };
+    const SCRIBBLES = [[218, 232, 'home!', -6], [800, 386, 'it glows. why', 4], [590, 600, 'do NOT pet', -3], [990, 90, '??', 8]];
+
+    const hash = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+    const el = (tag, attrs = {}, parent = svg) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+    const seedOf = (id) => [...id].reduce((a, c) => a + c.charCodeAt(0), 0);
+    // A land's edge: an ellipse with a few slow waves round it, as a smooth closed path.
+    function blobPoints(land, grow = 1) {
+      const s = seedOf(land.name), pts = [];
+      for (let i = 0; i < 40; i++) {
+        const a = i / 40 * Math.PI * 2, w = 1 + 0.07 * Math.sin(3 * a + s) + 0.045 * Math.sin(5 * a + s * 1.7) + 0.03 * Math.sin(8 * a + s * 0.4);
+        pts.push([land.at[0] + Math.cos(a) * land.size[0] * w * grow, land.at[1] + Math.sin(a) * land.size[1] * w * grow]);
+      }
+      return pts;
+    }
+    function smoothPath(pts) {
+      const n = pts.length; let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+      for (let i = 0; i < n; i++) {
+        const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+        d += ` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+      }
+      return d + 'Z';
+    }
+    // Where a land's edge is in a direction, so roads stop at the coast.
+    const edgeAt = (land, dir) => { const a = Math.atan2(dir[1] / land.size[1], dir[0] / land.size[0]); return [land.at[0] + Math.cos(a) * land.size[0] * 0.62, land.at[1] + Math.sin(a) * land.size[1] * 0.62]; };
+    const STAMPS = {
+      tree: (t) => `<path d="M0 2 l-5 9 h10z M0 -5 l-4 8 h8z" fill="${t}"/><rect x="-1" y="10" width="2" height="4" fill="#3b2a2a"/>`,
+      palm: (t) => `<path d="M0 12 q1 -8 0 -14" stroke="#7a5a3a" stroke-width="2" fill="none"/><path d="M0 -2 q-8 -6 -12 0 q7 -2 12 2z M0 -2 q8 -6 12 0 q-7 -2 -12 2z M0 -2 q-4 -9 2 -12 q-1 7 -2 12z" fill="${t}"/>`,
+      flower: (t) => `<circle cx="-5" cy="2" r="2.4" fill="${t}"/><circle cx="3" cy="-3" r="2" fill="#fff"/><circle cx="6" cy="4" r="2.2" fill="${t}"/>`,
+      crystal: (t) => `<path d="M0 -12 l5 8 l-5 8 l-5 -8z" fill="${t}"/><path d="M0 -12 l5 8 l-5 2z" fill="#fff" opacity="0.35"/>`,
+      mesa: (t) => `<path d="M-10 8 l3 -10 h14 l3 10z" fill="${t}"/><path d="M-7 -2 h14 l-1 -3 h-12z" fill="#fff" opacity="0.25"/>`,
+      shroom: (t) => `<path d="M-8 2 a8 7 0 0 1 16 0z" fill="${t}"/><rect x="-2" y="2" width="4" height="7" fill="#e9d6ff"/><circle cx="-3" cy="-2" r="1.3" fill="#fff" opacity="0.7"/>`,
+      thorn: (t) => `<path d="M0 10 v-16 M0 -2 l-6 -5 M0 1 l6 -6 M0 5 l-5 -3" stroke="${t}" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+      stone: (t) => `<path d="M-8 6 q-2 -9 6 -10 q9 -1 9 8 q-8 4 -15 2z" fill="${t}"/>`,
+    };
+
+    /* the sea */
+    el('rect', { width: 1000, height: 640, fill: 'url(#sea-g)', class: 'sea' });
+    for (let i = 0; i < 7; i++) {
+      const y = 40 + i * 92 + (i % 2) * 30; let d = `M-40 ${y}`;
+      for (let x = 0; x <= 1040; x += 40) d += ` q20 -6 40 0`;
+      el('path', { d, class: 'wave', style: `--d:${(i * 1.3).toFixed(1)}s` });
+    }
+    /* roads under the lands */
+    const roads = el('g', { class: 'roads' });
+    for (const [a, b, bar, bend] of LINKS) {
+      const A = LANDS[a], B = LANDS[b];
+      const from = edgeAt(A, bend ? [bend[0] - A.at[0], bend[1] - A.at[1]] : [B.at[0] - A.at[0], B.at[1] - A.at[1]]);
+      const to = edgeAt(B, bend ? [bend[0] - B.at[0], bend[1] - B.at[1]] : [A.at[0] - B.at[0], A.at[1] - B.at[1]]);
+      const d = bend ? `M${from} Q${bend} ${to}` : `M${from} L${to}`;
+      const kind = bar === 'rockfall' ? 'buried' : bar === 'fog' ? 'fog' : bar ? 'barred' : 'open';
+      const g = el('g', { class: 'road ' + kind, 'data-road': a + '|' + b }, roads);
+      el('path', { d, class: 'road-under' }, g); el('path', { d, class: 'road-line' }, g);
+      if (bar) {
+        // The thing in the way sits toward the land it bars from.
+        const t = kind === 'buried' ? 0.5 : 0.28, p = bend
+          ? [(1 - t) * (1 - t) * from[0] + 2 * (1 - t) * t * bend[0] + t * t * to[0], (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * bend[1] + t * t * to[1]]
+          : [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t];
+        const m = el('g', { class: 'bar ' + bar, transform: `translate(${p[0].toFixed(1)} ${p[1].toFixed(1)})` }, g);
+        const title = document.createElementNS(NS, 'title'); title.textContent = BAR_WORDS[bar]; m.appendChild(title);
+        m.innerHTML += {
+          brambles: '<circle r="11" class="bar-bg"/><path d="M-6 5 q3 -10 10 -9 M-7 -3 q6 -2 12 6 M-2 -8 q2 6 6 11" stroke="#d2435a" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="-5" cy="-4" r="1.4" fill="#ffd27a"/>',
+          ledge: '<circle r="11" class="bar-bg"/><path d="M-7 5 h5 v-4 h5 v-4 h5" stroke="#ffc26b" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+          murk: '<circle r="11" class="bar-bg"/><path d="M-7 -3 q3 -3 6 0 t6 0 M-7 2 q3 -3 6 0 t6 0 M-7 7 q3 -3 6 0 t6 0" stroke="#b9a3f0" stroke-width="2" fill="none" stroke-linecap="round"/>',
+          rockfall: '<circle r="12" class="bar-bg"/><circle cx="-4" cy="3" r="4.5" fill="#8f8aa8"/><circle cx="4" cy="4" r="3.8" fill="#a9a3c2"/><circle cx="0" cy="-3" r="3.6" fill="#7a7494"/>',
+          fog: '<circle r="9" class="bar-bg" opacity="0.5"/><text y="4" text-anchor="middle" class="bar-q">?</text>',
+        }[bar];
+      }
+    }
+    /* the lands */
+    const landsG = el('g', { class: 'lands' });
+    const nodes = {};
+    for (const id of ORDER) {
+      const L = LANDS[id], g = el('g', { class: 'land' + (L.cloud ? ' clouded' : ''), 'data-land': id, role: 'button', tabindex: '0', 'aria-label': `${L.name}, ${L.kind}`, 'aria-pressed': 'false' }, landsG);
+      const d = smoothPath(blobPoints(L));
+      el('path', { d: smoothPath(blobPoints(L, 1.08)), class: 'coast' }, g);
+      if (L.barren) {
+        const gid = 'lush-' + id, grad = el('radialGradient', { id: gid, cx: '50%', cy: '50%', r: '60%' }, svg.querySelector('defs'));
+        el('stop', { offset: '0', 'stop-color': L.ground }, grad); el('stop', { offset: '0.55', 'stop-color': L.ground }, grad); el('stop', { offset: '1', 'stop-color': '#948a85' }, grad);
+        el('path', { d, class: 'ground', fill: `url(#${gid})` }, g);
+      } else el('path', { d, class: 'ground', fill: L.ground }, g);
+      const s = seedOf(id);
+      for (let i = 0; i < 3; i++) {
+        const a = hash(s + i * 7) * Math.PI * 2, r = 0.25 + hash(s + i * 13) * 0.4;
+        el('ellipse', { cx: (L.at[0] + Math.cos(a) * L.size[0] * r).toFixed(1), cy: (L.at[1] + Math.sin(a) * L.size[1] * r).toFixed(1), rx: (L.size[0] * (0.16 + hash(s + i) * 0.14)).toFixed(1), ry: (L.size[1] * (0.14 + hash(s + i + 2) * 0.12)).toFixed(1), fill: L.accent, opacity: '0.7' }, g);
+      }
+      const stamps = el('g', { class: 'stamps' }, g);
+      const count = Math.round(L.size[0] * L.size[1] / 650);
+      let inner = '';
+      for (let i = 0; i < count; i++) {
+        const a = hash(s * 3 + i * 11) * Math.PI * 2, r = 0.18 + hash(s * 5 + i * 17) * 0.6, sc = (0.75 + hash(s + i * 23) * 0.5).toFixed(2);
+        const x = (L.at[0] + Math.cos(a) * L.size[0] * r).toFixed(1), y = (L.at[1] + Math.sin(a) * L.size[1] * r).toFixed(1);
+        inner += `<g transform="translate(${x} ${y}) scale(${sc})">${STAMPS[L.art](L.tint)}</g>`;
+      }
+      stamps.innerHTML = inner;
+      if (id === 'base') {
+        stamps.innerHTML += `<g transform="translate(${L.at[0]} ${L.at[1] + 2})"><ellipse cx="0" cy="12" rx="16" ry="4" fill="#000" opacity="0.2"/><path d="M-12 2 h24 v10 h-24z" fill="#fff1dc"/><path d="M-15 3 l15 -13 l15 13z" fill="#ff9fb3"/><rect x="-3" y="5" width="6" height="7" fill="#2a1d23"/><rect x="6" y="5" width="4" height="4" fill="#ffe2a0"/><path d="M-26 14 l6 -14 l6 14z" fill="#ffc26b"/><path d="M-20 0 l6 14 h-4z" fill="#e8a454"/></g>`;
+      }
+      if (L.cloud) {
+        const c = el('g', { class: 'cloud' }, g);
+        c.innerHTML = `<ellipse cx="${L.at[0] - 10}" cy="${L.at[1]}" rx="34" ry="18"/><ellipse cx="${L.at[0] + 16}" cy="${L.at[1] - 8}" rx="28" ry="16"/><ellipse cx="${L.at[0] + 6}" cy="${L.at[1] + 12}" rx="30" ry="14"/>`;
+      }
+      el('path', { d, class: 'hit' }, g);
+      const lat = L.lblAt || [L.at[0], L.at[1] + L.size[1] * 0.62 + 22];
+      const lbl = el('text', { x: lat[0], y: lat[1], class: 'lbl', 'text-anchor': 'middle' }, g);
+      lbl.textContent = L.name;
+      nodes[id] = g;
+    }
+    /* Rivet's pencil */
+    for (const [x, y, words, rot] of SCRIBBLES) { const t = el('text', { x, y, class: 'scribble', transform: `rotate(${rot} ${x} ${y})` }); t.textContent = words; }
+    /* a spacer bobbing over home, and Rivet crossing the sky now and then */
+    const you = el('g', { class: 'you', transform: `translate(${LANDS.base.at[0] + 26} ${LANDS.base.at[1] - 30})` });
+    you.innerHTML = '<ellipse cx="0" cy="24" rx="8" ry="2.5" fill="#000" opacity="0.25"/><circle cx="0" cy="0" r="9" fill="#fff"/><circle cx="0" cy="0" r="6" fill="#2a2148"/><circle cx="-2" cy="-2" r="1.6" fill="#fff" opacity="0.7"/><rect x="-5" y="8" width="10" height="9" rx="4" fill="#7fd8bf"/>';
+    const comet = el('g', { class: 'comet' });
+    comet.innerHTML = '<path d="M-34 0 L0 0" stroke="#73f2e6" stroke-width="3" stroke-linecap="round" opacity="0.6"/><rect x="-4" y="-4" width="8" height="8" rx="2" fill="#d7dce8"/><rect x="-2.5" y="-2" width="5" height="3" rx="1" fill="#73f2e6"/>';
+
+    /* the card */
+    const card = document.getElementById('chart-card');
+    const img = card.querySelector('img'), kindEl = card.querySelector('.cc-kind'), nameEl = card.querySelector('h3'), blurbEl = card.querySelector('.cc-blurb'), rows = card.querySelector('.cc-rows');
+    let picked = null;
+    function pick(id, focus) {
+      if (picked === id) return;
+      const L = LANDS[id]; picked = id;
+      for (const k in nodes) { nodes[k].classList.toggle('picked', k === id); nodes[k].setAttribute('aria-pressed', k === id ? 'true' : 'false'); }
+      svg.querySelectorAll('.road').forEach((r) => { const [a, b] = r.dataset.road.split('|'); r.classList.toggle('lit', a === id || b === id); });
+      card.classList.remove('swap'); void card.offsetWidth; card.classList.add('swap');
+      card.classList.toggle('redacted', !!L.cloud);
+      if (L.shot) { img.src = L.shot; img.alt = `${L.name}, as it looks in the game.`; img.hidden = false; } else { img.removeAttribute('src'); img.hidden = true; }
+      kindEl.textContent = L.kind; nameEl.textContent = L.name; blurbEl.textContent = L.blurb;
+      const who = L.who.map((s) => `<i class="sp" style="--c:${SPECIES[s][1]}">${SPECIES[s][0]}</i>`).join('') + (L.whoNote ? `<span>${L.whoNote}</span>` : '');
+      rows.innerHTML = `<div><dt>Who lives here</dt><dd>${who}</dd></div><div><dt>What grows</dt><dd>${L.grows}</dd></div><div><dt>Watch out for</dt><dd>${L.watch}</dd></div><div><dt>The way in</dt><dd>${L.way}</dd></div>`;
+      if (focus) nodes[id].focus({ preventScroll: true });
+    }
+    for (const id in nodes) {
+      const g = nodes[id];
+      g.addEventListener('click', () => pick(id));
+      // A click picks without taking focus, so nothing scrolls to bring the land into view.
+      g.addEventListener('mousedown', (e) => e.preventDefault());
+      g.addEventListener('pointerenter', () => { if (LANDS[id].shot) { const pre = new Image(); pre.src = LANDS[id].shot; } });
+      g.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(id); }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); pick(ORDER[(ORDER.indexOf(picked || id) + 1) % ORDER.length], true); }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); pick(ORDER[(ORDER.indexOf(picked || id) + ORDER.length - 1) % ORDER.length], true); }
+      });
+    }
+    document.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => pick(b.dataset.pick)));
+    pick('base');
+
+    /* the comet, only while the chart is on screen */
+    let visible = false, t0 = performance.now();
+    new IntersectionObserver((es) => { visible = es[0].isIntersecting; }, { rootMargin: '80px' }).observe(host);
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!visible || reduce) return;
+      const t = (now - t0) / 1000, cycle = t % 13, u = cycle / 1.1;
+      you.setAttribute('transform', `translate(${LANDS.base.at[0] + 26} ${LANDS.base.at[1] - 30 + Math.sin(t * 2.2) * 3})`);
+      if (u < 1) {
+        const x = -40 + u * 1080, y = 90 + Math.sin(u * Math.PI) * -40 + u * 30, ang = Math.atan2(30 - 40 * Math.PI * Math.cos(u * Math.PI), 1080) * 180 / Math.PI;
+        comet.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${ang.toFixed(1)})`); comet.style.opacity = '1';
+      } else comet.style.opacity = '0';
+    }
+    requestAnimationFrame(tick);
+  })();
+</script>
+<script>
+  /* ── Door Bowl: the studio card, ported from the game. A ceramic bowl with a tiny door in its side sits in
+     the footer. Knock three times (each knock lands harder, and something kicks back from inside), and on the
+     third the door bursts and soup pours out of it straight at the camera until DOOR BOWL bobs up in it. Then
+     it drains, the juice left behind pulls itself into "a" and "game", and the camera dives through the little
+     door into the page. ── */
+  (() => {
+    const small = document.getElementById('doorbowl');
+    if (!small) return;
+    const FRAME = [1280, 720], MIDDLE = [640, 360];
+    const K = {
+      BACKDROP: [19, 13, 28], SPOT: [32, 20, 47], SPOT_CORE: [42, 27, 61], INK: [23, 14, 33], CERAMIC: [204, 194, 179],
+      CERAMIC_SHADE: [158, 145, 148], GLAZE: [69, 92, 153], DOOR: [168, 74, 71], DOOR_BACK: [107, 43, 51], DOOR_FRAME: [140, 92, 56],
+      DOORWAY: [43, 15, 33], KNOB: [209, 173, 82], PASTA: [209, 194, 143], LETTER: [237, 230, 209], PEA: [112, 163, 97], CARROT: [194, 128, 66],
+    };
+    const SOUP = [[115, 51, 82], [38, 87, 92], [122, 97, 43], [71, 54, 112], [128, 71, 43]];
+    const JUICE = [[173, 61, 120], [36, 135, 140], [194, 148, 51], [110, 79, 184], [196, 97, 51]];
+    const RIM = [640, 300], RIM_RADII = [212, 40], DEPTH = 168, FOOT = [640, 486];
+    const DOOR_RECT = { x: 613, y: 382, w: 54, h: 74 };
+    const BOWL_SCALE = 1.25, BOWL_PIVOT = [640, 380], MOUTH = [640, 440];
+    const KICK_POWER = [0.6, 0.85, 1.3], AJAR = 22, OPEN_SECONDS = 0.24, SHAKE = 9;
+    const DOOR_CRACKS = [[[26, 8], [22, 19], [29, 27], [24, 36]], [[24, 36], [33, 44], [27, 54], [35, 63], [31, 72]], [[29, 27], [41, 31], [48, 25]]];
+    // The gush and everything after it run from the third kick.
+    const GUSH = 0.06, BAND_EVERY = 0.16, GROWTH = 3.3, MOUTH_RADIUS = 11, SAG = 1.4, WOBBLE = 0.205, EDGE_POINTS = 120, RIDERS = 4;
+    const WORDS = ['DOOR', 'BOWL'], LETTERS_AT = 1.16, LETTER_EVERY = 0.085, LETTER_SIZE = 212, POP_SECONDS = 0.42;
+    const DRAIN = 2.81, DRAIN_RUSH = 1.9, LOCKUP_AT = DRAIN + 0.1, LOCKUP_SECONDS = 0.6, LOCKUP_EVERY = 0.015, LOCKUP_SCALE = 0.72;
+    const LOCKUP = [892, 352], SETTLED_SCALE = 0.76, SETTLED_AT = [370, 372], MOUTH_MOVES = [1.35, 2.0];
+    const GOO_AT = DRAIN + 0.55, GOO_SECONDS = 0.95, ZOOM_AT = GOO_AT + GOO_SECONDS + 1.05, ZOOM_SECONDS = 1.15, DOOR_LINING = 3;
+    const END = ZOOM_AT + ZOOM_SECONDS;
+    const GOO_WORDS = [{ text: 'a', at: [668, 110], height: 64 }, { text: 'game', at: [754, 530], height: 64 }];
+    const GOO_STROKES = {
+      a: [[[0.94, 0.24], [0.66, 0.02], [0.28, 0.08], [0.04, 0.48], [0.24, 0.9], [0.62, 0.98], [0.92, 0.7]], [[0.95, 0.03], [0.94, 0.5], [0.97, 0.88], [1.14, 1.0]]],
+      g: [[[0.94, 0.24], [0.66, 0.02], [0.28, 0.08], [0.04, 0.48], [0.24, 0.9], [0.62, 0.98], [0.92, 0.7]], [[0.95, 0.03], [0.94, 0.7], [0.92, 1.2], [0.68, 1.5], [0.32, 1.52], [0.08, 1.34]]],
+      m: [[[0.06, 0.03], [0.06, 0.5], [0.06, 1.0]], [[0.06, 0.38], [0.24, 0.06], [0.46, 0.04], [0.62, 0.26], [0.64, 1.0]], [[0.64, 0.38], [0.82, 0.06], [1.04, 0.04], [1.2, 0.26], [1.22, 0.76], [1.34, 1.0]]],
+      e: [[[0.06, 0.52], [0.5, 0.5], [0.94, 0.46], [0.8, 0.12], [0.46, 0.0], [0.12, 0.2], [0.02, 0.56], [0.18, 0.9], [0.52, 1.0], [0.88, 0.84]]],
+    };
+    const GOO_ADVANCE = { a: 1.46, g: 1.42, m: 1.76, e: 1.2 };
+    const GOO_FATNESS = 0.15, GOO_INK = 4.5, GOO_STEP = 3, SMEAR = 120, SMEAR_FAT = 1.9;
+    const GOO_DRIPS = [[0, 0.72, 18, 5.5, 0.62], [1, 0.92, 26, 6, 0.8], [3, 0.8, 26, 5.5, 0.9], [4, 0.74, 52, 7, 0.58], [7, 1.0, 34, 6, 0.74], [9, 0.84, 40, 6, 0.68]];
+    // The part of the frame the little footer bowl shows.
+    const SMALL_VIEW = { x: 352, y: 88, w: 576, h: 456 };
+
+    /* maths */
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    const fract = (x) => x - Math.floor(x);
+    const hash = (n) => fract(Math.sin(n * 127.1 + 311.7) * 43758.5453);
+    const vlerp = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t)];
+    const rgb = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+    const light = (c, f) => c.map((v) => v + (255 - v) * f);
+    const dark = (c, f) => c.map((v) => v * (1 - f));
+    const clerp = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+    const spring = (u) => u <= 0 ? 0 : u >= 1 ? 1 : 1 - Math.exp(-u * 6) * Math.cos(u * 11) * (1 - u);
+    const popf = (u) => 1 + 3.4 * Math.pow(u - 1, 3) + 2.4 * Math.pow(u - 1, 2);
+    // 2D transforms as canvas matrices; mul(A, B) applies B first, then A (Godot's A * B).
+    const ID = [1, 0, 0, 1, 0, 0];
+    const mul = (A, B) => [A[0] * B[0] + A[2] * B[1], A[1] * B[0] + A[3] * B[1], A[0] * B[2] + A[2] * B[3], A[1] * B[2] + A[3] * B[3], A[0] * B[4] + A[2] * B[5] + A[4], A[1] * B[4] + A[3] * B[5] + A[5]];
+    const T = (x, y) => [1, 0, 0, 1, x, y];
+    const S = (sx, sy = sx) => [sx, 0, 0, sy, 0, 0];
+    const Rot = (a) => [Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0];
+    const chain = (...ms) => ms.reduce((acc, m) => mul(acc, m), ID); // chain(T, R, S): S first
+    const xf = (M, p) => [M[0] * p[0] + M[2] * p[1] + M[4], M[1] * p[0] + M[3] * p[1] + M[5]];
+    const scaleOf = (M) => Math.hypot(M[0], M[1]);
+
+    /* state */
+    let kicks = []; // the time (performance.now()/1000) of each knock
+    let start = performance.now() / 1000;
+    let overlay = null, octx = null, ocv = null, closing = false, hopped = false, done = false;
+    let smallRect = null, playing = false, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let goo = [], font = '700 212px Fredoka, Nunito, sans-serif';
+    const sctx = small.getContext('2d');
+    const now = () => performance.now() / 1000 - start;
+    const k3 = () => kicks.length >= 3 ? kicks[2] : Infinity;
+    const since3 = (t) => t - k3(); // seconds since the third kick (negative before it)
+
+    /* ── sounds, synthesized on the spot ── */
+    let ac = null, master = null;
+    function audio() {
+      if (ac) return ac;
+      try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+      return ac;
+    }
+    function noise(seconds) {
+      const b = ac.createBuffer(1, Math.ceil(ac.sampleRate * seconds), ac.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const s = ac.createBufferSource(); s.buffer = b; return s;
+    }
+    function sfx(kind, power = 1) {
+      if (!audio() || ac.state === 'closed') return;
+      if (ac.state === 'suspended') ac.resume();
+      const t0 = ac.currentTime;
+      const env = (g, peak, attack, decay) => { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + attack); g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay); };
+      if (kind === 'kick') {
+        const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine';
+        o.frequency.setValueAtTime(120 * power, t0); o.frequency.exponentialRampToValueAtTime(42, t0 + 0.2);
+        env(g, 0.9 * power, 0.005, 0.28); o.connect(g).connect(master); o.start(t0); o.stop(t0 + 0.35);
+        const n = noise(0.08), f = ac.createBiquadFilter(), ng = ac.createGain(); f.type = 'lowpass'; f.frequency.value = 700;
+        env(ng, 0.35 * power, 0.003, 0.07); n.connect(f).connect(ng).connect(master); n.start(t0); n.stop(t0 + 0.1);
+      } else if (kind === 'creak') {
+        const o = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter(); o.type = 'sawtooth'; f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 6;
+        o.frequency.setValueAtTime(140, t0); o.frequency.linearRampToValueAtTime(260, t0 + 0.3);
+        const v = ac.createOscillator(), vg = ac.createGain(); v.frequency.value = 23; vg.gain.value = 18; v.connect(vg).connect(o.frequency); v.start(t0); v.stop(t0 + 0.4);
+        env(g, 0.08, 0.02, 0.32); o.connect(f).connect(g).connect(master); o.start(t0); o.stop(t0 + 0.4);
+      } else if (kind === 'gush') {
+        const n = noise(3.2), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'lowpass'; f.Q.value = 1.2;
+        f.frequency.setValueAtTime(300, t0); f.frequency.exponentialRampToValueAtTime(2600, t0 + 0.6); f.frequency.setValueAtTime(2600, t0 + 2.2); f.frequency.exponentialRampToValueAtTime(400, t0 + 3.1);
+        g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.28, t0 + 0.25); g.gain.setValueAtTime(0.28, t0 + 2.4); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 3.15);
+        n.connect(f).connect(g).connect(master); n.start(t0); n.stop(t0 + 3.2);
+        const o = ac.createOscillator(), og = ac.createGain(); o.type = 'sine'; o.frequency.value = 52;
+        og.gain.setValueAtTime(0.0001, t0); og.gain.exponentialRampToValueAtTime(0.25, t0 + 0.3); og.gain.setValueAtTime(0.25, t0 + 2.3); og.gain.exponentialRampToValueAtTime(0.0001, t0 + 3.0);
+        o.connect(og).connect(master); o.start(t0); o.stop(t0 + 3.1);
+      } else if (kind === 'pop') {
+        const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine';
+        o.frequency.setValueAtTime(420 * power, t0); o.frequency.exponentialRampToValueAtTime(880 * power, t0 + 0.07);
+        env(g, 0.16, 0.004, 0.11); o.connect(g).connect(master); o.start(t0); o.stop(t0 + 0.14);
+      } else if (kind === 'drain') {
+        const n = noise(0.7), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'bandpass'; f.Q.value = 2;
+        f.frequency.setValueAtTime(1800, t0); f.frequency.exponentialRampToValueAtTime(240, t0 + 0.6);
+        env(g, 0.18, 0.02, 0.6); n.connect(f).connect(g).connect(master); n.start(t0); n.stop(t0 + 0.7);
+      } else if (kind === 'goo') {
+        for (let i = 0; i < 5; i++) {
+          const o = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter(); o.type = 'triangle'; f.type = 'lowpass'; f.frequency.value = 900;
+          const at = t0 + i * 0.11, p = 160 + hash(i + 3) * 220;
+          o.frequency.setValueAtTime(p, at); o.frequency.exponentialRampToValueAtTime(p * 1.9, at + 0.09);
+          g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.12, at + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.13);
+          o.connect(f).connect(g).connect(master); o.start(at); o.stop(at + 0.15);
+        }
+      } else if (kind === 'zoom') {
+        const n = noise(1.3), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'bandpass'; f.Q.value = 1.4;
+        f.frequency.setValueAtTime(180, t0); f.frequency.exponentialRampToValueAtTime(5200, t0 + 1.1);
+        g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.3, t0 + 0.9); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.25);
+        n.connect(f).connect(g).connect(master); n.start(t0); n.stop(t0 + 1.3);
+      }
+    }
+    let cued = {};
+    function cue(name, at, t, kind, power) { if (t >= at && !cued[name]) { cued[name] = true; sfx(kind, power); } }
+
+    /* ── the soup's clock and shapes ── */
+    const flowAt = (s) => s <= DRAIN ? s - GUSH : DRAIN - GUSH + (s - DRAIN) * DRAIN_RUSH;
+    const holeFrom = () => (Math.floor((DRAIN - GUSH) / BAND_EVERY) + 1) * BAND_EVERY;
+    const radius = (age) => MOUTH_RADIUS * Math.exp(GROWTH * age);
+    const reachOf = (view) => Math.hypot(view.w / 2, view.h / 2);
+    const covers = (r, reach) => r * (1 - WOBBLE) > reach + 20;
+    function center(k, r) {
+      const settled = [SETTLED_AT[0] + (MOUTH[0] - BOWL_PIVOT[0]) * SETTLED_SCALE, SETTLED_AT[1] + (MOUTH[1] - BOWL_PIVOT[1]) * SETTLED_SCALE];
+      const mouth = vlerp(MOUTH, settled, smooth(MOUTH_MOVES[0], MOUTH_MOVES[1], k * BAND_EVERY));
+      const hang = [mouth[0], mouth[1] + Math.min(r, 110) * 0.72];
+      return vlerp(hang, MIDDLE, smooth(110, 520, r));
+    }
+    let tm = 0; // the card's own clock, for wobbles
+    const wobble = (k, a) => 1 + 0.11 * Math.sin(3 * a + k * 1.7 + tm * 2.3) + 0.06 * Math.sin(5 * a - tm * 3.4 + k * 0.9) + 0.035 * Math.sin(9 * a + tm * 5.1 + k * 2.3);
+    function edge(k, r) {
+      const c = center(k, r), sag = lerp(SAG, 1, smooth(40, 300, r)), pts = new Array(EDGE_POINTS);
+      for (let i = 0; i < EDGE_POINTS; i++) {
+        const a = i * Math.PI * 2 / EDGE_POINTS; let ax = Math.cos(a), ay = Math.sin(a); if (ay > 0) ay *= sag;
+        const w = r * wobble(k, a); pts[i] = [c[0] + ax * w, c[1] + ay * w];
+      }
+      return pts;
+    }
+
+    /* ── canvas helpers ── */
+    let ctx = null;
+    const setM = (M) => ctx.setTransform(dpr * M[0], dpr * M[1], dpr * M[2], dpr * M[3], dpr * M[4], dpr * M[5]);
+    let dpr = 1;
+    function poly(pts, close = true) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); if (close) ctx.closePath(); }
+    function fillPoly(pts, color) { poly(pts); ctx.fillStyle = color; ctx.fill(); }
+    function strokePoly(pts, color, width, close = false) { poly(pts, close); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke(); }
+    function outlined(pts, color, width) { fillPoly(pts, color); strokePoly(pts, rgb(K.INK), width, true); }
+    function circle(at, r, color) { ctx.beginPath(); ctx.arc(at[0], at[1], Math.max(r, 0.1), 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); }
+    function ring(at, r, color, width) { ctx.beginPath(); ctx.arc(at[0], at[1], Math.max(r, 0.1), 0, Math.PI * 2); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); }
+    function ellipse(c, rx, ry, n = 40) { const pts = []; for (let i = 0; i < n; i++) { const a = i * Math.PI * 2 / n; pts.push([c[0] + Math.cos(a) * rx, c[1] + Math.sin(a) * ry]); } return pts; }
+    function arc(c, radii, from, to, steps = 24) { const pts = []; for (let i = 0; i <= steps; i++) { const a = Math.PI * lerp(from, to, i / steps); pts.push([c[0] + Math.cos(a) * radii[0], c[1] + Math.sin(a) * radii[1]]); } return pts; }
+    function archPts(rect, grow) {
+      const x = rect.x - grow, y = rect.y - grow, w = rect.w + grow * 2, h = rect.h + grow * 2, r = w / 2, mid = [x + r, y + r];
+      const pts = [[x, y + h], [x + w, y + h]];
+      for (let i = 0; i <= 36; i++) { const a = -Math.PI * i / 36; pts.push([mid[0] + Math.cos(a) * r, mid[1] + Math.sin(a) * r]); }
+      return pts;
+    }
+    function boil(pts, salt, close) {
+      const tick = Math.floor(tm * 12) * 97 + salt * 1013, out = [];
+      for (let i = 0; i < pts.length; i++) out.push([pts[i][0] + (hash(tick + i * 2) - 0.5) * 2.4, pts[i][1] + (hash(tick + i * 2 + 1) - 0.5) * 2.4]);
+      if (close) out.push(out[0]);
+      return out;
+    }
+
+    /* ── the bowl's wobble, the door, the kicks ── */
+    function shake(t) {
+      if (reduce) return [0, 0];
+      let x = 0, y = 0;
+      kicks.forEach((k, i) => { const s = t - k; if (s >= 0 && s < 0.5) { const f = Math.exp(-s * 11) * KICK_POWER[i] * KICK_POWER[i] * SHAKE; x += Math.sin(s * 67) * f; y += Math.cos(s * 83) * f; } });
+      return [x, y];
+    }
+    function bowlTransform(t) {
+      const s3 = since3(t);
+      let squash = 0.012 * Math.sin(t * 5) * (1 - smooth(ZOOM_AT - 0.45, ZOOM_AT - 0.05, s3)), tilt = 0, hop = 0;
+      kicks.forEach((k, i) => {
+        const s = t - k; if (s < 0) return;
+        const r = Math.exp(-s * 8) * Math.sin(s * 38);
+        squash += 0.085 * KICK_POWER[i] * r; tilt += 0.05 * KICK_POWER[i] * r * (i % 2 === 0 ? 1 : -1);
+        hop += 16 * KICK_POWER[i] * Math.max(Math.sin(Math.min(s / 0.2, 1) * Math.PI), 0);
+      });
+      const shudder = clamp(s3 / 0.3, 0, 1) * (1 - smooth(DRAIN - 0.4, DRAIN, s3));
+      tilt += 0.024 * shudder * Math.sin(t * 31); squash += 0.03 * shudder * Math.sin(t * 23);
+      return chain(T(FOOT[0], FOOT[1] - hop), Rot(tilt), S(1 + squash, 1 - squash), T(-FOOT[0], -FOOT[1]));
+    }
+    function doorAngle(t) {
+      const flung = since3(t) / OPEN_SECONDS;
+      if (flung >= 0) return (AJAR + (128 - AJAR) * (1 - Math.exp(-flung * 5) * Math.cos(flung * 9))) * Math.PI / 180;
+      const sprung = kicks.length >= 2 ? t - kicks[1] : -1;
+      if (sprung <= 0) return 0;
+      return (AJAR * (1 - Math.exp(-sprung * 16)) + 3.5 * Math.sin(sprung * 46) * Math.exp(-sprung * 3)) * Math.PI / 180;
+    }
+    function thump(t) { let th = 0; kicks.forEach((k, i) => { if (t >= k) th = Math.max(th, KICK_POWER[i] * (1 - (t - k) / 0.2)); }); return th; }
+    const bowlSize = () => chain(T(BOWL_PIVOT[0], BOWL_PIVOT[1]), S(BOWL_SCALE), T(-BOWL_PIVOT[0], -BOWL_PIVOT[1]));
+    const settledM = () => chain(T(SETTLED_AT[0], SETTLED_AT[1]), S(SETTLED_SCALE), T(-BOWL_PIVOT[0], -BOWL_PIVOT[1]));
+    function camera(view, t) {
+      const u = clamp((since3(t) - ZOOM_AT) / ZOOM_SECONDS, 0, 1);
+      if (u <= 0) return ID;
+      const dw = DOOR_RECT.w - DOOR_LINING * 2, dh = DOOR_RECT.h - DOOR_LINING * 2;
+      const end = Math.max(view.w / dw, view.h / (dh - dw / 2)) * 1.15 / (BOWL_SCALE * SETTLED_SCALE);
+      const zoom = Math.exp(Math.log(end) * Math.pow(u, 2.3)) * (1 - 0.05 * Math.sin(Math.min(u / 0.35, 1) * Math.PI));
+      const door = xf(mul(settledM(), bowlSize()), [DOOR_RECT.x + DOOR_RECT.w / 2, DOOR_RECT.y + DOOR_RECT.h / 2]);
+      const at = vlerp(door, [view.x + view.w / 2, view.y + view.h / 2], smooth(0, 0.6, u));
+      return chain(T(at[0], at[1]), S(zoom), T(-door[0], -door[1]));
+    }
+    function swung(p, angle, bulge) {
+      const mid = DOOR_RECT.y + DOOR_RECT.h / 2, across = (p[0] - DOOR_RECT.x) / DOOR_RECT.w, sw = Math.sin(angle) * across;
+      return [DOOR_RECT.x + Math.cos(angle) * DOOR_RECT.w * across * bulge, mid + (p[1] - mid) * (1 + 0.22 * sw) * bulge + 5 * sw];
+    }
+
+    function drawBowl(frameM, t) {
+      const s3 = since3(t);
+      setM(frameM);
+      fillPoly(ellipse([FOOT[0], FOOT[1] + 8], 250, 22), 'rgb(11,8,18)');
+      setM(mul(frameM, bowlTransform(t)));
+      outlined([[RIM[0] - 80, RIM[1] + 150], [RIM[0] + 80, RIM[1] + 150], [RIM[0] + 66, RIM[1] + 188], [RIM[0] - 66, RIM[1] + 188]], rgb(K.CERAMIC_SHADE), 7);
+      const body = []; for (let i = 0; i <= 40; i++) { const a = Math.PI * i / 40; body.push([RIM[0] + Math.cos(a) * RIM_RADII[0], RIM[1] + Math.sin(a) * DEPTH]); }
+      fillPoly(body, rgb(K.CERAMIC));
+      const shade = [];
+      for (let i = 0; i <= 12; i++) { const a = Math.PI * (0.02 + 0.44 * i / 12); shade.push([RIM[0] + Math.cos(a) * RIM_RADII[0], RIM[1] + Math.sin(a) * DEPTH]); }
+      for (let i = 0; i <= 12; i++) { const a = Math.PI * (0.46 - 0.44 * i / 12); shade.push([RIM[0] + Math.cos(a) * 160, RIM[1] + Math.sin(a) * 150]); }
+      fillPoly(shade, rgb(K.CERAMIC_SHADE));
+      strokePoly(arc([RIM[0], RIM[1] + 10], [207, 44], 0.07, 0.93), rgb(K.GLAZE), 10);
+      strokePoly(arc([RIM[0], RIM[1] + 26], [199, 42], 0.1, 0.9), rgb(K.GLAZE), 4);
+      const shine = arc(RIM, [186, 146], 0.74, 0.9);
+      strokePoly(shine, '#fff', 9); circle(shine[0], 4.5, '#fff'); circle(shine[shine.length - 1], 4.5, '#fff');
+      strokePoly(boil(body, 1, false), rgb(K.INK), 7);
+      const rim = arc(RIM, RIM_RADII, 0, 2, 48); fillPoly(rim, rgb(K.CERAMIC));
+      const inside = arc([RIM[0], RIM[1] + 3], [190, 30], 0, 2, 40); fillPoly(inside, rgb(K.CERAMIC_SHADE)); strokePoly(inside, rgb(K.INK), 5, true);
+      const surface = arc([RIM[0], RIM[1] + 9], [176, 21], 0, 2, 40); fillPoly(surface, rgb(SOUP[0])); strokePoly(surface, rgb(K.INK), 5, true);
+      for (let i = 0; i < 4; i++) {
+        const blip = fract(t * 1.3 + i * 0.37);
+        ring([RIM[0] - 110 + i * 72 + Math.sin(i * 4) * 14, RIM[1] + 9 + Math.sin(i * 2.3) * 7], 3 + blip * 7, `rgba(255,255,255,${1 - blip})`, 2.5);
+      }
+      strokePoly(boil(rim, 2, true), rgb(K.INK), 7);
+      for (let i = 0; i < 3; i++) {
+        const curl = [], rise = fract(t * 0.5 + i * 0.33);
+        for (let st = 0; st < 9; st++) { const up = st / 8; curl.push([RIM[0] - 70 + i * 70 + Math.sin(up * 5 + t * 2 + i * 2) * 13, RIM[1] - 50 - rise * 26 - up * 62]); }
+        strokePoly(curl, `rgba(204,184,242,${0.5 * Math.sin(rise * Math.PI)})`, 6);
+      }
+      drawDoor(t, s3);
+    }
+
+    function drawDoor(t, s3) {
+      const step = { x: DOOR_RECT.x - 13, y: DOOR_RECT.y + DOOR_RECT.h + 3, w: DOOR_RECT.w + 26, h: 9 };
+      ctx.fillStyle = rgb(K.INK); ctx.fillRect(step.x - 3.5, step.y - 3.5, step.w + 7, step.h + 7);
+      ctx.fillStyle = rgb(K.CERAMIC_SHADE); ctx.fillRect(step.x, step.y, step.w, step.h);
+      fillPoly(archPts(DOOR_RECT, 10), rgb(K.INK)); fillPoly(archPts(DOOR_RECT, 6), rgb(K.DOOR_FRAME)); fillPoly(archPts(DOOR_RECT, 1.5), rgb(K.INK));
+      const sprung = kicks.length >= 2 ? smooth(kicks[1], kicks[1] + 0.3, t) : 0;
+      fillPoly(archPts(DOOR_RECT, -1.5), rgb(clerp(K.DOORWAY, dark(JUICE[0], 0.2), sprung * (1 - smooth(GUSH, DRAIN, s3)))));
+      const angle = doorAngle(t), th = thump(t), bulge = 1 + 0.17 * th;
+      const leaf = archPts(DOOR_RECT, -2.5).map((p) => swung(p, angle, bulge));
+      const front = Math.cos(angle) > 0;
+      if (Math.abs(Math.cos(angle)) > 0.04) {
+        fillPoly(leaf, rgb(front ? K.DOOR : K.DOOR_BACK));
+        if (front) {
+          for (const pn of [[11, 24, 32, 16], [11, 46, 32, 20]]) {
+            const x = DOOR_RECT.x + pn[0], y = DOOR_RECT.y + pn[1];
+            fillPoly([swung([x, y], angle, bulge), swung([x + pn[2], y], angle, bulge), swung([x + pn[2], y + pn[3]], angle, bulge), swung([x, y + pn[3]], angle, bulge)], rgb(K.DOOR_BACK));
+          }
+        }
+        const knob = swung([DOOR_RECT.x + DOOR_RECT.w - 9, DOOR_RECT.y + DOOR_RECT.h / 2 + 8], angle, bulge);
+        knob[0] += Math.sin(t * 70) * 2 * th;
+        circle(knob, 6, rgb(K.INK)); circle(knob, 3.6, rgb(K.KNOB));
+        // Cracks from each kick, and the toe doming the door.
+        DOOR_CRACKS.forEach((crack, i) => { if (kicks.length > i && t >= kicks[i]) strokePoly(crack.map((p) => swung([DOOR_RECT.x + p[0], DOOR_RECT.y + p[1]], angle, bulge)), rgb(K.INK), 3); });
+        if (th > 0 && angle < 0.5) {
+          const toe = swung([DOOR_RECT.x + 25, DOOR_RECT.y + 40], angle, bulge);
+          outlined(ellipse(toe, 15 * Math.min(th, 1) + 3, 12 * Math.min(th, 1) + 3, 24), rgb(light(K.DOOR, 0.28)), 3);
+        }
+      }
+      strokePoly(leaf, rgb(K.INK), 4, true);
+      if (th > 0) {
+        for (let i = 0; i < 5; i++) {
+          const a = -Math.PI * (0.08 + 0.21 * i), out = [Math.cos(a), Math.sin(a)];
+          const from = [DOOR_RECT.x + DOOR_RECT.w / 2 + out[0] * (50 + (1 - th) * 10), DOOR_RECT.y + 30 + out[1] * (50 + (1 - th) * 10)];
+          strokePoly([from, [from[0] + out[0] * 18 * Math.max(th, 0.6), from[1] + out[1] * 18 * Math.max(th, 0.6)]], rgb(K.INK), 5);
+        }
+      }
+      drawKickedLoose(t);
+      if (s3 >= DRAIN) {
+        const spill = [], fat = [];
+        for (let i = 0; i < 13; i++) { const sh = i / 12; spill.push([DOOR_RECT.x + 2 + 50 * sh, DOOR_RECT.y + DOOR_RECT.h + 6 + Math.sin(sh * 6) * 1.2]); fat.push(4 + 1.5 * Math.sin(sh * Math.PI + t)); }
+        const since = s3 - GOO_AT, ribbons = [[spill, fat]];
+        for (const tr of [[[DOOR_RECT.x + 12, DOOR_RECT.y + DOOR_RECT.h + 8], 28, 0.5], [[DOOR_RECT.x + DOOR_RECT.w - 14, DOOR_RECT.y + DOOR_RECT.h + 8], 46, 0.8]]) {
+          const run = Math.max(since - tr[2], 0); ribbons.push(drip(tr[0], Math.max(tr[1] * (1 - Math.exp(-run * 1.2)), 2), 4.5));
+        }
+        pour(ribbons);
+      }
+    }
+
+    function drawKickedLoose(t) {
+      kicks.forEach((k, kick) => {
+        const since = t - k; if (since < 0 || since > 0.8) return;
+        const power = KICK_POWER[kick];
+        for (let i = 0; i < Math.floor(4 * power) + 2; i++) {
+          const pick = kick * 53 + i * 11, fall = 640 * since * since, a = -Math.PI * lerp(0.12, 0.88, hash(pick)), out = [Math.cos(a), Math.sin(a)];
+          const e = [DOOR_RECT.x + DOOR_RECT.w / 2 + out[0] * 36, DOOR_RECT.y + DOOR_RECT.h / 2 + out[1] * 48], dust = clamp(since / 0.4, 0, 1);
+          if (dust < 1) circle([e[0] + out[0] * 26 * dust, e[1] + out[1] * 26 * dust], 4 + 9 * dust * power, rgb(K.CERAMIC, 0.5 * (1 - dust)));
+          const far = lerp(150, 340, hash(pick + 1)) * power * since, chip = [e[0] + out[0] * far, e[1] + out[1] * far + fall], turn = since * 14 + pick;
+          outlined([[chip[0] + Math.cos(turn) * 4.5, chip[1] + Math.sin(turn) * 4.5], [chip[0] + Math.cos(turn + 2.2) * 3.5, chip[1] + Math.sin(turn + 2.2) * 3.5], [chip[0] + Math.cos(turn + 4.1) * 4.5, chip[1] + Math.sin(turn + 4.1) * 4.5]], rgb(i % 2 === 0 ? K.DOOR_FRAME : K.CERAMIC), 1.5);
+          const slop = [RIM[0] + lerp(-150, 150, hash(pick + 2)), RIM[1] + 4 + lerp(-250, -430, hash(pick + 3)) * power * since + fall];
+          if (slop[1] < RIM[1] + 12) { circle(slop, 6.5, rgb(K.INK)); circle(slop, 4, rgb(light(SOUP[0], 0.25))); }
+        }
+      });
+    }
+
+    /* ── the soup ── */
+    function drawSoup(frameM, view, reach, flow) {
+      setM(frameM);
+      const hole = flow > holeFrom(), newest = Math.floor(Math.min(flow, DRAIN - GUSH) / BAND_EVERY), radii = [];
+      for (let k = 0; k <= newest; k++) radii.push(radius(flow - k * BAND_EVERY));
+      if (hole) radii.push(radius(flow - holeFrom()));
+      let first = 0; for (let k = 0; k < radii.length; k++) if (covers(radii[k], reach)) first = k;
+      const edges = []; for (let k = first; k < radii.length; k++) edges.push(edge(k, radii[k]));
+      for (let k = first; k <= newest; k++) {
+        const r = radii[k], e = edges[k - first], color = SOUP[k % SOUP.length], width = clamp(r * 0.035, 5, 15), whole = covers(r, reach);
+        if (k + 1 < radii.length && hole) {
+          if (covers(radii[k + 1], reach)) continue;
+          // The soup between this edge and the next (or the hole), as a ring.
+          ctx.beginPath(); const inner = edges[k + 1 - first];
+          ctx.moveTo(e[0][0], e[0][1]); for (let i = 1; i < e.length; i++) ctx.lineTo(e[i][0], e[i][1]); ctx.closePath();
+          ctx.moveTo(inner[0][0], inner[0][1]); for (let i = 1; i < inner.length; i++) ctx.lineTo(inner[i][0], inner[i][1]); ctx.closePath();
+          ctx.fillStyle = rgb(color); ctx.fill('evenodd');
+        } else if (whole) { ctx.fillStyle = rgb(color); ctx.fillRect(view.x - 40, view.y - 40, view.w + 80, view.h + 80); }
+        else fillPoly(e, rgb(color));
+        if (!whole) {
+          const c = center(k, r);
+          strokePoly(e.map((p) => [c[0] + (p[0] - c[0]) * 0.92, c[1] + (p[1] - c[1]) * 0.92]), rgb(light(color, 0.42)), width * 0.75, true);
+          strokePoly(e, rgb(K.INK), width, true);
+        }
+        drawRiders(k, r, width);
+      }
+      if (hole) strokePoly(edges[edges.length - 1], rgb(K.INK), clamp(radii[radii.length - 1] * 0.035, 5, 15), true);
+    }
+    function drawRiders(k, r, width) {
+      if (r < 30) return;
+      const c = center(k, r), color = SOUP[k % SOUP.length];
+      for (let j = 0; j < RIDERS + (k === 0 ? 3 : 0); j++) {
+        const pick = k * 31 + j * 7, a = hash(pick) * Math.PI * 2 + tm * 0.3 * (j % 2 === 0 ? 1 : -1), along = [Math.cos(a), Math.sin(a)];
+        const size = r * lerp(0.045, 0.08, hash(pick + 2));
+        if (j >= RIDERS) {
+          const d = r * wobble(k, a) * lerp(1.12, 1.34, hash(pick + 1)), drop = [c[0] + along[0] * d, c[1] + along[1] * d];
+          circle(drop, size * 0.8 + width * 0.5, rgb(K.INK)); circle(drop, size * 0.8, rgb(color)); continue;
+        }
+        const d = r * wobble(k, a) * lerp(0.7, 0.86, hash(pick + 1)), at = [c[0] + along[0] * d, c[1] + along[1] * d];
+        switch (Math.floor(hash(pick + 3) * 5)) {
+          case 0: circle(at, size + width * 0.5, rgb(K.INK)); circle(at, size, rgb(light(color, 0.5))); circle([at[0] - 0.34 * size, at[1] - 0.34 * size], size * 0.3, '#fff'); break;
+          case 1: {
+            const noodle = [], across = [-along[1], along[0]];
+            for (let st = 0; st < 25; st++) { const sh = st / 24 - 0.5, wig = Math.sin(sh * 9 + tm * 7 + pick) * size * 0.55; noodle.push([at[0] + across[0] * sh * size * 4.4 + along[0] * wig, at[1] + across[1] * sh * size * 4.4 + along[1] * wig]); }
+            for (const end of [noodle[0], noodle[24]]) circle(end, size * 0.3 + width * 0.5, rgb(K.INK));
+            strokePoly(noodle, rgb(K.INK), size * 0.6 + width); strokePoly(noodle, rgb(K.PASTA), size * 0.6);
+            for (const end of [noodle[0], noodle[24]]) circle(end, size * 0.3, rgb(K.PASTA));
+            break;
+          }
+          case 2: circle(at, size * 0.8 + width * 0.5, rgb(K.INK)); circle(at, size * 0.8, rgb(K.PEA)); circle([at[0] - 0.3 * size, at[1] - 0.3 * size], size * 0.2, rgb(light(K.PEA, 0.6))); break;
+          case 3: circle(at, size + width * 0.5, rgb(K.INK)); circle(at, size, rgb(color === SOUP[4] ? K.PEA : K.CARROT)); ring(at, size * 0.55, 'rgba(255,255,255,0.55)', size * 0.16); break;
+          default: {
+            const ink = [], star = [], spin = tm * 1.5 + pick;
+            for (let i = 0; i < 10; i++) { const a2 = spin + i * Math.PI / 5, far = i % 2 === 0 ? 1 : 0.52, ox = Math.cos(a2), oy = Math.sin(a2); ink.push([at[0] + ox * (size * 1.25 * far + width * 0.7), at[1] + oy * (size * 1.25 * far + width * 0.7)]); star.push([at[0] + ox * size * 1.25 * far, at[1] + oy * size * 1.25 * far]); }
+            fillPoly(ink, rgb(K.INK)); fillPoly(star, rgb(K.PASTA));
+          }
+        }
+      }
+    }
+
+    /* ── DOOR over BOWL ── */
+    let widths = null, block = 0;
+    function measure() {
+      ctx.font = font; widths = []; block = 0;
+      for (const word of WORDS) { let total = 0; for (const ch of word) { const w = ctx.measureText(ch).width; widths.push(w); total += w; } block = Math.max(block, total); }
+      block *= 1.03;
+    }
+    function drawLetters(shotM, s3, t) {
+      if (s3 < LETTERS_AT) return;
+      if (!widths) measure();
+      const cap = LETTER_SIZE * 0.7; let index = 0;
+      for (let line = 0; line < WORDS.length; line++) {
+        const word = WORDS[line]; let total = 0; for (let i = 0; i < word.length; i++) total += widths[index + i];
+        const gap = (block - total) / (word.length - 1); let x = MIDDLE[0] - block / 2;
+        for (let i = 0; i < word.length; i++) {
+          const w = widths[index], home = [x + w / 2, MIDDLE[1] + (line - 0.5) * LETTER_SIZE * 0.93], since = s3 - LETTERS_AT - index * LETTER_EVERY;
+          x += w + gap; index++;
+          if (since <= 0) continue;
+          const landed = clamp(since / POP_SECONDS, 0, 1), settled = spring((s3 - LOCKUP_AT - index * LOCKUP_EVERY) / LOCKUP_SECONDS), afloat = 1 - clamp(settled, 0, 1);
+          const target = [LOCKUP[0] + (home[0] - MIDDLE[0]) * LOCKUP_SCALE, LOCKUP[1] + (home[1] - MIDDLE[1]) * LOCKUP_SCALE];
+          const at = vlerp(home, target, settled); at[1] += Math.sin(t * 5.5 + index * 1.1) * 7 * afloat;
+          const tilt = Math.sin(t * 4.2 + index * 1.9) * 0.06 * afloat + (1 - landed) * 0.5 * (index % 2 === 0 ? 1 : -1);
+          const sc = popf(landed) * lerp(1, LOCKUP_SCALE, settled);
+          setM(mul(shotM, chain(T(at[0], at[1]), Rot(tilt), S(sc))));
+          ctx.font = font; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
+          const cx = -w / 2, cy = cap / 2, outline = LETTER_SIZE * 0.13;
+          ctx.strokeStyle = rgb(K.INK); ctx.lineWidth = outline * 2; ctx.strokeText(word[i], cx + 9, cy + 12); ctx.strokeText(word[i], cx, cy);
+          ctx.fillStyle = rgb(K.LETTER); ctx.fillText(word[i], cx, cy);
+        }
+      }
+    }
+
+    /* ── the goo ── */
+    function smoothKnots(knots) {
+      const pts = [], last = knots.length - 1;
+      for (let i = 0; i < last; i++) {
+        const p0 = knots[Math.max(i - 1, 0)], p1 = knots[i], p2 = knots[i + 1], p3 = knots[Math.min(i + 2, last)];
+        const steps = Math.max(Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / GOO_STEP), 1);
+        for (let s = 0; s < steps; s++) {
+          const u = s / steps, u2 = u * u, u3 = u2 * u;
+          pts.push([0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * u + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * u2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * u3),
+            0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * u + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * u2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * u3)]);
+        }
+      }
+      pts.push(knots[last]); return pts;
+    }
+    function layGoo() {
+      goo = [];
+      for (const word of GOO_WORDS) {
+        let ax = word.at[0]; const ay = word.at[1], h = word.height;
+        for (const letter of word.text) {
+          for (const knots of GOO_STROKES[letter]) {
+            const rest = smoothKnots(knots.map((k) => [ax + k[0] * h, ay + k[1] * h])), index = goo.length, fat = h * GOO_FATNESS;
+            const smeared = rest.map((p, i) => { const dx = p[0] - MIDDLE[0], dy = p[1] - MIDDLE[1], d = Math.hypot(dx, dy) || 1, drag = 0.55 + 0.45 * Math.sin(i / rest.length * 5 + index * 2.1); return [p[0] + dx / d * drag * SMEAR, p[1] + dy / d * drag * SMEAR]; });
+            goo.push({ index, rest, smeared, fat });
+          }
+          ax += h * GOO_ADVANCE[letter];
+        }
+      }
+    }
+    function shaped(stroke, pull, time) {
+      const pts = [], ws = [], n = stroke.rest.length, loose = clamp(1 - pull, 0, 1);
+      for (let i = 0; i < n; i++) {
+        const along = i / Math.max(n - 1, 1), at = vlerp(stroke.smeared[i], stroke.rest[i], pull);
+        at[0] += Math.sin(time * 5 + i * 0.3 + stroke.index) * (0.5 + 5 * loose); at[1] += Math.cos(time * 4.3 + i * 0.23 + stroke.index * 2) * (0.5 + 5 * loose);
+        pts.push(at);
+        ws.push(stroke.fat * (1 + 0.2 * Math.sin(along * 9 + stroke.index * 1.7 + time * 1.4) + 0.18 * (1 - Math.sin(along * Math.PI))) * lerp(1, SMEAR_FAT, loose));
+      }
+      return [pts, ws];
+    }
+    function juice(at) {
+      const swirl = Math.sin(at[0] * 0.019 + tm * 0.9) + 0.8 * Math.sin(at[1] * 0.043 - tm * 1.2 + Math.sin(at[0] * 0.012) * 2) + 0.7 * Math.sin((at[0] + at[1]) * 0.014 + tm * 0.6);
+      const place = fract(swirl * 1.7 / JUICE.length) * JUICE.length, band = Math.floor(place);
+      return clerp(JUICE[band], JUICE[(band + 1) % JUICE.length], smooth(0.28, 0.72, place - band));
+    }
+    function drip(at, length, fat) {
+      const pts = [], ws = [], steps = Math.max(Math.ceil(length / GOO_STEP), 2);
+      for (let i = 0; i <= steps; i++) { const sh = i / steps; pts.push([at[0] + Math.sin(sh * 2 + at[0]) * 1.5, at[1] + length * sh]); const neck = lerp(fat, fat * 0.42, smooth(0, 0.5, sh)); ws.push(lerp(neck, fat, smooth(0.62, 1, sh))); }
+      return [pts, ws];
+    }
+    function ribbon(pts, ws, ink) {
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let i = 0; i + 1 < pts.length; i++) {
+        ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[i + 1][0], pts[i + 1][1]);
+        ctx.strokeStyle = ink || rgb(juice(pts[i])); ctx.lineWidth = Math.max(ws[i] * 2, 0.5); ctx.stroke();
+      }
+    }
+    function pour(ribbons) {
+      for (const [pts, ws] of ribbons) ribbon(pts, ws.map((w) => w + GOO_INK), rgb(K.INK));
+      ribbons.forEach(([pts, ws], salt) => {
+        ribbon(pts, ws, null);
+        const n = pts.length; if (n < 12) return;
+        const from = Math.floor(hash(salt + 5) * n * 0.5), to = Math.min(from + Math.floor(n * 0.28) + 4, n), line = [];
+        for (let i = from; i < to; i++) line.push([pts[i][0] - 0.34 * ws[i], pts[i][1] - 0.34 * ws[i]]);
+        strokePoly(line, 'rgba(255,255,255,0.55)', Math.max(ws[from] * 0.26, 1.5));
+        const tip = pts[Math.min(to + 3, n - 1)]; circle([tip[0] - 0.34 * ws[from], tip[1] - 0.34 * ws[from]], ws[from] * 0.16, 'rgba(255,255,255,0.6)');
+      });
+    }
+    function drawGoo(shotM, s3, t) {
+      if (s3 < DRAIN) return;
+      setM(shotM);
+      const since = s3 - GOO_AT, ribbons = goo.map((st) => shaped(st, spring((since - st.index * 0.03) / GOO_SECONDS), t));
+      for (const d of GOO_DRIPS) { const run = since - d[4]; if (run > 0) { const line = ribbons[d[0]][0]; ribbons.push(drip(line[Math.floor(d[1] * (line.length - 1))], d[2] * (1 - Math.exp(-run * 1.5)), d[3])); } }
+      pour(ribbons);
+    }
+
+    /* ── one frame of the card, into `ctx` with the frame laid out by `frameM`, `view` being the screen in frame units ── */
+    function render(frameM, view, t, withBackdrop) {
+      tm = t;
+      const s3 = since3(t), reach = reachOf(view), flow = flowAt(s3), hole = flow > holeFrom();
+      const shot = mul(frameM, camera(view, t)), stage = hole ? mul(shot, settledM()) : shot, bowl = mul(stage, bowlSize());
+      if (hole || !covers(radius(flow), reach)) {
+        if (withBackdrop > 0) { setM(frameM); ctx.fillStyle = rgb(K.BACKDROP, withBackdrop); ctx.fillRect(view.x - 60, view.y - 60, view.w + 120, view.h + 120); }
+        setM(stage); circle([640, 372], 318, rgb(K.SPOT, withBackdrop)); circle([640, 372], 232, rgb(K.SPOT_CORE, withBackdrop));
+        drawBowl(bowl, t);
+        drawGoo(shot, s3, t);
+      }
+      if (flow > 0 && !(hole && covers(radius(flow - holeFrom()), reach))) drawSoup(frameM, view, reach, flow);
+      drawLetters(shot, s3, t);
+      // The dive: the doorway opens onto the page underneath.
+      const opened = smooth(ZOOM_AT + 0.15, ZOOM_AT + 0.6, s3);
+      if (opened > 0) {
+        const box = { x: DOOR_RECT.x + DOOR_LINING, y: DOOR_RECT.y + DOOR_LINING, w: DOOR_RECT.w - 2 * DOOR_LINING, h: DOOR_RECT.h - 2 * DOOR_LINING };
+        setM(bowl); ctx.globalCompositeOperation = 'destination-out'; fillPoly(archPts(box, 0), `rgba(0,0,0,${opened})`); ctx.globalCompositeOperation = 'source-over';
+      }
+    }
+
+    /* ── the little bowl in the footer ── */
+    function sizeSmall() {
+      const r = small.getBoundingClientRect(); if (r.width < 10) return false;
+      dpr = Math.min(devicePixelRatio || 1, 2);
+      const w = Math.round(r.width), h = Math.round(r.width * SMALL_VIEW.h / SMALL_VIEW.w);
+      if (small.width !== Math.round(w * dpr)) { small.width = Math.round(w * dpr); small.height = Math.round(h * dpr); small.style.height = h + 'px'; }
+      return true;
+    }
+    function smallFrame() { const r = small.getBoundingClientRect(), s = r.width / SMALL_VIEW.w; return { M: chain(S(s), T(-SMALL_VIEW.x, -SMALL_VIEW.y)), s, r }; }
+    function drawSmall(t) {
+      if (!sizeSmall()) return;
+      ctx = sctx; const f = smallFrame();
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, small.width, small.height);
+      const sh = shake(t); small.style.transform = `translate(${sh[0] * f.s}px, ${sh[1] * f.s}px)`;
+      render(f.M, SMALL_VIEW, t, 0);
+    }
+
+    /* ── the full-screen card ── */
+    function openOverlay() {
+      overlay = document.createElement('div'); overlay.className = 'soup-card'; overlay.setAttribute('aria-label', 'The Door Bowl card. Press Escape to skip.');
+      ocv = document.createElement('canvas'); overlay.appendChild(ocv); octx = ocv.getContext('2d');
+      const skip = document.createElement('button'); skip.type = 'button'; skip.className = 'soup-skip'; skip.textContent = 'skip'; skip.addEventListener('click', () => finish(true)); overlay.appendChild(skip);
+      document.body.appendChild(overlay); document.body.classList.add('souped');
+      smallRect = small.getBoundingClientRect(); small.style.visibility = 'hidden';
+      overlay.addEventListener('pointerdown', (e) => { if (e.target === ocv && since3(now()) > GUSH + 0.6) finish(true); });
+    }
+    function fullFrame(W, H) { const fit = Math.min(W / FRAME[0], H / FRAME[1]); return { M: chain(T((W - FRAME[0] * fit) / 2, (H - FRAME[1] * fit) / 2), S(fit)), fit }; }
+    function drawOverlay(t) {
+      const W = innerWidth, H = innerHeight; dpr = Math.min(devicePixelRatio || 1, 1.5);
+      if (ocv.width !== Math.round(W * dpr) || ocv.height !== Math.round(H * dpr)) { ocv.width = Math.round(W * dpr); ocv.height = Math.round(H * dpr); ocv.style.width = W + 'px'; ocv.style.height = H + 'px'; }
+      ctx = octx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ocv.width, ocv.height);
+      const s3 = since3(t), full = fullFrame(W, H);
+      // The bowl starts where the little one sat and settles into the middle of the screen as the kick lands.
+      const sS = smallRect.width / SMALL_VIEW.w, u = smooth(0, 0.45, s3);
+      const fit = lerp(sS, full.fit, u), ox = lerp(smallRect.left - SMALL_VIEW.x * sS, full.M[4], u), oy = lerp(smallRect.top - SMALL_VIEW.y * sS, full.M[5], u);
+      const sh = shake(t), M = chain(T(ox + sh[0] * fit, oy + sh[1] * fit), S(fit));
+      const view = { x: -ox / fit, y: -oy / fit, w: W / fit, h: H / fit };
+      render(M, view, t, smooth(0, 0.4, s3));
+      cue('gush', GUSH - 0.05, s3, 'gush'); cue('drain', DRAIN, s3, 'drain'); cue('goo', GOO_AT, s3, 'goo'); cue('zoom', ZOOM_AT, s3, 'zoom');
+      for (let i = 0; i < 8; i++) cue('pop' + i, LETTERS_AT + i * LETTER_EVERY, s3, 'pop', 1 + i * 0.09);
+      if (s3 >= ZOOM_AT + 0.15 && !hopped) { hopped = true; scrollTo({ top: 0, behavior: 'instant' }); }
+      if (s3 >= END) finish(false);
+    }
+    function finish(skipped) {
+      if (closing) return; closing = true;
+      const bye = () => { overlay.remove(); overlay = null; reset(); };
+      if (skipped) { overlay.style.transition = 'opacity 0.28s'; overlay.style.opacity = '0'; setTimeout(bye, 300); } else bye();
+    }
+    function reset() {
+      kicks = []; cued = {}; closing = false; hopped = false; playing = false; small.style.visibility = ''; small.style.transform = '';
+      document.body.classList.remove('souped'); start = performance.now() / 1000; small.parentElement.classList.remove('ajar', 'burst');
+    }
+
+    /* ── knocking ── */
+    function knock() {
+      if (playing || closing) return;
+      const t = now(); audio();
+      if (kicks.length && t - kicks[kicks.length - 1] < 0.35) return;
+      kicks.push(t); const i = kicks.length - 1;
+      sfx('kick', KICK_POWER[i]); if (i === 1) setTimeout(() => sfx('creak'), 130);
+      small.parentElement.classList.toggle('ajar', i >= 1);
+      if (i === 2) {
+        playing = true; small.parentElement.classList.add('burst'); layGoo(); widths = null;
+        if (document.fonts && document.fonts.load) document.fonts.load('700 100px Fredoka').catch(() => {});
+        openOverlay();
+      }
+    }
+    const knocker = small.parentElement;
+    knocker.addEventListener('click', knock);
+    knocker.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); knock(); } });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay && !closing) finish(true); });
+
+    /* ── the loop: the little bowl only draws while it's on screen ── */
+    let seen = false;
+    new IntersectionObserver((es) => { seen = es[0].isIntersecting; }, { rootMargin: '120px' }).observe(small);
+    function loop() {
+      requestAnimationFrame(loop);
+      const t = now();
+      if (overlay && !closing) drawOverlay(t);
+      else if (seen && !overlay && !playing) drawSmall(t);
+    }
+    loop();
+  })();
 </script>
 </body>
 </html>
