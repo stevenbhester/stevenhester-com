@@ -798,7 +798,95 @@ a { color: var(--amber); }
   color: var(--teal); background: rgba(10, 24, 32, 0.7); border: 1px solid var(--teal); border-radius: 999px; padding: 8px 14px; cursor: pointer; opacity: 0.75; }
 body.souped { overflow: hidden; }
 
-/* ───────────── Responsive ───────────── */</style>
+/* ───────────── A Door Bowl game: the studio band ───────────── */
+.studio-band { padding-block: clamp(28px, 4vw, 56px) clamp(20px, 3vw, 40px); background: radial-gradient(50% 70% at 50% 60%, #2a1b3d 0%, #20142f 45%, #130d1c 100%); border-top: 1px solid rgba(255, 241, 220, 0.06); border-bottom: 1px solid rgba(255, 241, 220, 0.06); }
+.studio-band .studio { margin-top: 0; }
+.studio-band .studio-name { font-size: 1.35rem; margin-top: -10px; }
+.studio-sub { font-size: 1.15rem; color: var(--moss); opacity: 0.7; margin-top: 2px; }
+.knocker.ajar ~ .studio-sub, .knocker.burst ~ .studio-sub { opacity: 0; }
+/* ───────────── The day in real light ───────────── */
+.day-shots { position: absolute; inset: 0; z-index: 0; }
+.day-shots img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+.day.real .day-land, .day.real .day-stars { display: none; }
+.day.real .day-pin::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(10, 8, 22, 0.55), rgba(10, 8, 22, 0) 38%, rgba(10, 8, 22, 0) 72%, rgba(10, 8, 22, 0.55)); }
+.day.real .orb { z-index: 1; }
+.day.real .clock-card { background: rgba(26, 20, 48, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border-radius: 22px; padding: 18px 22px; display: inline-block; border: 1px solid rgba(255, 241, 220, 0.1); }
+/* ───────────── The title theme ───────────── */
+.tune { display: inline-flex; align-items: center; gap: 8px; font: 700 0.76rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal); background: rgba(10, 24, 32, 0.55); border: 1px solid rgba(115, 242, 230, 0.5); border-radius: 999px; padding: 9px 14px; cursor: pointer; }
+.tune:hover { background: rgba(115, 242, 230, 0.12); }
+.tune[aria-pressed="true"] { background: var(--teal); color: var(--charter); border-color: var(--teal); }
+.tune .bars { display: inline-flex; gap: 2px; align-items: flex-end; height: 11px; }
+.tune .bars i { display: block; width: 3px; height: 4px; background: currentColor; border-radius: 1px; }
+.tune[aria-pressed="true"] .bars i { animation: eq 0.7s ease-in-out infinite; }
+.tune .bars i:nth-child(2) { animation-delay: -0.2s; } .tune .bars i:nth-child(3) { animation-delay: -0.45s; } .tune .bars i:nth-child(4) { animation-delay: -0.1s; }
+@keyframes eq { 50% { height: 11px; } }
+
+/* ───────────── Early reviews ───────────── */
+.reviews { margin-top: clamp(40px, 6vw, 72px); }
+.reviews ul { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.reviews .dim { opacity: 0.22; }
+.reviews li { background: rgba(26, 20, 48, 0.6); border: 1px solid rgba(185, 163, 240, 0.25); border-radius: 14px; padding: 14px 16px; display: grid; gap: 5px; align-content: start; rotate: var(--r, 0deg); }
+.reviews li:nth-child(odd) { --r: -0.6deg; } .reviews li:nth-child(even) { --r: 0.7deg; }
+.reviews b { color: var(--star); font-size: 0.85rem; letter-spacing: 0.1em; }
+.reviews q { font-family: var(--f-hand); font-weight: 700; font-size: 1.25rem; color: var(--cream); quotes: none; line-height: 1.15; }
+.reviews span { font-family: var(--f-mono); font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--moss); }
+
+/* ───────────── Responsive ───────────── */
+@media (max-width: 900px) {
+  .zones { grid-template-columns: minmax(0, 1fr); }
+  .zone { padding: 20px 18px 20px 128px; min-height: 112px; }
+  .zone svg { width: 116px; height: 100%; }
+  .notes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* two columns: swap the middle pair so the colors still checkerboard */
+  .notes article:nth-child(3) { background: var(--cream); color: var(--ink); border-color: transparent; border-top-color: var(--moss); }
+  .notes article:nth-child(3) p { color: #4b3a48; }
+  .notes article:nth-child(3) .hand { color: #7b55c9; }
+  .notes article.paper:nth-child(4) { background: var(--cocoa); color: var(--cream); border-color: rgba(255, 194, 107, 0.55); border-top-color: var(--amber); }
+  .notes article.paper:nth-child(4) p { color: var(--cream-dim); }
+  .beta-grid { grid-template-columns: minmax(0, 1fr); }
+  .ticket { max-width: 460px; }
+}
+@media (max-width: 720px) {
+  .chap { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .chap .vis { order: -1; min-height: 0; }
+  .chap .vis > * { max-height: 40vh; }
+  .chap h3 { font-size: clamp(1.9rem, 8vw, 2.6rem); }
+  .chap .punch { font-size: 1.1rem; }
+  .meter-card, .receipt { font-size: 0.76rem; padding: 12px 14px; }
+  .mrow { padding: 4px 0; }
+  .receipt li { padding: 2px 0; }
+  .pages { height: 210px; }
+  .pg { width: 96px; height: 124px; margin: -62px 0 0 -48px; }
+  .pg.read { width: 210px; margin: 0; font-size: 0.72rem; padding: 10px 12px; }
+  .listings li { padding: 7px 12px; }
+  .rivet-card svg { width: 130px; }
+  .bush { width: min(100%, 300px); }
+}
+@media (max-width: 520px) {
+  .notes { grid-template-columns: minmax(0, 1fr); }
+  .notes article:nth-child(3) { background: var(--cocoa); color: var(--cream); border-color: rgba(255, 194, 107, 0.55); border-top-color: var(--amber); }
+  .notes article:nth-child(3) p { color: var(--cream-dim); }
+  .notes article:nth-child(3) .hand { color: var(--turf); }
+  .notes article.paper:nth-child(4) { background: var(--cream); color: var(--ink); border-color: transparent; border-top-color: var(--moss); }
+  .notes article.paper:nth-child(4) p { color: #4b3a48; }
+  .comm { grid-template-columns: minmax(0, 1fr); }
+  .comm > svg { display: none; }
+  .zone { padding-left: 104px; }
+  .zone svg { width: 94px; }
+  .planet { width: 84px; top: 3%; }
+  .glimmer { font-size: 0.68rem; bottom: 8px; padding: 4px 10px; }
+  .ticket { grid-template-columns: minmax(0, 1fr) 64px; rotate: 1.5deg; }
+  .ticket .bars { width: 24px; }
+  .ticket .stamp { right: 76px; }
+  .say { min-width: 120px; font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
 
 <!-- ═════════ HERO ═════════ -->
 <header class="hero" id="top">
@@ -825,6 +913,7 @@ body.souped { overflow: hidden; }
       <a class="btn" href="#beta">Be a beta tester
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       <span class="hand">or scroll down and have a look ↓</span>
+      <button type="button" class="tune" id="tune" aria-pressed="false"><span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="tune-l">hear the title theme</span></button>
     </div>
   </div>
 
@@ -884,6 +973,20 @@ body.souped { overflow: hidden; }
   <div class="puffs" id="puffs"></div>
   <div class="glimmer" aria-live="polite"><b id="glim">0</b> glimmer · pop the puffballs</div>
 </header>
+
+<!-- ═════════ A DOOR BOWL GAME ═════════ -->
+<section class="band studio-band" id="studio" aria-label="A Door Bowl game">
+  <div class="wrap">
+    <div class="studio">
+      <div class="knocker" role="button" tabindex="0" aria-label="A ceramic bowl with a tiny door in its side. Knock on it.">
+        <canvas id="doorbowl" width="576" height="456" aria-hidden="true"></canvas>
+        <span class="knock-hint hand" aria-hidden="true">knock knock?</span>
+      </div>
+      <p class="studio-name">a <b>Door Bowl</b> game</p>
+      <p class="studio-sub hand">it's a door. you know what to do.</p>
+    </div>
+  </div>
+</section>
 
 <!-- ═════════ THE PITCH: what kind of game is this ═════════ -->
 <section class="band pitch" id="pitch">
@@ -1505,46 +1608,10 @@ body.souped { overflow: hidden; }
   </div>
 </section>
 
-<!-- ═════════ THE DAY, scrubbed ═════════ -->
-<section class="day" id="day" aria-label="A day on Celestia">
-  <div class="day-pin" id="day-pin">
-    <div class="day-stars"></div>
-    <div class="orb sun" id="sun"></div>
-    <div class="orb moon" id="moon"></div>
-    <svg class="day-land" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <defs><radialGradient id="dglow" r="0.5"><stop offset="0" stop-color="#9ffff0" stop-opacity="0.9"/><stop offset="1" stop-color="#73f2e6" stop-opacity="0"/></radialGradient>
-      <radialGradient id="dlamp" r="0.5"><stop offset="0" stop-color="#ffe2a0" stop-opacity="0.9"/><stop offset="1" stop-color="#ffc26b" stop-opacity="0"/></radialGradient></defs>
-      <path d="M0 130 Q150 80 320 116 T700 100 T1200 92 V300 H0Z" style="fill: var(--far, #3a3463)"/>
-      <path d="M0 190 Q260 140 520 176 T1000 160 T1200 170 V300 H0Z" style="fill: var(--near, #2d5f5a)"/>
-      <g style="opacity: var(--n, 0)">
-        <circle cx="180" cy="160" r="40" fill="url(#dglow)"/><circle cx="180" cy="160" r="7" fill="#9ffff0"/>
-        <circle cx="880" cy="150" r="36" fill="url(#dglow)"/><circle cx="880" cy="150" r="6" fill="#ffb3e6"/>
-        <circle cx="560" cy="150" r="60" fill="url(#dlamp)"/>
-      </g>
-      <path d="M180 196 v-34 M880 186 v-34" stroke="#2d5f5a" stroke-width="3"/>
-      <g transform="translate(470 98)"><path d="M0 78 L60 0 L120 78Z" fill="#ffc26b"/><path d="M60 0 L120 78 H80Z" fill="#e8a454"/><path d="M44 78 L60 34 L76 78Z" fill="#2a1d23"/>
-        <rect x="86" y="44" width="10" height="12" rx="3" fill="#ffe2a0" style="opacity: var(--n, 0)"/></g>
-      <g style="opacity: var(--doom, 0); transform: translateY(calc((1 - var(--doom, 0)) * 60px))">
-        <g fill="#241433"><ellipse cx="80" cy="250" rx="46" ry="40"/><ellipse cx="300" cy="262" rx="38" ry="34"/><ellipse cx="760" cy="256" rx="44" ry="38"/><ellipse cx="1000" cy="248" rx="50" ry="42"/><ellipse cx="1150" cy="266" rx="34" ry="30"/></g>
-        <g fill="#ffd94d"><circle cx="66" cy="240" r="5"/><circle cx="92" cy="240" r="5"/><circle cx="290" cy="254" r="4"/><circle cx="310" cy="254" r="4"/><circle cx="748" cy="246" r="5"/><circle cx="772" cy="246" r="5"/><circle cx="986" cy="236" r="5"/><circle cx="1014" cy="236" r="5"/><circle cx="1142" cy="258" r="4"/><circle cx="1160" cy="258" r="4"/></g>
-      </g>
-    </svg>
-    <div class="wrap day-ui">
-      <div class="clock-card">
-        <span class="eyebrow">a day on Celestia</span>
-        <div class="clock" id="clock">6:00 AM</div>
-        <h3 id="phase">Dawn</h3>
-        <p id="phase-line">The wilds rearrange themselves.</p>
-      </div>
-      <p class="day-hint">one day is six real minutes · keep scrolling</p>
-    </div>
-  </div>
-</section>
-
 <!-- ═════════ THE WORLD: Survey Team 7's chart ═════════ -->
 <section class="band chart-band" id="world">
   <div class="wrap">
-    <span class="eyebrow">the world map (press M)</span>
+    <span class="eyebrow">the world map (press M in the game)</span>
     <h2>One planet, eleven lands. <em>The wild ones redraw themselves every dawn.</em></h2>
     <p class="lede">Rivet's gates lead out from all four sides of the homestead. The wilds run east, deeper and stranger. Three quiet lands wait west, north and south to be woken up and settled. The whole thing is a loop, if you can clear the rockfalls.</p>
     <div class="chart-grid">
@@ -1596,6 +1663,52 @@ body.souped { overflow: hidden; }
         </svg>
         <div><b>Patience</b><p>How long the canteen lasts while you're away. The critters keep working until it runs dry. One more page, or head home?</p></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ THE DAY, scrubbed ═════════ -->
+<section class="day" id="day" aria-label="A day on Celestia">
+  <div class="day-pin" id="day-pin">
+    <div class="day-stars"></div>
+    <div class="day-shots" aria-hidden="true">
+      <img src="shots/day_0.jpg" alt="" loading="lazy" width="1600" height="900">
+      <img src="shots/day_1.jpg" alt="" loading="lazy" width="1600" height="900">
+      <img src="shots/day_2.jpg" alt="" loading="lazy" width="1600" height="900">
+      <img src="shots/day_3.jpg" alt="" loading="lazy" width="1600" height="900">
+      <img src="shots/day_4.jpg" alt="" loading="lazy" width="1600" height="900">
+      <img src="shots/day_5.jpg" alt="" loading="lazy" width="1600" height="900">
+      <img src="shots/day_6.jpg" alt="" loading="lazy" width="1600" height="900">
+      <img src="shots/day_7.jpg" alt="" loading="lazy" width="1600" height="900">
+    </div>
+    <div class="orb sun" id="sun"></div>
+    <div class="orb moon" id="moon"></div>
+    <svg class="day-land" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <defs><radialGradient id="dglow" r="0.5"><stop offset="0" stop-color="#9ffff0" stop-opacity="0.9"/><stop offset="1" stop-color="#73f2e6" stop-opacity="0"/></radialGradient>
+      <radialGradient id="dlamp" r="0.5"><stop offset="0" stop-color="#ffe2a0" stop-opacity="0.9"/><stop offset="1" stop-color="#ffc26b" stop-opacity="0"/></radialGradient></defs>
+      <path d="M0 130 Q150 80 320 116 T700 100 T1200 92 V300 H0Z" style="fill: var(--far, #3a3463)"/>
+      <path d="M0 190 Q260 140 520 176 T1000 160 T1200 170 V300 H0Z" style="fill: var(--near, #2d5f5a)"/>
+      <g style="opacity: var(--n, 0)">
+        <circle cx="180" cy="160" r="40" fill="url(#dglow)"/><circle cx="180" cy="160" r="7" fill="#9ffff0"/>
+        <circle cx="880" cy="150" r="36" fill="url(#dglow)"/><circle cx="880" cy="150" r="6" fill="#ffb3e6"/>
+        <circle cx="560" cy="150" r="60" fill="url(#dlamp)"/>
+      </g>
+      <path d="M180 196 v-34 M880 186 v-34" stroke="#2d5f5a" stroke-width="3"/>
+      <g transform="translate(470 98)"><path d="M0 78 L60 0 L120 78Z" fill="#ffc26b"/><path d="M60 0 L120 78 H80Z" fill="#e8a454"/><path d="M44 78 L60 34 L76 78Z" fill="#2a1d23"/>
+        <rect x="86" y="44" width="10" height="12" rx="3" fill="#ffe2a0" style="opacity: var(--n, 0)"/></g>
+      <g style="opacity: var(--doom, 0); transform: translateY(calc((1 - var(--doom, 0)) * 60px))">
+        <g fill="#241433"><ellipse cx="80" cy="250" rx="46" ry="40"/><ellipse cx="300" cy="262" rx="38" ry="34"/><ellipse cx="760" cy="256" rx="44" ry="38"/><ellipse cx="1000" cy="248" rx="50" ry="42"/><ellipse cx="1150" cy="266" rx="34" ry="30"/></g>
+        <g fill="#ffd94d"><circle cx="66" cy="240" r="5"/><circle cx="92" cy="240" r="5"/><circle cx="290" cy="254" r="4"/><circle cx="310" cy="254" r="4"/><circle cx="748" cy="246" r="5"/><circle cx="772" cy="246" r="5"/><circle cx="986" cy="236" r="5"/><circle cx="1014" cy="236" r="5"/><circle cx="1142" cy="258" r="4"/><circle cx="1160" cy="258" r="4"/></g>
+      </g>
+    </svg>
+    <div class="wrap day-ui">
+      <div class="clock-card">
+        <span class="eyebrow">a day on Celestia</span>
+        <div class="clock" id="clock">6:00 AM</div>
+        <h3 id="phase">Dawn</h3>
+        <p id="phase-line">The wilds rearrange themselves.</p>
+      </div>
+      <p class="day-hint">one day is six real minutes · keep scrolling · real homestead, real light</p>
     </div>
   </div>
 </section>
@@ -1686,6 +1799,16 @@ body.souped { overflow: hidden; }
       <span class="stamp">BETA</span>
     </div>
   </div>
+  <div class="wrap reviews" aria-label="Early reviews">
+    <span class="eyebrow">early reviews</span>
+    <ul>
+      <li><b aria-label="5 of 5 stars">★★★★★</b><q>da sprouts is firsty, plip!</q><span>a Drizzlet</span></li>
+      <li><b aria-label="4 of 5 stars">★★★★<span class="dim">★</span></b><q>snip snip. yu got beanz? me got beanz.</q><span>a Pipsnip, mid-harvest</span></li>
+      <li><b aria-label="2 of 5 stars">★★<span class="dim">★★★</span></b><q>Too many hugs.</q><span>a Gnawbit, probably</span></li>
+      <li><b aria-label="5 of 5 stars">★★★★★</b><q>Rivet would like it on the record that Rivet helped.</q><span>RIVET-7</span></li>
+      <li><b aria-label="1 of 5 stars">★<span class="dim">★★★★</span></b><q>Dropped my beans in the Hollows. Again.</q><span>a spacer, day 3</span></li>
+    </ul>
+  </div>
 </section>
 
 <!-- ═════════ THE LAST ORDER / footer ═════════ -->
@@ -1696,13 +1819,6 @@ body.souped { overflow: hidden; }
     <h2>Clear the loan. <em>Then choose.</em></h2>
     <p>One last shipment pays off a hundred thousand chits of somebody else's bad decisions. Then the Charter offers you a corner office, and the critters offer you a reason to stay.</p>
     <span class="sig">see you on Celestia ✦</span>
-    <div class="studio">
-      <div class="knocker" role="button" tabindex="0" aria-label="A ceramic bowl with a tiny door in its side. Knock on it.">
-        <canvas id="doorbowl" width="576" height="456" aria-hidden="true"></canvas>
-        <span class="knock-hint hand" aria-hidden="true">knock knock?</span>
-      </div>
-      <p class="studio-name">a <b>Door Bowl</b> game</p>
-    </div>
     <div class="foot">
       <span>Frontiers Celestia · Beta 1.1.5 · a Door Bowl game</span>
       <span>Lot 7, Celestia · Rent: none · Loan: considerable</span>
@@ -1892,6 +2008,8 @@ body.souped { overflow: hidden; }
   const phaseEl = document.getElementById('phase');
   const lineEl2 = document.getElementById('phase-line');
   const sun = document.getElementById('sun'), moon = document.getElementById('moon');
+  const shots = [...document.querySelectorAll('.day-shots img')];
+  shots.forEach((im) => { const on = () => day.classList.add('real'); if (im.complete && im.naturalWidth) on(); else im.addEventListener('load', on, { once: true }); });
   // [progress, sky top, sky bottom, far hills, near hills]
   const SKY = [
     [0.00, '#ff9eb0', '#ffd29a', '#8a6a9a', '#5fae9c'],
@@ -1923,6 +2041,11 @@ body.souped { overflow: hidden; }
   }
   let lastPhase = -1;
   function paintDay(p) {
+    // Eight renders of the homestead, 6 AM round to 3 AM, the next fading in over the last.
+    if (shots.length === 8) {
+      const f = p * 8, k = Math.floor(f) % 8, nx = (k + 1) % 8, a = f - Math.floor(f);
+      shots.forEach((im, i) => { im.style.opacity = i === k ? 1 : i === nx ? a.toFixed(3) : 0; im.style.zIndex = i === nx ? 1 : 0; });
+    }
     const [top, bot, far, near] = sky(p);
     pin.style.background = `linear-gradient(${top}, ${bot})`;
     pin.style.setProperty('--far', far); pin.style.setProperty('--near', near);
@@ -3052,6 +3175,20 @@ body.souped { overflow: hidden; }
       else if (seen && !overlay && !playing) drawSmall(t);
     }
     loop();
+  })();
+</script>
+<script>
+  /* ── the title theme: one loop of it, started and stopped by hand ── */
+  (() => {
+    const b = document.getElementById('tune'); if (!b) return;
+    const label = b.querySelector('.tune-l'); let tune = null;
+    const stop = () => { if (tune) tune.pause(); b.setAttribute('aria-pressed', 'false'); label.textContent = 'hear the title theme'; };
+    b.addEventListener('click', () => {
+      if (!tune) { tune = new Audio('music/title.wav'); tune.loop = true; tune.volume = 0.55; }
+      if (tune.paused) { tune.play().then(() => { b.setAttribute('aria-pressed', 'true'); label.textContent = 'title theme · stop'; }).catch(stop); }
+      else stop();
+    });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
   })();
 </script>
 </body>
