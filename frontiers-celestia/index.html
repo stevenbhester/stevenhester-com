@@ -805,12 +805,17 @@ body.souped { overflow: hidden; }
 .studio-sub { font-size: 1.15rem; color: var(--moss); opacity: 0.7; margin-top: 2px; }
 .knocker.ajar ~ .studio-sub, .knocker.burst ~ .studio-sub { opacity: 0; }
 /* ───────────── The day in real light ───────────── */
-.day-shots { position: absolute; inset: 0; z-index: 0; }
-.day-shots img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+.day-shots { position: absolute; inset: 0; z-index: 0; transform-origin: 50% 45%; will-change: transform; }
+.day-shots img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; will-change: opacity; backface-visibility: hidden; transform: translateZ(0); }
 .day.real .day-land, .day.real .day-stars { display: none; }
 .day.real .day-pin::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(10, 8, 22, 0.55), rgba(10, 8, 22, 0) 38%, rgba(10, 8, 22, 0) 72%, rgba(10, 8, 22, 0.55)); }
-.day.real .orb { z-index: 1; }
-.day.real .clock-card { background: rgba(26, 20, 48, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border-radius: 22px; padding: 18px 22px; display: inline-block; border: 1px solid rgba(255, 241, 220, 0.1); }
+.day.real .orb { display: none; }
+@media (orientation: portrait) {
+  .day.real .day-ui { position: absolute; left: 0; right: 0; bottom: max(28px, env(safe-area-inset-bottom, 0px)); padding-top: 0; }
+  .day.real .day-pin::after { background: linear-gradient(180deg, rgba(10, 8, 22, 0.35), rgba(10, 8, 22, 0) 22%, rgba(10, 8, 22, 0) 58%, rgba(10, 8, 22, 0.7)); }
+}
+.day.real .day-pin { background: #120d24 !important; }
+.day.real .clock-card { background: rgba(22, 16, 40, 0.8); border-radius: 22px; padding: 18px 22px; display: inline-block; border: 1px solid rgba(255, 241, 220, 0.12); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35); }
 /* ───────────── The title theme ───────────── */
 .tune { display: inline-flex; align-items: center; gap: 8px; font: 700 0.76rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal); background: rgba(10, 24, 32, 0.55); border: 1px solid rgba(115, 242, 230, 0.5); border-radius: 999px; padding: 9px 14px; cursor: pointer; }
 .tune:hover { background: rgba(115, 242, 230, 0.12); }
@@ -1672,14 +1677,14 @@ body.souped { overflow: hidden; }
   <div class="day-pin" id="day-pin">
     <div class="day-stars"></div>
     <div class="day-shots" aria-hidden="true">
-      <img src="shots/day_0.jpg" alt="" loading="lazy" width="1600" height="900">
-      <img src="shots/day_1.jpg" alt="" loading="lazy" width="1600" height="900">
-      <img src="shots/day_2.jpg" alt="" loading="lazy" width="1600" height="900">
-      <img src="shots/day_3.jpg" alt="" loading="lazy" width="1600" height="900">
-      <img src="shots/day_4.jpg" alt="" loading="lazy" width="1600" height="900">
-      <img src="shots/day_5.jpg" alt="" loading="lazy" width="1600" height="900">
-      <img src="shots/day_6.jpg" alt="" loading="lazy" width="1600" height="900">
-      <img src="shots/day_7.jpg" alt="" loading="lazy" width="1600" height="900">
+      <picture><source media="(orientation: portrait)" srcset="shots/dayp_0.jpg" width="900" height="1600"><img src="shots/day_0.jpg" alt="" loading="lazy" width="1600" height="900" decoding="async"></picture>
+      <picture><source media="(orientation: portrait)" srcset="shots/dayp_1.jpg" width="900" height="1600"><img src="shots/day_1.jpg" alt="" loading="lazy" width="1600" height="900" decoding="async"></picture>
+      <picture><source media="(orientation: portrait)" srcset="shots/dayp_2.jpg" width="900" height="1600"><img src="shots/day_2.jpg" alt="" loading="lazy" width="1600" height="900" decoding="async"></picture>
+      <picture><source media="(orientation: portrait)" srcset="shots/dayp_3.jpg" width="900" height="1600"><img src="shots/day_3.jpg" alt="" loading="lazy" width="1600" height="900" decoding="async"></picture>
+      <picture><source media="(orientation: portrait)" srcset="shots/dayp_4.jpg" width="900" height="1600"><img src="shots/day_4.jpg" alt="" loading="lazy" width="1600" height="900" decoding="async"></picture>
+      <picture><source media="(orientation: portrait)" srcset="shots/dayp_5.jpg" width="900" height="1600"><img src="shots/day_5.jpg" alt="" loading="lazy" width="1600" height="900" decoding="async"></picture>
+      <picture><source media="(orientation: portrait)" srcset="shots/dayp_6.jpg" width="900" height="1600"><img src="shots/day_6.jpg" alt="" loading="lazy" width="1600" height="900" decoding="async"></picture>
+      <picture><source media="(orientation: portrait)" srcset="shots/dayp_7.jpg" width="900" height="1600"><img src="shots/day_7.jpg" alt="" loading="lazy" width="1600" height="900" decoding="async"></picture>
     </div>
     <div class="orb sun" id="sun"></div>
     <div class="orb moon" id="moon"></div>
@@ -2040,30 +2045,43 @@ body.souped { overflow: hidden; }
     return [1, 2, 3, 4].map((k) => mix(a[k], b[k], t));
   }
   let lastPhase = -1;
+  const shotsBox = document.querySelector('.day-shots');
+  const shown = shots.map(() => -1);
+  let lastDrift = -1;
   function paintDay(p) {
     // Eight renders of the homestead, 6 AM round to 3 AM, the next fading in over the last.
+    const real = day.classList.contains('real');
     if (shots.length === 8) {
-      const f = p * 8, k = Math.floor(f) % 8, nx = (k + 1) % 8, a = f - Math.floor(f);
-      shots.forEach((im, i) => { im.style.opacity = i === k ? 1 : i === nx ? a.toFixed(3) : 0; im.style.zIndex = i === nx ? 1 : 0; });
+      const f = p * 8, k = Math.floor(f) % 8, nx = (k + 1) % 8, a = Math.round((f - Math.floor(f)) * 50) / 50;
+      shots.forEach((im, i) => {
+        const o = i === k ? 1 : i === nx ? a : 0;
+        if (o !== shown[i]) { shown[i] = o; im.style.opacity = o; im.style.zIndex = i === nx ? 1 : 0; }
+      });
+      // A slow drift in and up over the day, so the picture lives while you scroll.
+      const drift = Math.round(p * 400) / 400;
+      if (real && drift !== lastDrift) { lastDrift = drift; shotsBox.style.transform = `translate3d(0, ${(-2.4 * drift).toFixed(2)}%, 0) scale(${(1 + 0.07 * drift).toFixed(4)})`; }
     }
-    const [top, bot, far, near] = sky(p);
-    pin.style.background = `linear-gradient(${top}, ${bot})`;
-    pin.style.setProperty('--far', far); pin.style.setProperty('--near', near);
+    if (!real) {
+      const [top, bot, far, near] = sky(p);
+      pin.style.background = `linear-gradient(${top}, ${bot})`;
+      pin.style.setProperty('--far', far); pin.style.setProperty('--near', near);
+    }
     const n = p < 0.45 ? 0 : p < 0.62 ? (p - 0.45) / 0.17 : p < 0.94 ? 1 : 1 - (p - 0.94) / 0.06 * 0.5;
     const doom = clamp((p - 0.86) / 0.09, 0, 1);
-    pin.style.setProperty('--n', n.toFixed(3)); pin.style.setProperty('--doom', doom.toFixed(3));
+    if (!real) { pin.style.setProperty('--n', n.toFixed(3)); pin.style.setProperty('--doom', doom.toFixed(3)); }
     day.classList.toggle('doom', p > 0.92);
     // the sun crosses 6 AM to 6 PM, the moon 6 PM to 6 AM
     const arc = (f) => [10 + f * 80, 62 - Math.sin(f * Math.PI) * 44];
     const sf = clamp(p / 0.5, 0, 1), mf = clamp((p - 0.5) / 0.5, 0, 1);
     const [sx, sy] = arc(sf), [mx, my] = arc(mf);
-    sun.style.setProperty('--x', sx + '%'); sun.style.setProperty('--y', sy + '%'); sun.style.setProperty('--o', p < 0.52 ? 1 : 0);
-    moon.style.setProperty('--x', mx + '%'); moon.style.setProperty('--y', my + '%'); moon.style.setProperty('--o', p > 0.5 ? 1 : 0);
+    if (!real) sun.style.setProperty('--x', sx + '%'), sun.style.setProperty('--y', sy + '%'), sun.style.setProperty('--o', p < 0.52 ? 1 : 0);
+    if (!real) moon.style.setProperty('--x', mx + '%'), moon.style.setProperty('--y', my + '%'), moon.style.setProperty('--o', p > 0.5 ? 1 : 0);
     // the clock: 6 AM plus 24 hours, in 10-minute steps
     const mins = Math.floor((p * 24 * 60) / 10) * 10 + 6 * 60;
     const h24 = Math.floor(mins / 60) % 24, m = mins % 60;
     const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-    clockEl.textContent = `${h12}:${String(m).padStart(2, '0')} ${h24 < 12 ? 'AM' : 'PM'}`;
+    const said = `${h12}:${String(m).padStart(2, '0')} ${h24 < 12 ? 'AM' : 'PM'}`;
+    if (clockEl.textContent !== said) clockEl.textContent = said;
     let ph = 0; while (ph < PHASES.length - 1 && p >= PHASES[ph + 1][0]) ph++;
     if (ph !== lastPhase) { lastPhase = ph; phaseEl.textContent = PHASES[ph][1]; lineEl2.textContent = PHASES[ph][2]; }
   }
