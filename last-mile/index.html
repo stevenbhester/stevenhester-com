@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&family=Space+Mono:wght@400;700&family=Gaegu:wght@700&display=swap">
 <style>
 /* Last Mile. The page is the game's own paper-and-asphalt world: cream card, grey road, chunky
    buttons with a hard lip, a waybill to sign at the end. A road runs between the sections, torn up
@@ -124,7 +124,7 @@ h1 { font-size: clamp(74px, 19vw, 176px); letter-spacing: -0.035em; text-shadow:
   box-shadow: 14px 18px 0 rgba(59, 51, 70, 0.14);
   transform: rotate(2.2deg);
 }
-.phone video, .phone img { width: 100%; aspect-ratio: 720 / 1560; object-fit: cover; border-radius: 35px; background: var(--paper-deep); }
+.phone video, .phone img { width: 100%; height: auto; aspect-ratio: 720 / 1560; object-fit: cover; border-radius: 35px; background: var(--paper-deep); }
 .phone.left { transform: rotate(-2.4deg); box-shadow: -14px 18px 0 rgba(0, 0, 0, 0.22); }
 .phone .tap { position: absolute; inset: 0; display: grid; place-items: center; border: 0; background: none; cursor: pointer; }
 .phone .tap span { width: 78px; height: 78px; border-radius: 50%; background: rgba(255, 255, 255, 0.92); display: grid; place-items: center; box-shadow: 0 6px 0 rgba(59, 51, 70, 0.25); }
@@ -160,7 +160,7 @@ h2 { font-size: clamp(38px, 7vw, 68px); margin-top: 0.42em; }
 .board { position: relative; }
 #game { width: 100%; height: auto; user-select: none; -webkit-user-select: none; border-radius: 20px; }
 /* Only the van takes hold of a touch: anywhere else on the board, a swipe still scrolls the page. */
-#grip { position: absolute; width: 32%; height: 25%; border-radius: 50%; touch-action: none; cursor: grab; -webkit-tap-highlight-color: transparent; }
+#grip { position: absolute; width: 32%; height: 19%; border-radius: 50%; touch-action: none; cursor: grab; -webkit-tap-highlight-color: transparent; }
 #grip.drawing { cursor: grabbing; }
 .game-msg { min-height: 3.1em; margin-top: 12px; padding: 0 6px; font: 600 clamp(17px, 2.3vw, 20px)/1.3 var(--f-display); text-align: center; }
 .game-msg.bad { color: #c8452e; }
@@ -205,21 +205,54 @@ h2 { font-size: clamp(38px, 7vw, 68px); margin-top: 0.42em; }
 .big-grid { display: grid; gap: clamp(30px, 5vw, 64px); align-items: center; }
 .big .section-lede { color: rgba(255, 255, 255, 0.74); }
 .manifest { margin: 1.7em 0 0; padding: 0; list-style: none; font: 400 15px/1.45 var(--f-mono); border-top: 2px dashed rgba(255, 255, 255, 0.25); }
-.manifest li { display: grid; grid-template-columns: 9.2em 1fr; gap: 12px; padding: 11px 0; border-bottom: 2px dashed rgba(255, 255, 255, 0.25); }
+.manifest li { display: grid; grid-template-columns: 10.4em 1fr; gap: 12px; padding: 11px 0; border-bottom: 2px dashed rgba(255, 255, 255, 0.25); }
 .manifest b { color: var(--gold); font-weight: 700; letter-spacing: 0.05em; }
 .manifest span { color: rgba(255, 255, 255, 0.86); }
 
-/* ── Screens you can swipe through ── */
-.reel { display: flex; gap: clamp(16px, 3vw, 34px); overflow-x: auto; scroll-snap-type: x mandatory; padding: 26px var(--gutter) 34px; margin-top: clamp(20px, 3vw, 34px); scrollbar-width: none; }
-.reel::-webkit-scrollbar { display: none; }
-.reel figure { flex: 0 0 min(62vw, 250px); margin: 0; scroll-snap-align: center; }
-.reel .phone { width: 100%; border-width: 8px; border-radius: 34px; box-shadow: 8px 10px 0 rgba(59, 51, 70, 0.13); }
-.reel .phone img { border-radius: 26px; }
-.reel figure:nth-child(odd) .phone { transform: rotate(-1.6deg); }
-.reel figure:nth-child(even) .phone { transform: rotate(1.4deg); }
-.reel figcaption { font: 600 17px/1.3 var(--f-display); text-align: center; margin-top: 18px; }
-.reel figcaption small { display: block; font: 700 14.5px/1.4 var(--f-body); color: var(--ink-soft); margin-top: 4px; }
-@media (min-width: 1100px) { .reel { justify-content: center; } }
+/* ── What else is in the van: small cards, a cropped screen each ── */
+.perks-band { padding: clamp(52px, 8vw, 96px) 0 0; }
+.perk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2.4vw, 24px); margin-top: clamp(24px, 3.5vw, 40px); }
+.perk.log { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 16px; align-items: center; }
+.perk.log .log-card { grid-row: span 2; aspect-ratio: auto; min-height: 180px; }
+.perk.log h3 { align-self: end; margin-top: 0; }
+.perk.log p { align-self: start; }
+@media (min-width: 1000px) {
+  .perk-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .perk.log { grid-column: auto; display: block; }
+  .perk.log .log-card { aspect-ratio: 1; min-height: 0; }
+  .perk.log h3 { margin-top: 14px; }
+  .log-card { font-size: 11.5px; padding: 12px 12px 10px; }
+  .log-card li { grid-template-columns: 3.4em 1fr; gap: 4px; }
+  .log-card li:nth-child(n+4) { display: none; }
+}
+@media (max-width: 560px) {
+  .perk { padding: 8px 8px 14px; border-radius: 16px; }
+  .perk h3 { font-size: 19px; margin: 10px 4px 0; }
+  .perk p { font-size: 14.5px; margin: 4px 4px 0; }
+  .perk.log { grid-template-columns: 1fr; }
+  .perk.log .log-card { grid-row: auto; min-height: 0; }
+  .perk.log h3 { margin-top: 10px; }
+  .manifest li { grid-template-columns: 1fr; gap: 3px; }
+}
+.perk { background: var(--card); border-radius: 20px; padding: 12px 12px 18px; box-shadow: 0 6px 0 #dccfb6; }
+.perk figure { margin: 0; aspect-ratio: 1; border-radius: 13px; overflow: hidden; background: var(--paper-deep); }
+.perk figure img { width: 100%; height: 100%; object-fit: cover; }
+.perk h3 { font-size: 23px; margin: 14px 6px 0; }
+.perk p { font-size: 16px; color: var(--ink-soft); margin: 6px 6px 0; line-height: 1.4; }
+.log-card { aspect-ratio: 1; border-radius: 13px; background: var(--ink); color: #fff; padding: 16px 16px 12px; font: 400 13.5px/1.35 var(--f-mono); display: flex; flex-direction: column; }
+.log-head { display: flex; justify-content: space-between; font-weight: 700; letter-spacing: 0.1em; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); padding-bottom: 9px; }
+.log-head span:last-child { background: var(--gold); color: var(--ink); border-radius: 5px; padding: 1px 6px; }
+.log-card ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.log-card li { display: grid; grid-template-columns: 3.6em 1fr; gap: 6px; color: rgba(255, 255, 255, 0.86); }
+.log-card li b { color: var(--gold); }
+.log-card li:nth-child(n+4) { opacity: 0.55; }
+
+/* ── The tagline, big ── */
+.slogan { text-align: center; padding: clamp(60px, 10vw, 120px) 0 0; }
+.slogan p { font: 700 clamp(46px, 9.5vw, 104px)/0.98 var(--f-display); letter-spacing: -0.02em; }
+.slogan p span { display: block; }
+.slogan p span:last-child { color: var(--accent); }
+.slogan small { display: block; font: 700 14px/1.4 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin-top: 18px; }
 
 /* ── The waybill: the sign-up ── */
 .notify-grid { display: grid; gap: clamp(26px, 5vw, 60px); align-items: start; }
@@ -280,6 +313,33 @@ form.slip { padding: 6px 22px 0; }
 .notify-copy .perks li::before { content: ""; width: 22px; height: 22px; margin-top: 3px; border-radius: 6px; background: var(--c, var(--red)); box-shadow: 0 3px 0 rgba(59, 51, 70, 0.2); }
 .notify-copy .perks li:nth-child(2) { --c: var(--yellow); }
 .notify-copy .perks li:nth-child(3) { --c: var(--blue); }
+
+/* ── Door Bowl: the studio's bowl, knock on it (ported from the Frontiers Celestia page) ── */
+.studio-band {
+  --teal: #73f2e6; --amber: #ffc26b; --cream: #fff1dc; --moss: #b9a3f0; --charter: #0a1820;
+  margin-top: clamp(56px, 9vw, 110px); padding: clamp(30px, 5vw, 60px) 0 clamp(26px, 4vw, 48px); color: var(--cream); text-align: center;
+  background: radial-gradient(50% 70% at 50% 60%, #2a1b3d 0%, #20142f 45%, #130d1c 100%);
+}
+.studio { display: grid; justify-items: center; gap: 2px; width: 100%; }
+.knocker { position: relative; width: min(100%, 420px); cursor: pointer; border-radius: 24px; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.knocker canvas { display: block; width: 100%; height: auto; }
+.knocker:focus-visible { box-shadow: 0 0 0 3px var(--teal); }
+.hand { font-family: "Gaegu", "Comic Sans MS", cursive; font-weight: 700; }
+.knock-hint { position: absolute; right: 4%; top: 6%; font-size: 1.4rem; color: var(--amber); rotate: 6deg; opacity: 0; transition: opacity 0.3s, transform 0.3s; transform: translateY(6px); pointer-events: none; white-space: nowrap; }
+.knocker:hover .knock-hint, .knocker:focus-visible .knock-hint { opacity: 1; transform: none; }
+.knocker.ajar .knock-hint::after { content: " again!"; }
+.knocker.burst .knock-hint { opacity: 0 !important; }
+.studio-name { font-family: var(--f-display); font-size: 1.35rem; color: rgba(255, 241, 220, 0.7); margin-top: -10px; }
+.studio-name b { color: var(--cream); font-weight: 700; }
+.studio-sub { font-size: 1.2rem; color: var(--moss); opacity: 0.8; margin-top: 2px; }
+.knocker.ajar ~ .studio-sub, .knocker.burst ~ .studio-sub { opacity: 0; }
+.indie { max-width: 30em; margin: 22px auto 0; font: 700 clamp(17px, 2vw, 19px)/1.5 var(--f-body); color: rgba(255, 241, 220, 0.82); }
+.indie b { color: var(--cream); font-weight: 800; }
+.soup-card { position: fixed; inset: 0; z-index: 1000; touch-action: none; }
+.soup-card canvas { position: absolute; inset: 0; display: block; }
+.soup-skip { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); font: 700 0.75rem var(--f-mono); letter-spacing: 0.16em; text-transform: uppercase;
+  color: #73f2e6; background: rgba(10, 24, 32, 0.7); border: 1px solid #73f2e6; border-radius: 999px; padding: 8px 14px; cursor: pointer; opacity: 0.75; }
+body.souped { overflow: hidden; }
 
 /* ── Footer ── */
 footer { padding: clamp(40px, 7vw, 80px) 0 calc(40px + env(safe-area-inset-bottom)); font-size: 16px; color: var(--ink-soft); }
@@ -343,7 +403,7 @@ footer details p { margin-top: 10px; }
 
 <header class="wrap top">
   <a class="maker" href="/" data-track="lastmile-home"><svg class="bowl" aria-hidden="true"><use href="#bowl"/></svg> a Door Bowl game</a>
-  <a class="jump" href="#notify" data-track="lastmile-jump-top">Get notified</a>
+  <a class="jump" href="#notify" data-track="lastmile-jump-top">Get updates</a>
 </header>
 
 <main>
@@ -356,7 +416,7 @@ footer details p { margin-top: 10px; }
         <p class="tag">Draw the route. Mind the stack.</p>
         <p class="lede">A one-thumb delivery puzzle for iPhone. Every package has someone waiting for it, <b>only the top of the stack can go out</b>, and <b>the road falls to bits behind you</b>.</p>
         <div class="cta-row">
-          <a class="btn" href="#notify" data-track="lastmile-cta-hero">Get in on the playtest
+          <a class="btn" href="#notify" data-track="lastmile-cta-hero">Get Updates
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
           <a class="text-link" href="#play" data-track="lastmile-cta-try">or try a level first</a>
         </div>
@@ -381,18 +441,18 @@ footer details p { margin-top: 10px; }
     <div class="wrap play-grid">
       <div>
         <span class="sign">Stop 1 · try it</span>
-        <h2>Three packages. One road.</h2>
-        <p class="section-lede">This is a real level from the game. No download, no sign-up: put your thumb on the van and drag.</p>
+        <h2>Four packages. One way through.</h2>
+        <p class="section-lede">Level 5 from the game, right here. No download, no sign-up: put your thumb on the van and drag. Most ways round end in a dead end.</p>
         <ol class="how">
           <li><span><b>Drag from the van</b> along the road, then let go. It drives what you drew.</span></li>
           <li><span>Packages come off the belt in order. <b>The house marked 1 is next.</b></span></li>
-          <li><span>The road breaks up behind you, so <b>you only get to drive it once.</b></span></li>
+          <li><span>The road breaks up behind you, so <b>every street is one-shot.</b></span></li>
         </ol>
       </div>
       <div>
         <div class="board-card">
           <div class="board">
-            <svg id="game" viewBox="0 0 500 640" role="img" aria-label="A playable level of Last Mile: a loop of road round a yellow house, with a red house on the left and a blue one on the right."></svg>
+            <svg id="game" viewBox="0 0 500 840" role="img" aria-label="A playable level of Last Mile: a grid of streets with a yellow, a blue, a red and a purple house, and the van at the bottom."></svg>
             <div id="grip" role="application" aria-label="The van. Drag from here along the road to draw a route."></div>
           </div>
           <div class="stamp" id="game-stamp" aria-hidden="true">DELIVERED!</div>
@@ -417,22 +477,22 @@ footer details p { margin-top: 10px; }
         <article class="label">
           <i class="tape" aria-hidden="true"></i>
           <div class="no"><span>RULE 01</span><span>THIS WAY UP</span></div>
-          <h3>Top of the stack goes first.</h3>
-          <p>Your load rides a conveyor belt in the order it has to go out. Every house wears a number, and 1 is the only door you can knock on right now.</p>
+          <h3>Top of the stack first.</h3>
+          <p>Packages go out in order. House 1 is next.</p>
           <figure class="shot"><img src="media/plan.jpg" alt="A route drawn round a block of houses. Each house has a number matching the package's place on the conveyor belt below." loading="lazy" width="720" height="1560"></figure>
         </article>
         <article class="label">
           <i class="tape" aria-hidden="true"></i>
-          <div class="no"><span>RULE 02</span><span>FRAGILE</span></div>
-          <h3>The road breaks up behind you.</h3>
-          <p>You drive so hard the asphalt gives up. No doubling back for the one you missed. Point the van at the wreckage and it stands on the brakes instead.</p>
+          <div class="no"><span>RULE 02</span><span>DESTRUCTIVE</span></div>
+          <h3>The road breaks behind you.</h3>
+          <p>No doubling back for the one you missed.</p>
           <figure class="shot"><img src="media/brake.jpg" alt="The van stopped just short of a stretch of torn-up road, with a red X and the word WHOA." loading="lazy" width="720" height="1560"></figure>
         </article>
         <article class="label">
           <i class="tape" aria-hidden="true"></i>
           <div class="no"><span>RULE 03</span><span>DO NOT BEND</span></div>
           <h3>So plan the whole run.</h3>
-          <p>Gates that only lift for the right package. Bridges. One-way streets. Parcel shops that mess with your stack. There's one perfect route, and you'll know when you've found it.</p>
+          <p>There's one perfect route. Find it.</p>
           <figure class="shot"><img src="media/gates.jpg" alt="A big level before the first move: red gates, two bridges, parcel shops, a sorting hub and nine houses, each wearing its number." loading="lazy" width="720" height="1560"></figure>
         </article>
       </div>
@@ -453,25 +513,51 @@ footer details p { margin-top: 10px; }
       <div>
         <span class="sign">Stop 3 · the long haul</span>
         <h2>Then the maps get big.</h2>
-        <p class="section-lede">Level 45 has eight packages, two bridges, two gates and a sorting hub that swaps your stack mid-run. Get it in one and the van catches fire. That's the good outcome.</p>
+        <p class="section-lede">Every few levels the road learns a new trick. By level 45 they're all on one map, and getting it in one sets the van on fire. That's the good outcome.</p>
         <ul class="manifest">
-          <li><b>45 LEVELS</b><span>A road trip through six regions, Maple Suburbs to Seaside Lights.</span></li>
-          <li><b>DAILY PUZZLE</b><span>A new one every day. Solve it clean to keep your streak burning.</span></li>
-          <li><b>PRESENTS</b><span>Hidden just off the obvious route. One of them is a monster truck.</span></li>
-          <li><b>MOMENTUM</b><span>Win streaks set the van alight: orange, then blue, then full supernova.</span></li>
-          <li><b>YOUR CALL</b><span>Draw the route with a finger, or plot it on a D-pad and hit DRIVE BABY DRIVE.</span></li>
+          <li><b>ONE-WAY STREETS</b><span>Turn on from the side if you like. Leave the way the arrow points.</span></li>
+          <li><b>BRIDGES</b><span>Cross a junction twice: once over, once under.</span></li>
+          <li><b>COLOUR GATES</b><span>They only lift while the right package is on top.</span></li>
+          <li><b>PARCEL SHOPS</b><span>Pick up a parcel on the way, straight onto the top of your stack.</span></li>
+          <li><b>SORTING HUBS</b><span>Roll over one and your top two packages swap.</span></li>
+          <li><b>BACK TO DEPOT</b><span>Deliver everything, then make it home without crossing your own wreckage.</span></li>
         </ul>
       </div>
     </div>
   </section>
 
-  <div class="reel" aria-label="Screens from the game">
-    <figure><div class="phone"><img src="media/map.jpg" alt="The level map: a winding road through a desert region, with numbered stops." loading="lazy" width="720" height="1560"></div><figcaption>The road trip<small>45 stops, and your van waits at the next one.</small></figcaption></figure>
-    <figure><div class="phone"><img src="media/daily.jpg" alt="The daily puzzle screen showing a five-day streak in blue flames." loading="lazy" width="720" height="1560"></div><figcaption>The daily<small>One puzzle a day. One redo, or the streak's gone.</small></figcaption></figure>
-    <figure><div class="phone"><img src="media/garage.jpg" alt="The garage, with a monster truck and a grid of paint jobs and toppers." loading="lazy" width="720" height="1560"></div><figcaption>The garage<small>Yes, that is a monster truck.</small></figcaption></figure>
-    <figure><div class="phone"><img src="media/finish.jpg" alt="The level finish screen: DELIVERED!, with time, three stars and a momentum of seven." loading="lazy" width="720" height="1560"></div><figcaption>The finish<small>Time, stars, and how hot your streak is running.</small></figcaption></figure>
-    <figure><div class="phone"><img src="media/dpad.jpg" alt="A route plotted with the D-pad, with the DRIVE BABY DRIVE button." loading="lazy" width="720" height="1560"></div><figcaption>The D-pad<small>For buses, queues and one free hand.</small></figcaption></figure>
-  </div>
+  <section class="perks-band" aria-label="What else is in the box">
+    <div class="wrap">
+      <span class="sign amber">Stop 4 · what else is in the van</span>
+      <h2>Plenty to come back for.</h2>
+      <div class="perk-grid">
+        <article class="perk"><figure><img src="media/card-road.jpg" alt="The level map: a winding road through the desert with numbered stops and the van parked at the next one." loading="lazy" width="560" height="560"></figure>
+          <h3>A road trip</h3><p>45 stops, from the suburbs to the seaside.</p></article>
+        <article class="perk"><figure><img src="media/card-daily.jpg" alt="The daily puzzle, with a five-day streak burning in blue flames." loading="lazy" width="560" height="560"></figure>
+          <h3>A daily puzzle</h3><p>A new one every day. Keep the streak burning.</p></article>
+        <article class="perk"><figure><img src="media/card-garage.jpg" alt="The garage, with Kuma's Monster Truck on the turntable." loading="lazy" width="560" height="560"></figure>
+          <h3>A garage</h3><p>Presents hide off the obvious route. One's a monster truck.</p></article>
+        <article class="perk"><figure><img src="media/card-hint.jpg" alt="A golden hint arrow pointing the van up the road to its next turn." loading="lazy" width="560" height="560"></figure>
+          <h3>Hints when stuck</h3><p>A golden arrow to your next turn. No shame.</p></article>
+        <article class="perk log">
+          <div class="log-card" aria-hidden="true">
+            <div class="log-head"><span>DELIVERY LOG</span><span>NEW</span></div>
+            <ol>
+              <li><b>v0.4</b> Drive with a D-pad</li>
+              <li><b>v0.4</b> The van brakes for wreckage</li>
+              <li><b>v0.3</b> Kuma's Monster Truck</li>
+              <li><b>v0.3</b> Daily puzzle and streaks</li>
+              <li><b>v0.2</b> Hints, gas and the garage</li>
+            </ol>
+          </div>
+          <h3>Constant updates</h3><p>New levels and features land all the time. Playtesters get them first.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="slogan" aria-label="Tagline">
+    <div class="wrap"><p><span>Plan the route.</span><span>Burn the road.</span></p><small>Last Mile · coming to iPhone</small></div>
+  </section>
 
   <div class="road r4" aria-hidden="true"><div class="rubble"><svg><use href="#rubble"/></svg></div><svg class="van"><use href="#van"/></svg></div>
 
@@ -516,7 +602,7 @@ footer details p { margin-top: 10px; }
           <button class="btn" type="submit" id="notify-btn">Sign for it
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <p class="form-msg" role="status" aria-live="polite"></p>
-          <p class="smallprint">You'll hear from Steven about Last Mile and nothing else: when it's out, and a playtest invite if you ticked the box. By text as well only if you left a number. Reply to any of it and you're off the list.</p>
+          <p class="smallprint">You'll hear from Steven about Last Mile and nothing else: when it's out, and a playtest invite if you ticked the box.</p>
         </form>
         <div class="signed" id="notify-done" hidden>
           <span class="ink-stamp">SIGNED FOR</span>
@@ -526,6 +612,21 @@ footer details p { margin-top: 10px; }
     </div>
   </section>
 </main>
+
+<!-- ═════════ A DOOR BOWL GAME ═════════ -->
+<section class="studio-band" id="studio" aria-label="A Door Bowl game">
+  <div class="wrap">
+    <div class="studio">
+      <div class="knocker" role="button" tabindex="0" aria-label="A ceramic bowl with a tiny door in its side. Knock on it.">
+        <canvas id="doorbowl" width="576" height="456" aria-hidden="true"></canvas>
+        <span class="knock-hint hand" aria-hidden="true">knock knock?</span>
+      </div>
+      <p class="studio-name">a <b>Door Bowl</b> game</p>
+      <p class="studio-sub hand">it's a door. you know what to do.</p>
+      <p class="indie">Last Mile is a <b>fully indie-developed title from Door Bowl Games</b>. Made by hand, one wrecked road at a time.</p>
+    </div>
+  </div>
+</section>
 
 <footer>
   <div class="wrap">
@@ -662,7 +763,7 @@ document.addEventListener('click', e => {
   });
 })();
 
-/* ── The playable level: level 4 of the game, cut down to its bones. Same rules: only the package
+/* ── The playable level: level 5 of the game ("Rush Hour"), cut down to its bones. Same rules: only the package
       at the front of the belt can go out, to a house right beside the road; and each tile of road
       can be driven once. Drawn as SVG so it's sharp at any size. ── */
 (() => {
@@ -671,16 +772,19 @@ document.addEventListener('click', e => {
   const NS = 'http://www.w3.org/2000/svg';
   const T = 100;
   const MAP = [
-    '. # # # .',
-    '. # y # .',
-    'r # . # b',
-    '. # # # .',
-    '. . S . .',
+    '# # # # #',
+    '# y . b #',
+    '# # # # #',
+    '# . r . #',
+    '# # # # #',
+    '# p . . #',
+    '# # S # #',
   ].map(row => row.split(' '));
-  const NAMES = { r: 'red', y: 'yellow', b: 'blue' };
-  const HEX = { red: '#ff5d5d', yellow: '#ffc53d', blue: '#4d8dff' };
-  const DARK = { red: '#c94040', yellow: '#d19a1c', blue: '#3468c4' };
-  const ORDER = ['red', 'yellow', 'blue'];           // the belt, front first
+  const NAMES = { r: 'red', y: 'yellow', b: 'blue', p: 'purple' };
+  const HEX = { red: '#ff5d5d', yellow: '#ffc53d', blue: '#4d8dff', purple: '#a26bf5' };
+  const DARK = { red: '#c94040', yellow: '#d19a1c', blue: '#3468c4', purple: '#7a48c9' };
+  const ORDER = ['blue', 'red', 'yellow', 'purple'];   // the belt, front first
+  const W = MAP[0].length * T, H = MAP.length * T, VH = H + 140, BELT_Y = H + 70;
   const key = (x, y) => x + ',' + y;
   const roads = new Set(), houses = [];
   let start = null;
@@ -700,12 +804,12 @@ document.addEventListener('click', e => {
   const beside = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
 
   /* Ground, trees, road */
-  el('rect', { x: 0, y: 0, width: 500, height: 500, rx: 26, fill: '#a8d98a' });
+  el('rect', { x: 0, y: 0, width: W, height: H, rx: 26, fill: '#a8d98a' });
   MAP.forEach((row, y) => row.forEach((c, x) => {
     if (c === '.' && (x + y) % 2 === 0) el('rect', { x: x * T + 6, y: y * T + 6, width: T - 12, height: T - 12, rx: 18, fill: '#9ed17f' });
     if (NAMES[c]) el('rect', { x: x * T + 6, y: y * T + 6, width: T - 12, height: T - 12, rx: 18, fill: '#c4e8a9' });
   }));
-  for (const [x, y] of [[0, 0], [4, 0], [0, 4], [4, 4], [3, 4], [2, 2]]) {
+  for (const [x, y] of [[2, 1], [1, 3], [3, 5]]) {
     el('circle', { cx: x * T + 50, cy: y * T + 58, r: 19, fill: 'rgba(0,0,0,.12)' });
     el('circle', { cx: x * T + 50, cy: y * T + 50, r: 19, fill: '#5fae5b' });
     el('circle', { cx: x * T + 44, cy: y * T + 44, r: 8, fill: '#7cc472' });
@@ -762,12 +866,14 @@ document.addEventListener('click', e => {
   }
 
   /* The belt under the board */
-  el('rect', { x: 78, y: 529, width: 344, height: 96, rx: 26, fill: '#3a4150' });
-  el('rect', { x: 78, y: 522, width: 344, height: 96, rx: 26, fill: '#4b5364' });
-  el('rect', { x: 100, y: 530, width: 80, height: 80, rx: 18, fill: '#ffc53d' });
-  el('rect', { x: 106, y: 536, width: 68, height: 68, rx: 13, fill: '#5d667a' });
+  const PITCH = 104, FIRST = W / 2 - (ORDER.length - 1) * PITCH / 2;
+  const slotX = i => FIRST + i * PITCH;
+  const beltL = FIRST - 66, beltW = (ORDER.length - 1) * PITCH + 132;
+  el('rect', { x: beltL, y: BELT_Y - 41, width: beltW, height: 96, rx: 26, fill: '#3a4150' });
+  el('rect', { x: beltL, y: BELT_Y - 48, width: beltW, height: 96, rx: 26, fill: '#4b5364' });
+  el('rect', { x: FIRST - 40, y: BELT_Y - 40, width: 80, height: 80, rx: 18, fill: '#ffc53d' });
+  el('rect', { x: FIRST - 34, y: BELT_Y - 34, width: 68, height: 68, rx: 13, fill: '#5d667a' });
   const beltLayer = el('g');
-  const slotX = i => 140 + i * 110;
   let boxes = [];
 
   let route, plan, queue, done, busy, drawing, over, touched = false;
@@ -839,7 +945,7 @@ document.addEventListener('click', e => {
     beltLayer.replaceChildren();
     boxes = queue.map((color, i) => {
       const g = el('g', {}, beltLayer);
-      g.style.transform = `translate(${slotX(i)}px, 570px)`;
+      g.style.transform = `translate(${slotX(i)}px, ${BELT_Y}px)`;
       g.style.transition = 'transform .28s cubic-bezier(.3,1.5,.5,1), opacity .2s';
       el('rect', { x: -31, y: -27, width: 62, height: 62, rx: 13, fill: DARK[color] }, g);
       el('rect', { x: -31, y: -31, width: 62, height: 62, rx: 13, fill: HEX[color] }, g);
@@ -854,7 +960,7 @@ document.addEventListener('click', e => {
   }
   function numberBelt() {
     boxes.forEach((b, n) => {
-      b.g.style.transform = `translate(${slotX(n)}px, 570px)`;
+      b.g.style.transform = `translate(${slotX(n)}px, ${BELT_Y}px)`;
       b.disc.setAttribute('fill', n === 0 ? '#ffc53d' : '#f3ead9');
       b.text.textContent = n + 1;
     });
@@ -871,7 +977,7 @@ document.addEventListener('click', e => {
     retry.hidden = true; next.hidden = true;
     ring.setAttribute('visibility', 'visible');
     buildBelt();
-    placeVan(centre(start), -90);
+    placeVan(centre(start), 0);
     placeGrip();
     say(touched ? 'Fresh road. Drag from the van.' : 'Drag from the van.');
     paint();
@@ -898,7 +1004,7 @@ document.addEventListener('click', e => {
   /* Pointer → tile */
   function tileAt(e) {
     const r = svg.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width * 500, y = (e.clientY - r.top) / r.height * 640;
+    const x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * VH;
     return { x: Math.floor(x / T), y: Math.floor(y / T), px: x, py: y };
   }
   function showX(from, to) {
@@ -927,8 +1033,8 @@ document.addEventListener('click', e => {
   const grip = document.getElementById('grip');
   function placeGrip() {
     const c = centre(route[route.length - 1]);
-    grip.style.left = (c.x - 80) / 5 + '%';
-    grip.style.top = (c.y - 80) / 6.4 + '%';
+    grip.style.left = (c.x - 80) / W * 100 + '%';
+    grip.style.top = (c.y - 80) / VH * 100 + '%';
     grip.style.display = over ? 'none' : '';
   }
   grip.addEventListener('pointerdown', e => {
@@ -985,7 +1091,7 @@ document.addEventListener('click', e => {
             if (!done.has(h) && h.color === queue[0] && beside(h, at)) {
               done.add(h); queue.shift(); again = true; gave = true;
               const first = boxes.shift();
-              first.g.style.transform = `translate(${slotX(0)}px, 505px)`;
+              first.g.style.transform = `translate(${slotX(0)}px, ${BELT_Y - 65}px)`;
               first.g.setAttribute('opacity', 0);
               setTimeout(() => first.g.remove(), 300);
               numberBelt();
@@ -1010,7 +1116,7 @@ document.addEventListener('click', e => {
       over = true;
       placeGrip();
       stamp.classList.add('on');
-      say("That was level 4. There are 45, and they stop being this nice about it.", 'good');
+      say("That was level 5. There are 45, and they stop being this nice about it.", 'good');
       next.hidden = false; retry.hidden = false; retry.textContent = 'Play it again';
       track('link', 'lastmile-demo-win');
       return;
@@ -1032,5 +1138,606 @@ document.addEventListener('click', e => {
   reset();
 })();
 </script>
+<script>
+  /* ── Door Bowl: the studio card, ported from the game. A ceramic bowl with a tiny door in its side sits in
+     the footer. Knock three times (each knock lands harder, and something kicks back from inside), and on the
+     third the door bursts and soup pours out of it straight at the camera until DOOR BOWL bobs up in it. Then
+     it drains, the juice left behind pulls itself into "a" and "game", and the camera dives through the little
+     door into the page. ── */
+  (() => {
+    const small = document.getElementById('doorbowl');
+    if (!small) return;
+    const FRAME = [1280, 720], MIDDLE = [640, 360];
+    const K = {
+      BACKDROP: [19, 13, 28], SPOT: [32, 20, 47], SPOT_CORE: [42, 27, 61], INK: [23, 14, 33], CERAMIC: [204, 194, 179],
+      CERAMIC_SHADE: [158, 145, 148], GLAZE: [69, 92, 153], DOOR: [168, 74, 71], DOOR_BACK: [107, 43, 51], DOOR_FRAME: [140, 92, 56],
+      DOORWAY: [43, 15, 33], KNOB: [209, 173, 82], PASTA: [209, 194, 143], LETTER: [237, 230, 209], PEA: [112, 163, 97], CARROT: [194, 128, 66],
+    };
+    const SOUP = [[115, 51, 82], [38, 87, 92], [122, 97, 43], [71, 54, 112], [128, 71, 43]];
+    const JUICE = [[173, 61, 120], [36, 135, 140], [194, 148, 51], [110, 79, 184], [196, 97, 51]];
+    const RIM = [640, 300], RIM_RADII = [212, 40], DEPTH = 168, FOOT = [640, 486];
+    const DOOR_RECT = { x: 613, y: 382, w: 54, h: 74 };
+    const BOWL_SCALE = 1.25, BOWL_PIVOT = [640, 380], MOUTH = [640, 440];
+    const KICK_POWER = [0.6, 0.85, 1.3], AJAR = 22, OPEN_SECONDS = 0.24, SHAKE = 9;
+    const DOOR_CRACKS = [[[26, 8], [22, 19], [29, 27], [24, 36]], [[24, 36], [33, 44], [27, 54], [35, 63], [31, 72]], [[29, 27], [41, 31], [48, 25]]];
+    // The gush and everything after it run from the third kick.
+    const GUSH = 0.06, BAND_EVERY = 0.16, GROWTH = 3.3, MOUTH_RADIUS = 11, SAG = 1.4, WOBBLE = 0.205, EDGE_POINTS = 120, RIDERS = 4;
+    const WORDS = ['DOOR', 'BOWL'], LETTERS_AT = 1.16, LETTER_EVERY = 0.085, LETTER_SIZE = 212, POP_SECONDS = 0.42;
+    const DRAIN = 2.81, DRAIN_RUSH = 1.9, LOCKUP_AT = DRAIN + 0.1, LOCKUP_SECONDS = 0.6, LOCKUP_EVERY = 0.015, LOCKUP_SCALE = 0.72;
+    const LOCKUP = [892, 352], SETTLED_SCALE = 0.76, SETTLED_AT = [370, 372], MOUTH_MOVES = [1.35, 2.0];
+    const GOO_AT = DRAIN + 0.55, GOO_SECONDS = 0.95, ZOOM_AT = GOO_AT + GOO_SECONDS + 1.05, ZOOM_SECONDS = 1.15, DOOR_LINING = 3;
+    const END = ZOOM_AT + ZOOM_SECONDS;
+    const GOO_WORDS = [{ text: 'a', at: [668, 110], height: 64 }, { text: 'game', at: [754, 530], height: 64 }];
+    const GOO_STROKES = {
+      a: [[[0.94, 0.24], [0.66, 0.02], [0.28, 0.08], [0.04, 0.48], [0.24, 0.9], [0.62, 0.98], [0.92, 0.7]], [[0.95, 0.03], [0.94, 0.5], [0.97, 0.88], [1.14, 1.0]]],
+      g: [[[0.94, 0.24], [0.66, 0.02], [0.28, 0.08], [0.04, 0.48], [0.24, 0.9], [0.62, 0.98], [0.92, 0.7]], [[0.95, 0.03], [0.94, 0.7], [0.92, 1.2], [0.68, 1.5], [0.32, 1.52], [0.08, 1.34]]],
+      m: [[[0.06, 0.03], [0.06, 0.5], [0.06, 1.0]], [[0.06, 0.38], [0.24, 0.06], [0.46, 0.04], [0.62, 0.26], [0.64, 1.0]], [[0.64, 0.38], [0.82, 0.06], [1.04, 0.04], [1.2, 0.26], [1.22, 0.76], [1.34, 1.0]]],
+      e: [[[0.06, 0.52], [0.5, 0.5], [0.94, 0.46], [0.8, 0.12], [0.46, 0.0], [0.12, 0.2], [0.02, 0.56], [0.18, 0.9], [0.52, 1.0], [0.88, 0.84]]],
+    };
+    const GOO_ADVANCE = { a: 1.46, g: 1.42, m: 1.76, e: 1.2 };
+    const GOO_FATNESS = 0.15, GOO_INK = 4.5, GOO_STEP = 3, SMEAR = 120, SMEAR_FAT = 1.9;
+    const GOO_DRIPS = [[0, 0.72, 18, 5.5, 0.62], [1, 0.92, 26, 6, 0.8], [3, 0.8, 26, 5.5, 0.9], [4, 0.74, 52, 7, 0.58], [7, 1.0, 34, 6, 0.74], [9, 0.84, 40, 6, 0.68]];
+    // The part of the frame the little footer bowl shows.
+    const SMALL_VIEW = { x: 352, y: 88, w: 576, h: 456 };
+
+    /* maths */
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    const fract = (x) => x - Math.floor(x);
+    const hash = (n) => fract(Math.sin(n * 127.1 + 311.7) * 43758.5453);
+    const vlerp = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t)];
+    const rgb = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+    const light = (c, f) => c.map((v) => v + (255 - v) * f);
+    const dark = (c, f) => c.map((v) => v * (1 - f));
+    const clerp = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+    const spring = (u) => u <= 0 ? 0 : u >= 1 ? 1 : 1 - Math.exp(-u * 6) * Math.cos(u * 11) * (1 - u);
+    const popf = (u) => 1 + 3.4 * Math.pow(u - 1, 3) + 2.4 * Math.pow(u - 1, 2);
+    // 2D transforms as canvas matrices; mul(A, B) applies B first, then A (Godot's A * B).
+    const ID = [1, 0, 0, 1, 0, 0];
+    const mul = (A, B) => [A[0] * B[0] + A[2] * B[1], A[1] * B[0] + A[3] * B[1], A[0] * B[2] + A[2] * B[3], A[1] * B[2] + A[3] * B[3], A[0] * B[4] + A[2] * B[5] + A[4], A[1] * B[4] + A[3] * B[5] + A[5]];
+    const T = (x, y) => [1, 0, 0, 1, x, y];
+    const S = (sx, sy = sx) => [sx, 0, 0, sy, 0, 0];
+    const Rot = (a) => [Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0];
+    const chain = (...ms) => ms.reduce((acc, m) => mul(acc, m), ID); // chain(T, R, S): S first
+    const xf = (M, p) => [M[0] * p[0] + M[2] * p[1] + M[4], M[1] * p[0] + M[3] * p[1] + M[5]];
+    const scaleOf = (M) => Math.hypot(M[0], M[1]);
+
+    /* state */
+    let kicks = []; // the time (performance.now()/1000) of each knock
+    let start = performance.now() / 1000;
+    let overlay = null, octx = null, ocv = null, closing = false, hopped = false, done = false;
+    let smallRect = null, playing = false, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let goo = [], font = '700 212px Fredoka, Nunito, sans-serif';
+    const sctx = small.getContext('2d');
+    const now = () => performance.now() / 1000 - start;
+    const k3 = () => kicks.length >= 3 ? kicks[2] : Infinity;
+    const since3 = (t) => t - k3(); // seconds since the third kick (negative before it)
+
+    /* ── sounds, synthesized on the spot ── */
+    let ac = null, master = null;
+    function audio() {
+      if (ac) return ac;
+      try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+      return ac;
+    }
+    function noise(seconds) {
+      const b = ac.createBuffer(1, Math.ceil(ac.sampleRate * seconds), ac.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const s = ac.createBufferSource(); s.buffer = b; return s;
+    }
+    function sfx(kind, power = 1) {
+      if (!audio() || ac.state === 'closed') return;
+      if (ac.state === 'suspended') ac.resume();
+      const t0 = ac.currentTime;
+      const env = (g, peak, attack, decay) => { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + attack); g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay); };
+      if (kind === 'kick') {
+        const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine';
+        o.frequency.setValueAtTime(120 * power, t0); o.frequency.exponentialRampToValueAtTime(42, t0 + 0.2);
+        env(g, 0.9 * power, 0.005, 0.28); o.connect(g).connect(master); o.start(t0); o.stop(t0 + 0.35);
+        const n = noise(0.08), f = ac.createBiquadFilter(), ng = ac.createGain(); f.type = 'lowpass'; f.frequency.value = 700;
+        env(ng, 0.35 * power, 0.003, 0.07); n.connect(f).connect(ng).connect(master); n.start(t0); n.stop(t0 + 0.1);
+      } else if (kind === 'creak') {
+        const o = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter(); o.type = 'sawtooth'; f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 6;
+        o.frequency.setValueAtTime(140, t0); o.frequency.linearRampToValueAtTime(260, t0 + 0.3);
+        const v = ac.createOscillator(), vg = ac.createGain(); v.frequency.value = 23; vg.gain.value = 18; v.connect(vg).connect(o.frequency); v.start(t0); v.stop(t0 + 0.4);
+        env(g, 0.08, 0.02, 0.32); o.connect(f).connect(g).connect(master); o.start(t0); o.stop(t0 + 0.4);
+      } else if (kind === 'gush') {
+        const n = noise(3.2), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'lowpass'; f.Q.value = 1.2;
+        f.frequency.setValueAtTime(300, t0); f.frequency.exponentialRampToValueAtTime(2600, t0 + 0.6); f.frequency.setValueAtTime(2600, t0 + 2.2); f.frequency.exponentialRampToValueAtTime(400, t0 + 3.1);
+        g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.28, t0 + 0.25); g.gain.setValueAtTime(0.28, t0 + 2.4); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 3.15);
+        n.connect(f).connect(g).connect(master); n.start(t0); n.stop(t0 + 3.2);
+        const o = ac.createOscillator(), og = ac.createGain(); o.type = 'sine'; o.frequency.value = 52;
+        og.gain.setValueAtTime(0.0001, t0); og.gain.exponentialRampToValueAtTime(0.25, t0 + 0.3); og.gain.setValueAtTime(0.25, t0 + 2.3); og.gain.exponentialRampToValueAtTime(0.0001, t0 + 3.0);
+        o.connect(og).connect(master); o.start(t0); o.stop(t0 + 3.1);
+      } else if (kind === 'pop') {
+        const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine';
+        o.frequency.setValueAtTime(420 * power, t0); o.frequency.exponentialRampToValueAtTime(880 * power, t0 + 0.07);
+        env(g, 0.16, 0.004, 0.11); o.connect(g).connect(master); o.start(t0); o.stop(t0 + 0.14);
+      } else if (kind === 'drain') {
+        const n = noise(0.7), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'bandpass'; f.Q.value = 2;
+        f.frequency.setValueAtTime(1800, t0); f.frequency.exponentialRampToValueAtTime(240, t0 + 0.6);
+        env(g, 0.18, 0.02, 0.6); n.connect(f).connect(g).connect(master); n.start(t0); n.stop(t0 + 0.7);
+      } else if (kind === 'goo') {
+        for (let i = 0; i < 5; i++) {
+          const o = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter(); o.type = 'triangle'; f.type = 'lowpass'; f.frequency.value = 900;
+          const at = t0 + i * 0.11, p = 160 + hash(i + 3) * 220;
+          o.frequency.setValueAtTime(p, at); o.frequency.exponentialRampToValueAtTime(p * 1.9, at + 0.09);
+          g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.12, at + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.13);
+          o.connect(f).connect(g).connect(master); o.start(at); o.stop(at + 0.15);
+        }
+      } else if (kind === 'zoom') {
+        const n = noise(1.3), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'bandpass'; f.Q.value = 1.4;
+        f.frequency.setValueAtTime(180, t0); f.frequency.exponentialRampToValueAtTime(5200, t0 + 1.1);
+        g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.3, t0 + 0.9); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.25);
+        n.connect(f).connect(g).connect(master); n.start(t0); n.stop(t0 + 1.3);
+      }
+    }
+    let cued = {};
+    function cue(name, at, t, kind, power) { if (t >= at && !cued[name]) { cued[name] = true; sfx(kind, power); } }
+
+    /* ── the soup's clock and shapes ── */
+    const flowAt = (s) => s <= DRAIN ? s - GUSH : DRAIN - GUSH + (s - DRAIN) * DRAIN_RUSH;
+    const holeFrom = () => (Math.floor((DRAIN - GUSH) / BAND_EVERY) + 1) * BAND_EVERY;
+    const radius = (age) => MOUTH_RADIUS * Math.exp(GROWTH * age);
+    const reachOf = (view) => Math.hypot(view.w / 2, view.h / 2);
+    const covers = (r, reach) => r * (1 - WOBBLE) > reach + 20;
+    function center(k, r) {
+      const settled = [SETTLED_AT[0] + (MOUTH[0] - BOWL_PIVOT[0]) * SETTLED_SCALE, SETTLED_AT[1] + (MOUTH[1] - BOWL_PIVOT[1]) * SETTLED_SCALE];
+      const mouth = vlerp(MOUTH, settled, smooth(MOUTH_MOVES[0], MOUTH_MOVES[1], k * BAND_EVERY));
+      const hang = [mouth[0], mouth[1] + Math.min(r, 110) * 0.72];
+      return vlerp(hang, MIDDLE, smooth(110, 520, r));
+    }
+    let tm = 0; // the card's own clock, for wobbles
+    const wobble = (k, a) => 1 + 0.11 * Math.sin(3 * a + k * 1.7 + tm * 2.3) + 0.06 * Math.sin(5 * a - tm * 3.4 + k * 0.9) + 0.035 * Math.sin(9 * a + tm * 5.1 + k * 2.3);
+    function edge(k, r) {
+      const c = center(k, r), sag = lerp(SAG, 1, smooth(40, 300, r)), pts = new Array(EDGE_POINTS);
+      for (let i = 0; i < EDGE_POINTS; i++) {
+        const a = i * Math.PI * 2 / EDGE_POINTS; let ax = Math.cos(a), ay = Math.sin(a); if (ay > 0) ay *= sag;
+        const w = r * wobble(k, a); pts[i] = [c[0] + ax * w, c[1] + ay * w];
+      }
+      return pts;
+    }
+
+    /* ── canvas helpers ── */
+    let ctx = null;
+    const setM = (M) => ctx.setTransform(dpr * M[0], dpr * M[1], dpr * M[2], dpr * M[3], dpr * M[4], dpr * M[5]);
+    let dpr = 1;
+    function poly(pts, close = true) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); if (close) ctx.closePath(); }
+    function fillPoly(pts, color) { poly(pts); ctx.fillStyle = color; ctx.fill(); }
+    function strokePoly(pts, color, width, close = false) { poly(pts, close); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke(); }
+    function outlined(pts, color, width) { fillPoly(pts, color); strokePoly(pts, rgb(K.INK), width, true); }
+    function circle(at, r, color) { ctx.beginPath(); ctx.arc(at[0], at[1], Math.max(r, 0.1), 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); }
+    function ring(at, r, color, width) { ctx.beginPath(); ctx.arc(at[0], at[1], Math.max(r, 0.1), 0, Math.PI * 2); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); }
+    function ellipse(c, rx, ry, n = 40) { const pts = []; for (let i = 0; i < n; i++) { const a = i * Math.PI * 2 / n; pts.push([c[0] + Math.cos(a) * rx, c[1] + Math.sin(a) * ry]); } return pts; }
+    function arc(c, radii, from, to, steps = 24) { const pts = []; for (let i = 0; i <= steps; i++) { const a = Math.PI * lerp(from, to, i / steps); pts.push([c[0] + Math.cos(a) * radii[0], c[1] + Math.sin(a) * radii[1]]); } return pts; }
+    function archPts(rect, grow) {
+      const x = rect.x - grow, y = rect.y - grow, w = rect.w + grow * 2, h = rect.h + grow * 2, r = w / 2, mid = [x + r, y + r];
+      const pts = [[x, y + h], [x + w, y + h]];
+      for (let i = 0; i <= 36; i++) { const a = -Math.PI * i / 36; pts.push([mid[0] + Math.cos(a) * r, mid[1] + Math.sin(a) * r]); }
+      return pts;
+    }
+    function boil(pts, salt, close) {
+      const tick = Math.floor(tm * 12) * 97 + salt * 1013, out = [];
+      for (let i = 0; i < pts.length; i++) out.push([pts[i][0] + (hash(tick + i * 2) - 0.5) * 2.4, pts[i][1] + (hash(tick + i * 2 + 1) - 0.5) * 2.4]);
+      if (close) out.push(out[0]);
+      return out;
+    }
+
+    /* ── the bowl's wobble, the door, the kicks ── */
+    function shake(t) {
+      if (reduce) return [0, 0];
+      let x = 0, y = 0;
+      kicks.forEach((k, i) => { const s = t - k; if (s >= 0 && s < 0.5) { const f = Math.exp(-s * 11) * KICK_POWER[i] * KICK_POWER[i] * SHAKE; x += Math.sin(s * 67) * f; y += Math.cos(s * 83) * f; } });
+      return [x, y];
+    }
+    function bowlTransform(t) {
+      const s3 = since3(t);
+      let squash = 0.012 * Math.sin(t * 5) * (1 - smooth(ZOOM_AT - 0.45, ZOOM_AT - 0.05, s3)), tilt = 0, hop = 0;
+      kicks.forEach((k, i) => {
+        const s = t - k; if (s < 0) return;
+        const r = Math.exp(-s * 8) * Math.sin(s * 38);
+        squash += 0.085 * KICK_POWER[i] * r; tilt += 0.05 * KICK_POWER[i] * r * (i % 2 === 0 ? 1 : -1);
+        hop += 16 * KICK_POWER[i] * Math.max(Math.sin(Math.min(s / 0.2, 1) * Math.PI), 0);
+      });
+      const shudder = clamp(s3 / 0.3, 0, 1) * (1 - smooth(DRAIN - 0.4, DRAIN, s3));
+      tilt += 0.024 * shudder * Math.sin(t * 31); squash += 0.03 * shudder * Math.sin(t * 23);
+      return chain(T(FOOT[0], FOOT[1] - hop), Rot(tilt), S(1 + squash, 1 - squash), T(-FOOT[0], -FOOT[1]));
+    }
+    function doorAngle(t) {
+      const flung = since3(t) / OPEN_SECONDS;
+      if (flung >= 0) return (AJAR + (128 - AJAR) * (1 - Math.exp(-flung * 5) * Math.cos(flung * 9))) * Math.PI / 180;
+      const sprung = kicks.length >= 2 ? t - kicks[1] : -1;
+      if (sprung <= 0) return 0;
+      return (AJAR * (1 - Math.exp(-sprung * 16)) + 3.5 * Math.sin(sprung * 46) * Math.exp(-sprung * 3)) * Math.PI / 180;
+    }
+    function thump(t) { let th = 0; kicks.forEach((k, i) => { if (t >= k) th = Math.max(th, KICK_POWER[i] * (1 - (t - k) / 0.2)); }); return th; }
+    const bowlSize = () => chain(T(BOWL_PIVOT[0], BOWL_PIVOT[1]), S(BOWL_SCALE), T(-BOWL_PIVOT[0], -BOWL_PIVOT[1]));
+    const settledM = () => chain(T(SETTLED_AT[0], SETTLED_AT[1]), S(SETTLED_SCALE), T(-BOWL_PIVOT[0], -BOWL_PIVOT[1]));
+    function camera(view, t) {
+      const u = clamp((since3(t) - ZOOM_AT) / ZOOM_SECONDS, 0, 1);
+      if (u <= 0) return ID;
+      const dw = DOOR_RECT.w - DOOR_LINING * 2, dh = DOOR_RECT.h - DOOR_LINING * 2;
+      const end = Math.max(view.w / dw, view.h / (dh - dw / 2)) * 1.15 / (BOWL_SCALE * SETTLED_SCALE);
+      const zoom = Math.exp(Math.log(end) * Math.pow(u, 2.3)) * (1 - 0.05 * Math.sin(Math.min(u / 0.35, 1) * Math.PI));
+      const door = xf(mul(settledM(), bowlSize()), [DOOR_RECT.x + DOOR_RECT.w / 2, DOOR_RECT.y + DOOR_RECT.h / 2]);
+      const at = vlerp(door, [view.x + view.w / 2, view.y + view.h / 2], smooth(0, 0.6, u));
+      return chain(T(at[0], at[1]), S(zoom), T(-door[0], -door[1]));
+    }
+    function swung(p, angle, bulge) {
+      const mid = DOOR_RECT.y + DOOR_RECT.h / 2, across = (p[0] - DOOR_RECT.x) / DOOR_RECT.w, sw = Math.sin(angle) * across;
+      return [DOOR_RECT.x + Math.cos(angle) * DOOR_RECT.w * across * bulge, mid + (p[1] - mid) * (1 + 0.22 * sw) * bulge + 5 * sw];
+    }
+
+    function drawBowl(frameM, t) {
+      const s3 = since3(t);
+      setM(frameM);
+      fillPoly(ellipse([FOOT[0], FOOT[1] + 8], 250, 22), 'rgb(11,8,18)');
+      setM(mul(frameM, bowlTransform(t)));
+      outlined([[RIM[0] - 80, RIM[1] + 150], [RIM[0] + 80, RIM[1] + 150], [RIM[0] + 66, RIM[1] + 188], [RIM[0] - 66, RIM[1] + 188]], rgb(K.CERAMIC_SHADE), 7);
+      const body = []; for (let i = 0; i <= 40; i++) { const a = Math.PI * i / 40; body.push([RIM[0] + Math.cos(a) * RIM_RADII[0], RIM[1] + Math.sin(a) * DEPTH]); }
+      fillPoly(body, rgb(K.CERAMIC));
+      const shade = [];
+      for (let i = 0; i <= 12; i++) { const a = Math.PI * (0.02 + 0.44 * i / 12); shade.push([RIM[0] + Math.cos(a) * RIM_RADII[0], RIM[1] + Math.sin(a) * DEPTH]); }
+      for (let i = 0; i <= 12; i++) { const a = Math.PI * (0.46 - 0.44 * i / 12); shade.push([RIM[0] + Math.cos(a) * 160, RIM[1] + Math.sin(a) * 150]); }
+      fillPoly(shade, rgb(K.CERAMIC_SHADE));
+      strokePoly(arc([RIM[0], RIM[1] + 10], [207, 44], 0.07, 0.93), rgb(K.GLAZE), 10);
+      strokePoly(arc([RIM[0], RIM[1] + 26], [199, 42], 0.1, 0.9), rgb(K.GLAZE), 4);
+      const shine = arc(RIM, [186, 146], 0.74, 0.9);
+      strokePoly(shine, '#fff', 9); circle(shine[0], 4.5, '#fff'); circle(shine[shine.length - 1], 4.5, '#fff');
+      strokePoly(boil(body, 1, false), rgb(K.INK), 7);
+      const rim = arc(RIM, RIM_RADII, 0, 2, 48); fillPoly(rim, rgb(K.CERAMIC));
+      const inside = arc([RIM[0], RIM[1] + 3], [190, 30], 0, 2, 40); fillPoly(inside, rgb(K.CERAMIC_SHADE)); strokePoly(inside, rgb(K.INK), 5, true);
+      const surface = arc([RIM[0], RIM[1] + 9], [176, 21], 0, 2, 40); fillPoly(surface, rgb(SOUP[0])); strokePoly(surface, rgb(K.INK), 5, true);
+      for (let i = 0; i < 4; i++) {
+        const blip = fract(t * 1.3 + i * 0.37);
+        ring([RIM[0] - 110 + i * 72 + Math.sin(i * 4) * 14, RIM[1] + 9 + Math.sin(i * 2.3) * 7], 3 + blip * 7, `rgba(255,255,255,${1 - blip})`, 2.5);
+      }
+      strokePoly(boil(rim, 2, true), rgb(K.INK), 7);
+      for (let i = 0; i < 3; i++) {
+        const curl = [], rise = fract(t * 0.5 + i * 0.33);
+        for (let st = 0; st < 9; st++) { const up = st / 8; curl.push([RIM[0] - 70 + i * 70 + Math.sin(up * 5 + t * 2 + i * 2) * 13, RIM[1] - 50 - rise * 26 - up * 62]); }
+        strokePoly(curl, `rgba(204,184,242,${0.5 * Math.sin(rise * Math.PI)})`, 6);
+      }
+      drawDoor(t, s3);
+    }
+
+    function drawDoor(t, s3) {
+      const step = { x: DOOR_RECT.x - 13, y: DOOR_RECT.y + DOOR_RECT.h + 3, w: DOOR_RECT.w + 26, h: 9 };
+      ctx.fillStyle = rgb(K.INK); ctx.fillRect(step.x - 3.5, step.y - 3.5, step.w + 7, step.h + 7);
+      ctx.fillStyle = rgb(K.CERAMIC_SHADE); ctx.fillRect(step.x, step.y, step.w, step.h);
+      fillPoly(archPts(DOOR_RECT, 10), rgb(K.INK)); fillPoly(archPts(DOOR_RECT, 6), rgb(K.DOOR_FRAME)); fillPoly(archPts(DOOR_RECT, 1.5), rgb(K.INK));
+      const sprung = kicks.length >= 2 ? smooth(kicks[1], kicks[1] + 0.3, t) : 0;
+      fillPoly(archPts(DOOR_RECT, -1.5), rgb(clerp(K.DOORWAY, dark(JUICE[0], 0.2), sprung * (1 - smooth(GUSH, DRAIN, s3)))));
+      const angle = doorAngle(t), th = thump(t), bulge = 1 + 0.17 * th;
+      const leaf = archPts(DOOR_RECT, -2.5).map((p) => swung(p, angle, bulge));
+      const front = Math.cos(angle) > 0;
+      if (Math.abs(Math.cos(angle)) > 0.04) {
+        fillPoly(leaf, rgb(front ? K.DOOR : K.DOOR_BACK));
+        if (front) {
+          for (const pn of [[11, 24, 32, 16], [11, 46, 32, 20]]) {
+            const x = DOOR_RECT.x + pn[0], y = DOOR_RECT.y + pn[1];
+            fillPoly([swung([x, y], angle, bulge), swung([x + pn[2], y], angle, bulge), swung([x + pn[2], y + pn[3]], angle, bulge), swung([x, y + pn[3]], angle, bulge)], rgb(K.DOOR_BACK));
+          }
+        }
+        const knob = swung([DOOR_RECT.x + DOOR_RECT.w - 9, DOOR_RECT.y + DOOR_RECT.h / 2 + 8], angle, bulge);
+        knob[0] += Math.sin(t * 70) * 2 * th;
+        circle(knob, 6, rgb(K.INK)); circle(knob, 3.6, rgb(K.KNOB));
+        // Cracks from each kick, and the toe doming the door.
+        DOOR_CRACKS.forEach((crack, i) => { if (kicks.length > i && t >= kicks[i]) strokePoly(crack.map((p) => swung([DOOR_RECT.x + p[0], DOOR_RECT.y + p[1]], angle, bulge)), rgb(K.INK), 3); });
+        if (th > 0 && angle < 0.5) {
+          const toe = swung([DOOR_RECT.x + 25, DOOR_RECT.y + 40], angle, bulge);
+          outlined(ellipse(toe, 15 * Math.min(th, 1) + 3, 12 * Math.min(th, 1) + 3, 24), rgb(light(K.DOOR, 0.28)), 3);
+        }
+      }
+      strokePoly(leaf, rgb(K.INK), 4, true);
+      if (th > 0) {
+        for (let i = 0; i < 5; i++) {
+          const a = -Math.PI * (0.08 + 0.21 * i), out = [Math.cos(a), Math.sin(a)];
+          const from = [DOOR_RECT.x + DOOR_RECT.w / 2 + out[0] * (50 + (1 - th) * 10), DOOR_RECT.y + 30 + out[1] * (50 + (1 - th) * 10)];
+          strokePoly([from, [from[0] + out[0] * 18 * Math.max(th, 0.6), from[1] + out[1] * 18 * Math.max(th, 0.6)]], rgb(K.INK), 5);
+        }
+      }
+      drawKickedLoose(t);
+      if (s3 >= DRAIN) {
+        const spill = [], fat = [];
+        for (let i = 0; i < 13; i++) { const sh = i / 12; spill.push([DOOR_RECT.x + 2 + 50 * sh, DOOR_RECT.y + DOOR_RECT.h + 6 + Math.sin(sh * 6) * 1.2]); fat.push(4 + 1.5 * Math.sin(sh * Math.PI + t)); }
+        const since = s3 - GOO_AT, ribbons = [[spill, fat]];
+        for (const tr of [[[DOOR_RECT.x + 12, DOOR_RECT.y + DOOR_RECT.h + 8], 28, 0.5], [[DOOR_RECT.x + DOOR_RECT.w - 14, DOOR_RECT.y + DOOR_RECT.h + 8], 46, 0.8]]) {
+          const run = Math.max(since - tr[2], 0); ribbons.push(drip(tr[0], Math.max(tr[1] * (1 - Math.exp(-run * 1.2)), 2), 4.5));
+        }
+        pour(ribbons);
+      }
+    }
+
+    function drawKickedLoose(t) {
+      kicks.forEach((k, kick) => {
+        const since = t - k; if (since < 0 || since > 0.8) return;
+        const power = KICK_POWER[kick];
+        for (let i = 0; i < Math.floor(4 * power) + 2; i++) {
+          const pick = kick * 53 + i * 11, fall = 640 * since * since, a = -Math.PI * lerp(0.12, 0.88, hash(pick)), out = [Math.cos(a), Math.sin(a)];
+          const e = [DOOR_RECT.x + DOOR_RECT.w / 2 + out[0] * 36, DOOR_RECT.y + DOOR_RECT.h / 2 + out[1] * 48], dust = clamp(since / 0.4, 0, 1);
+          if (dust < 1) circle([e[0] + out[0] * 26 * dust, e[1] + out[1] * 26 * dust], 4 + 9 * dust * power, rgb(K.CERAMIC, 0.5 * (1 - dust)));
+          const far = lerp(150, 340, hash(pick + 1)) * power * since, chip = [e[0] + out[0] * far, e[1] + out[1] * far + fall], turn = since * 14 + pick;
+          outlined([[chip[0] + Math.cos(turn) * 4.5, chip[1] + Math.sin(turn) * 4.5], [chip[0] + Math.cos(turn + 2.2) * 3.5, chip[1] + Math.sin(turn + 2.2) * 3.5], [chip[0] + Math.cos(turn + 4.1) * 4.5, chip[1] + Math.sin(turn + 4.1) * 4.5]], rgb(i % 2 === 0 ? K.DOOR_FRAME : K.CERAMIC), 1.5);
+          const slop = [RIM[0] + lerp(-150, 150, hash(pick + 2)), RIM[1] + 4 + lerp(-250, -430, hash(pick + 3)) * power * since + fall];
+          if (slop[1] < RIM[1] + 12) { circle(slop, 6.5, rgb(K.INK)); circle(slop, 4, rgb(light(SOUP[0], 0.25))); }
+        }
+      });
+    }
+
+    /* ── the soup ── */
+    function drawSoup(frameM, view, reach, flow) {
+      setM(frameM);
+      const hole = flow > holeFrom(), newest = Math.floor(Math.min(flow, DRAIN - GUSH) / BAND_EVERY), radii = [];
+      for (let k = 0; k <= newest; k++) radii.push(radius(flow - k * BAND_EVERY));
+      if (hole) radii.push(radius(flow - holeFrom()));
+      let first = 0; for (let k = 0; k < radii.length; k++) if (covers(radii[k], reach)) first = k;
+      const edges = []; for (let k = first; k < radii.length; k++) edges.push(edge(k, radii[k]));
+      for (let k = first; k <= newest; k++) {
+        const r = radii[k], e = edges[k - first], color = SOUP[k % SOUP.length], width = clamp(r * 0.035, 5, 15), whole = covers(r, reach);
+        if (k + 1 < radii.length && hole) {
+          if (covers(radii[k + 1], reach)) continue;
+          // The soup between this edge and the next (or the hole), as a ring.
+          ctx.beginPath(); const inner = edges[k + 1 - first];
+          ctx.moveTo(e[0][0], e[0][1]); for (let i = 1; i < e.length; i++) ctx.lineTo(e[i][0], e[i][1]); ctx.closePath();
+          ctx.moveTo(inner[0][0], inner[0][1]); for (let i = 1; i < inner.length; i++) ctx.lineTo(inner[i][0], inner[i][1]); ctx.closePath();
+          ctx.fillStyle = rgb(color); ctx.fill('evenodd');
+        } else if (whole) { ctx.fillStyle = rgb(color); ctx.fillRect(view.x - 40, view.y - 40, view.w + 80, view.h + 80); }
+        else fillPoly(e, rgb(color));
+        if (!whole) {
+          const c = center(k, r);
+          strokePoly(e.map((p) => [c[0] + (p[0] - c[0]) * 0.92, c[1] + (p[1] - c[1]) * 0.92]), rgb(light(color, 0.42)), width * 0.75, true);
+          strokePoly(e, rgb(K.INK), width, true);
+        }
+        drawRiders(k, r, width);
+      }
+      if (hole) strokePoly(edges[edges.length - 1], rgb(K.INK), clamp(radii[radii.length - 1] * 0.035, 5, 15), true);
+    }
+    function drawRiders(k, r, width) {
+      if (r < 30) return;
+      const c = center(k, r), color = SOUP[k % SOUP.length];
+      for (let j = 0; j < RIDERS + (k === 0 ? 3 : 0); j++) {
+        const pick = k * 31 + j * 7, a = hash(pick) * Math.PI * 2 + tm * 0.3 * (j % 2 === 0 ? 1 : -1), along = [Math.cos(a), Math.sin(a)];
+        const size = r * lerp(0.045, 0.08, hash(pick + 2));
+        if (j >= RIDERS) {
+          const d = r * wobble(k, a) * lerp(1.12, 1.34, hash(pick + 1)), drop = [c[0] + along[0] * d, c[1] + along[1] * d];
+          circle(drop, size * 0.8 + width * 0.5, rgb(K.INK)); circle(drop, size * 0.8, rgb(color)); continue;
+        }
+        const d = r * wobble(k, a) * lerp(0.7, 0.86, hash(pick + 1)), at = [c[0] + along[0] * d, c[1] + along[1] * d];
+        switch (Math.floor(hash(pick + 3) * 5)) {
+          case 0: circle(at, size + width * 0.5, rgb(K.INK)); circle(at, size, rgb(light(color, 0.5))); circle([at[0] - 0.34 * size, at[1] - 0.34 * size], size * 0.3, '#fff'); break;
+          case 1: {
+            const noodle = [], across = [-along[1], along[0]];
+            for (let st = 0; st < 25; st++) { const sh = st / 24 - 0.5, wig = Math.sin(sh * 9 + tm * 7 + pick) * size * 0.55; noodle.push([at[0] + across[0] * sh * size * 4.4 + along[0] * wig, at[1] + across[1] * sh * size * 4.4 + along[1] * wig]); }
+            for (const end of [noodle[0], noodle[24]]) circle(end, size * 0.3 + width * 0.5, rgb(K.INK));
+            strokePoly(noodle, rgb(K.INK), size * 0.6 + width); strokePoly(noodle, rgb(K.PASTA), size * 0.6);
+            for (const end of [noodle[0], noodle[24]]) circle(end, size * 0.3, rgb(K.PASTA));
+            break;
+          }
+          case 2: circle(at, size * 0.8 + width * 0.5, rgb(K.INK)); circle(at, size * 0.8, rgb(K.PEA)); circle([at[0] - 0.3 * size, at[1] - 0.3 * size], size * 0.2, rgb(light(K.PEA, 0.6))); break;
+          case 3: circle(at, size + width * 0.5, rgb(K.INK)); circle(at, size, rgb(color === SOUP[4] ? K.PEA : K.CARROT)); ring(at, size * 0.55, 'rgba(255,255,255,0.55)', size * 0.16); break;
+          default: {
+            const ink = [], star = [], spin = tm * 1.5 + pick;
+            for (let i = 0; i < 10; i++) { const a2 = spin + i * Math.PI / 5, far = i % 2 === 0 ? 1 : 0.52, ox = Math.cos(a2), oy = Math.sin(a2); ink.push([at[0] + ox * (size * 1.25 * far + width * 0.7), at[1] + oy * (size * 1.25 * far + width * 0.7)]); star.push([at[0] + ox * size * 1.25 * far, at[1] + oy * size * 1.25 * far]); }
+            fillPoly(ink, rgb(K.INK)); fillPoly(star, rgb(K.PASTA));
+          }
+        }
+      }
+    }
+
+    /* ── DOOR over BOWL ── */
+    let widths = null, block = 0;
+    function measure() {
+      ctx.font = font; widths = []; block = 0;
+      for (const word of WORDS) { let total = 0; for (const ch of word) { const w = ctx.measureText(ch).width; widths.push(w); total += w; } block = Math.max(block, total); }
+      block *= 1.03;
+    }
+    function drawLetters(shotM, s3, t) {
+      if (s3 < LETTERS_AT) return;
+      if (!widths) measure();
+      const cap = LETTER_SIZE * 0.7; let index = 0;
+      for (let line = 0; line < WORDS.length; line++) {
+        const word = WORDS[line]; let total = 0; for (let i = 0; i < word.length; i++) total += widths[index + i];
+        const gap = (block - total) / (word.length - 1); let x = MIDDLE[0] - block / 2;
+        for (let i = 0; i < word.length; i++) {
+          const w = widths[index], home = [x + w / 2, MIDDLE[1] + (line - 0.5) * LETTER_SIZE * 0.93], since = s3 - LETTERS_AT - index * LETTER_EVERY;
+          x += w + gap; index++;
+          if (since <= 0) continue;
+          const landed = clamp(since / POP_SECONDS, 0, 1), settled = spring((s3 - LOCKUP_AT - index * LOCKUP_EVERY) / LOCKUP_SECONDS), afloat = 1 - clamp(settled, 0, 1);
+          const target = [LOCKUP[0] + (home[0] - MIDDLE[0]) * LOCKUP_SCALE, LOCKUP[1] + (home[1] - MIDDLE[1]) * LOCKUP_SCALE];
+          const at = vlerp(home, target, settled); at[1] += Math.sin(t * 5.5 + index * 1.1) * 7 * afloat;
+          const tilt = Math.sin(t * 4.2 + index * 1.9) * 0.06 * afloat + (1 - landed) * 0.5 * (index % 2 === 0 ? 1 : -1);
+          const sc = popf(landed) * lerp(1, LOCKUP_SCALE, settled);
+          setM(mul(shotM, chain(T(at[0], at[1]), Rot(tilt), S(sc))));
+          ctx.font = font; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
+          const cx = -w / 2, cy = cap / 2, outline = LETTER_SIZE * 0.13;
+          ctx.strokeStyle = rgb(K.INK); ctx.lineWidth = outline * 2; ctx.strokeText(word[i], cx + 9, cy + 12); ctx.strokeText(word[i], cx, cy);
+          ctx.fillStyle = rgb(K.LETTER); ctx.fillText(word[i], cx, cy);
+        }
+      }
+    }
+
+    /* ── the goo ── */
+    function smoothKnots(knots) {
+      const pts = [], last = knots.length - 1;
+      for (let i = 0; i < last; i++) {
+        const p0 = knots[Math.max(i - 1, 0)], p1 = knots[i], p2 = knots[i + 1], p3 = knots[Math.min(i + 2, last)];
+        const steps = Math.max(Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / GOO_STEP), 1);
+        for (let s = 0; s < steps; s++) {
+          const u = s / steps, u2 = u * u, u3 = u2 * u;
+          pts.push([0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * u + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * u2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * u3),
+            0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * u + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * u2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * u3)]);
+        }
+      }
+      pts.push(knots[last]); return pts;
+    }
+    function layGoo() {
+      goo = [];
+      for (const word of GOO_WORDS) {
+        let ax = word.at[0]; const ay = word.at[1], h = word.height;
+        for (const letter of word.text) {
+          for (const knots of GOO_STROKES[letter]) {
+            const rest = smoothKnots(knots.map((k) => [ax + k[0] * h, ay + k[1] * h])), index = goo.length, fat = h * GOO_FATNESS;
+            const smeared = rest.map((p, i) => { const dx = p[0] - MIDDLE[0], dy = p[1] - MIDDLE[1], d = Math.hypot(dx, dy) || 1, drag = 0.55 + 0.45 * Math.sin(i / rest.length * 5 + index * 2.1); return [p[0] + dx / d * drag * SMEAR, p[1] + dy / d * drag * SMEAR]; });
+            goo.push({ index, rest, smeared, fat });
+          }
+          ax += h * GOO_ADVANCE[letter];
+        }
+      }
+    }
+    function shaped(stroke, pull, time) {
+      const pts = [], ws = [], n = stroke.rest.length, loose = clamp(1 - pull, 0, 1);
+      for (let i = 0; i < n; i++) {
+        const along = i / Math.max(n - 1, 1), at = vlerp(stroke.smeared[i], stroke.rest[i], pull);
+        at[0] += Math.sin(time * 5 + i * 0.3 + stroke.index) * (0.5 + 5 * loose); at[1] += Math.cos(time * 4.3 + i * 0.23 + stroke.index * 2) * (0.5 + 5 * loose);
+        pts.push(at);
+        ws.push(stroke.fat * (1 + 0.2 * Math.sin(along * 9 + stroke.index * 1.7 + time * 1.4) + 0.18 * (1 - Math.sin(along * Math.PI))) * lerp(1, SMEAR_FAT, loose));
+      }
+      return [pts, ws];
+    }
+    function juice(at) {
+      const swirl = Math.sin(at[0] * 0.019 + tm * 0.9) + 0.8 * Math.sin(at[1] * 0.043 - tm * 1.2 + Math.sin(at[0] * 0.012) * 2) + 0.7 * Math.sin((at[0] + at[1]) * 0.014 + tm * 0.6);
+      const place = fract(swirl * 1.7 / JUICE.length) * JUICE.length, band = Math.floor(place);
+      return clerp(JUICE[band], JUICE[(band + 1) % JUICE.length], smooth(0.28, 0.72, place - band));
+    }
+    function drip(at, length, fat) {
+      const pts = [], ws = [], steps = Math.max(Math.ceil(length / GOO_STEP), 2);
+      for (let i = 0; i <= steps; i++) { const sh = i / steps; pts.push([at[0] + Math.sin(sh * 2 + at[0]) * 1.5, at[1] + length * sh]); const neck = lerp(fat, fat * 0.42, smooth(0, 0.5, sh)); ws.push(lerp(neck, fat, smooth(0.62, 1, sh))); }
+      return [pts, ws];
+    }
+    function ribbon(pts, ws, ink) {
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let i = 0; i + 1 < pts.length; i++) {
+        ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[i + 1][0], pts[i + 1][1]);
+        ctx.strokeStyle = ink || rgb(juice(pts[i])); ctx.lineWidth = Math.max(ws[i] * 2, 0.5); ctx.stroke();
+      }
+    }
+    function pour(ribbons) {
+      for (const [pts, ws] of ribbons) ribbon(pts, ws.map((w) => w + GOO_INK), rgb(K.INK));
+      ribbons.forEach(([pts, ws], salt) => {
+        ribbon(pts, ws, null);
+        const n = pts.length; if (n < 12) return;
+        const from = Math.floor(hash(salt + 5) * n * 0.5), to = Math.min(from + Math.floor(n * 0.28) + 4, n), line = [];
+        for (let i = from; i < to; i++) line.push([pts[i][0] - 0.34 * ws[i], pts[i][1] - 0.34 * ws[i]]);
+        strokePoly(line, 'rgba(255,255,255,0.55)', Math.max(ws[from] * 0.26, 1.5));
+        const tip = pts[Math.min(to + 3, n - 1)]; circle([tip[0] - 0.34 * ws[from], tip[1] - 0.34 * ws[from]], ws[from] * 0.16, 'rgba(255,255,255,0.6)');
+      });
+    }
+    function drawGoo(shotM, s3, t) {
+      if (s3 < DRAIN) return;
+      setM(shotM);
+      const since = s3 - GOO_AT, ribbons = goo.map((st) => shaped(st, spring((since - st.index * 0.03) / GOO_SECONDS), t));
+      for (const d of GOO_DRIPS) { const run = since - d[4]; if (run > 0) { const line = ribbons[d[0]][0]; ribbons.push(drip(line[Math.floor(d[1] * (line.length - 1))], d[2] * (1 - Math.exp(-run * 1.5)), d[3])); } }
+      pour(ribbons);
+    }
+
+    /* ── one frame of the card, into `ctx` with the frame laid out by `frameM`, `view` being the screen in frame units ── */
+    function render(frameM, view, t, withBackdrop) {
+      tm = t;
+      const s3 = since3(t), reach = reachOf(view), flow = flowAt(s3), hole = flow > holeFrom();
+      const shot = mul(frameM, camera(view, t)), stage = hole ? mul(shot, settledM()) : shot, bowl = mul(stage, bowlSize());
+      if (hole || !covers(radius(flow), reach)) {
+        if (withBackdrop > 0) { setM(frameM); ctx.fillStyle = rgb(K.BACKDROP, withBackdrop); ctx.fillRect(view.x - 60, view.y - 60, view.w + 120, view.h + 120); }
+        setM(stage); circle([640, 372], 318, rgb(K.SPOT, withBackdrop)); circle([640, 372], 232, rgb(K.SPOT_CORE, withBackdrop));
+        drawBowl(bowl, t);
+        drawGoo(shot, s3, t);
+      }
+      if (flow > 0 && !(hole && covers(radius(flow - holeFrom()), reach))) drawSoup(frameM, view, reach, flow);
+      drawLetters(shot, s3, t);
+      // The dive: the doorway opens onto the page underneath.
+      const opened = smooth(ZOOM_AT + 0.15, ZOOM_AT + 0.6, s3);
+      if (opened > 0) {
+        const box = { x: DOOR_RECT.x + DOOR_LINING, y: DOOR_RECT.y + DOOR_LINING, w: DOOR_RECT.w - 2 * DOOR_LINING, h: DOOR_RECT.h - 2 * DOOR_LINING };
+        setM(bowl); ctx.globalCompositeOperation = 'destination-out'; fillPoly(archPts(box, 0), `rgba(0,0,0,${opened})`); ctx.globalCompositeOperation = 'source-over';
+      }
+    }
+
+    /* ── the little bowl in the footer ── */
+    function sizeSmall() {
+      const r = small.getBoundingClientRect(); if (r.width < 10) return false;
+      dpr = Math.min(devicePixelRatio || 1, 2);
+      const w = Math.round(r.width), h = Math.round(r.width * SMALL_VIEW.h / SMALL_VIEW.w);
+      if (small.width !== Math.round(w * dpr)) { small.width = Math.round(w * dpr); small.height = Math.round(h * dpr); small.style.height = h + 'px'; }
+      return true;
+    }
+    function smallFrame() { const r = small.getBoundingClientRect(), s = r.width / SMALL_VIEW.w; return { M: chain(S(s), T(-SMALL_VIEW.x, -SMALL_VIEW.y)), s, r }; }
+    function drawSmall(t) {
+      if (!sizeSmall()) return;
+      ctx = sctx; const f = smallFrame();
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, small.width, small.height);
+      const sh = shake(t); small.style.transform = `translate(${sh[0] * f.s}px, ${sh[1] * f.s}px)`;
+      render(f.M, SMALL_VIEW, t, 0);
+    }
+
+    /* ── the full-screen card ── */
+    function openOverlay() {
+      overlay = document.createElement('div'); overlay.className = 'soup-card'; overlay.setAttribute('aria-label', 'The Door Bowl card. Press Escape to skip.');
+      ocv = document.createElement('canvas'); overlay.appendChild(ocv); octx = ocv.getContext('2d');
+      const skip = document.createElement('button'); skip.type = 'button'; skip.className = 'soup-skip'; skip.textContent = 'skip'; skip.addEventListener('click', () => finish(true)); overlay.appendChild(skip);
+      document.body.appendChild(overlay); document.body.classList.add('souped');
+      smallRect = small.getBoundingClientRect(); small.style.visibility = 'hidden';
+      overlay.addEventListener('pointerdown', (e) => { if (e.target === ocv && since3(now()) > GUSH + 0.6) finish(true); });
+    }
+    function fullFrame(W, H) { const fit = Math.min(W / FRAME[0], H / FRAME[1]); return { M: chain(T((W - FRAME[0] * fit) / 2, (H - FRAME[1] * fit) / 2), S(fit)), fit }; }
+    function drawOverlay(t) {
+      const W = innerWidth, H = innerHeight; dpr = Math.min(devicePixelRatio || 1, 1.5);
+      if (ocv.width !== Math.round(W * dpr) || ocv.height !== Math.round(H * dpr)) { ocv.width = Math.round(W * dpr); ocv.height = Math.round(H * dpr); ocv.style.width = W + 'px'; ocv.style.height = H + 'px'; }
+      ctx = octx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ocv.width, ocv.height);
+      const s3 = since3(t), full = fullFrame(W, H);
+      // The bowl starts where the little one sat and settles into the middle of the screen as the kick lands.
+      const sS = smallRect.width / SMALL_VIEW.w, u = smooth(0, 0.45, s3);
+      const fit = lerp(sS, full.fit, u), ox = lerp(smallRect.left - SMALL_VIEW.x * sS, full.M[4], u), oy = lerp(smallRect.top - SMALL_VIEW.y * sS, full.M[5], u);
+      const sh = shake(t), M = chain(T(ox + sh[0] * fit, oy + sh[1] * fit), S(fit));
+      const view = { x: -ox / fit, y: -oy / fit, w: W / fit, h: H / fit };
+      render(M, view, t, smooth(0, 0.4, s3));
+      cue('gush', GUSH - 0.05, s3, 'gush'); cue('drain', DRAIN, s3, 'drain'); cue('goo', GOO_AT, s3, 'goo'); cue('zoom', ZOOM_AT, s3, 'zoom');
+      for (let i = 0; i < 8; i++) cue('pop' + i, LETTERS_AT + i * LETTER_EVERY, s3, 'pop', 1 + i * 0.09);
+      if (s3 >= ZOOM_AT + 0.15 && !hopped) { hopped = true; scrollTo({ top: 0, behavior: 'instant' }); }
+      if (s3 >= END) finish(false);
+    }
+    function finish(skipped) {
+      if (closing) return; closing = true;
+      const bye = () => { overlay.remove(); overlay = null; reset(); };
+      if (skipped) { overlay.style.transition = 'opacity 0.28s'; overlay.style.opacity = '0'; setTimeout(bye, 300); } else bye();
+    }
+    function reset() {
+      kicks = []; cued = {}; closing = false; hopped = false; playing = false; small.style.visibility = ''; small.style.transform = '';
+      document.body.classList.remove('souped'); start = performance.now() / 1000; small.parentElement.classList.remove('ajar', 'burst');
+    }
+
+    /* ── knocking ── */
+    function knock() {
+      if (playing || closing) return;
+      const t = now(); audio();
+      if (kicks.length && t - kicks[kicks.length - 1] < 0.35) return;
+      kicks.push(t); const i = kicks.length - 1;
+      sfx('kick', KICK_POWER[i]); if (i === 1) setTimeout(() => sfx('creak'), 130);
+      small.parentElement.classList.toggle('ajar', i >= 1);
+      if (i === 2) {
+        playing = true; small.parentElement.classList.add('burst'); layGoo(); widths = null;
+        if (document.fonts && document.fonts.load) document.fonts.load('700 100px Fredoka').catch(() => {});
+        openOverlay();
+      }
+    }
+    const knocker = small.parentElement;
+    knocker.addEventListener('click', knock);
+    knocker.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); knock(); } });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay && !closing) finish(true); });
+
+    /* ── the loop: the little bowl only draws while it's on screen ── */
+    let seen = false;
+    new IntersectionObserver((es) => { seen = es[0].isIntersecting; }, { rootMargin: '120px' }).observe(small);
+    function loop() {
+      requestAnimationFrame(loop);
+      const t = now();
+      if (overlay && !closing) drawOverlay(t);
+      else if (seen && !overlay && !playing) drawSmall(t);
+    }
+    loop();
+  })();
+</script>
+
 </body>
 </html>
