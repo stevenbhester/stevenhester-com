@@ -90,6 +90,9 @@
   }
   @media (hover: hover) { .btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--cobalt-deep); } }
   .btn:active { transform: translateY(5px); box-shadow: 0 0 0 var(--cobalt-deep); }
+  .btn.lm { background: #ff7a59; color: #fff; box-shadow: 0 5px 0 #d95a3c; }
+  @media (hover: hover) { .btn.lm:hover { box-shadow: 0 3px 0 #d95a3c; } }
+  .btn.lm:active { box-shadow: 0 0 0 #d95a3c; }
   .btn.sun { background: var(--sun); color: var(--sun-ink); box-shadow: 0 5px 0 var(--sun-deep); }
   @media (hover: hover) { .btn.sun:hover { box-shadow: 0 3px 0 var(--sun-deep); } }
   .btn.sun:active { box-shadow: 0 0 0 var(--sun-deep); }
@@ -296,6 +299,10 @@
   }
   .feature.mg { --tile-accent: var(--cobalt); }
   .feature.td { --tile-accent: var(--sun); }
+  .feature.lm { --tile-accent: #ff7a59; }
+  /* Last Mile: a slice of a level, in its own cream-and-asphalt colours */
+  .lm-fig { margin: 0; border-radius: 22px; overflow: hidden; aspect-ratio: 5 / 4; background: #a8d98a; border: 6px solid #f3ead9; box-shadow: 0 0 0 1px var(--line), 0 14px 30px -18px rgba(18, 21, 43, 0.45); }
+  .lm-fig img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 37%; }
   .feature + .feature { margin-top: clamp(24px, 3.5vw, 44px); }
   @media (max-width: 560px) { .feature { padding: 26px 16px 22px; } }
   @media (min-width: 860px) {
@@ -1247,6 +1254,20 @@
             </svg>
           </button>
           <figcaption>Say hi. They're friendly.</figcaption>
+        </figure>
+      </article>
+
+      <article class="feature flip lm" id="last-mile">
+        <div>
+          <h3>Last Mile <span class="sticker">playtesting</span></h3>
+          <p>A one-thumb delivery puzzle for iPhone. Only the top of the stack can go out, and the road breaks up behind the van, so you get one go at every street. There's a level you can play right on the page.</p>
+          <div class="actions">
+            <a class="btn lm" href="/last-mile/#play" data-track="lastmile-try">Try a level</a>
+            <a class="link" href="/last-mile/#notify" data-track="lastmile-notify">Get told when it's out</a>
+          </div>
+        </div>
+        <figure class="lm-fig">
+          <img src="/last-mile/media/plan.jpg" alt="A level of Last Mile: a route drawn round a block of houses in the colours of the packages it will deliver, with the queue on a conveyor belt below." loading="lazy" width="720" height="1560">
         </figure>
       </article>
 
