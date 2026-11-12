@@ -618,6 +618,22 @@
     @keyframes spin-disc { to { transform: rotate(360deg); } }
   }
   .song.ghost { position: fixed; z-index: 80; pointer-events: none; transform: rotate(-4deg) scale(1.06); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28); }
+  /* Desktop: the board takes the right column and the crate tucks under the intro on the left,
+     so the card is about as tall as the other project tiles instead of stacking everything. */
+  @media (min-width: 860px) {
+    .feature.mg { grid-template-rows: auto 1fr; row-gap: 28px; align-items: start; }
+    .feature.mg > div { grid-column: 1; grid-row: 1; }
+    .feature.mg > .sample { display: contents; }
+    .feature.mg .mg-board { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+    .feature.mg .mg-play { grid-column: 1; grid-row: 2; }
+    .feature.mg .mg-msg { min-height: 48px; margin: 0 0 12px; padding: 8px 12px; }
+    .feature.mg .crate { padding: 12px; }
+    .feature.mg .crate-head { margin-bottom: 10px; }
+    .feature.mg .mg-tray { gap: 8px; }
+    .feature.mg .song { gap: 8px; padding: 5px 12px 5px 5px; font-size: 13.5px; }
+    .feature.mg .song .disc { width: 22px; height: 22px; }
+    .feature.mg .grid .slot { aspect-ratio: 1.25; }
+  }
   .sample .now-playing { max-width: none; margin: 6px 0 0; font-size: 14px; color: var(--muted); }
   .now-playing a { color: inherit; text-underline-offset: 3px; }
 
@@ -1091,6 +1107,7 @@
         </div>
 
         <figure class="sample" id="mg">
+          <div class="mg-board">
           <p class="mg-how"><span class="mg-badge">Playable</span><span id="mgHow">Drag each song to the square that fits both its artist and its column.</span></p>
           <div class="grid" id="mgGrid">
             <div class="cell"></div>
@@ -1104,6 +1121,8 @@
             <div class="cell row">The Vaccines</div>
             <div class="cell slot" data-r="2" data-c="0"></div><div class="cell slot" data-r="2" data-c="1"></div><div class="cell slot" data-r="2" data-c="2"></div>
           </div>
+          </div>
+          <div class="mg-play">
           <div class="mg-msg info" id="mgMsg" role="status" aria-live="polite"></div>
           <div class="crate">
             <div class="crate-head">
@@ -1113,6 +1132,7 @@
             <div class="mg-tray" id="mgTray"></div>
           </div>
           <p class="now-playing" id="nowPlaying" aria-live="polite" hidden></p>
+          </div>
         </figure>
       </article>
 
