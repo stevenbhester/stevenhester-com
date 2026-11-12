@@ -164,6 +164,17 @@ h2 { font-size: clamp(38px, 7vw, 68px); margin-top: 0.42em; }
 #grip.drawing { cursor: grabbing; }
 .game-msg { min-height: 3.1em; margin-top: 12px; padding: 0 6px; font: 600 clamp(17px, 2.3vw, 20px)/1.3 var(--f-display); text-align: center; }
 .game-msg.bad { color: #c8452e; }
+.game-level { margin: 2px 0 12px; text-align: center; font: 700 13px/1 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.game-tip { margin: 2px 0 4px; text-align: center; font: 700 15px/1.4 var(--f-body); color: var(--ink-soft); }
+#game .aura { opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+#game .aura.on { opacity: 1; }
+#game .aura.on .glow, #game .aura.on .halo { transform-box: fill-box; transform-origin: center; animation: aura 1.6s ease-in-out infinite; }
+#game .aura.on .halo { animation-name: halo; }
+@keyframes halo { 0% { transform: scale(0.85); opacity: 0.9; } 100% { transform: scale(1.25); opacity: 0; } }
+#game .aura.on .twinkle { transform-box: fill-box; transform-origin: center; animation: twinkle 1.6s ease-in-out infinite; }
+#game .aura.on .twinkle:nth-of-type(2n) { animation-delay: -0.8s; }
+@keyframes aura { 0%, 100% { transform: scale(0.94); opacity: 0.85; } 50% { transform: scale(1.06); opacity: 1; } }
+@keyframes twinkle { 0%, 100% { transform: scale(0.4); opacity: 0.2; } 50% { transform: scale(1.1); opacity: 1; } }
 .game-msg.good { color: #1f8a53; }
 .game-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 12px; margin: 8px 0 8px; }
 .game-actions .btn { font-size: 17px; padding: 0.7em 1.1em 0.75em; white-space: nowrap; }
@@ -341,6 +352,12 @@ form.slip { padding: 6px 22px 0; }
   color: #73f2e6; background: rgba(10, 24, 32, 0.7); border: 1px solid #73f2e6; border-radius: 999px; padding: 8px 14px; cursor: pointer; opacity: 0.75; }
 body.souped { overflow: hidden; }
 
+.tiktok { display: inline-flex; align-items: center; gap: 12px; margin-top: 26px; padding: 12px 18px 12px 14px; border-radius: 999px; background: #17141c; color: #fff; text-decoration: none;
+  font: 600 16px/1.2 var(--f-display); box-shadow: 0 5px 0 #000, 0 14px 22px -14px rgba(0, 0, 0, 0.6); transition: transform 0.09s, box-shadow 0.09s; }
+.tiktok:active { transform: translateY(4px); box-shadow: 0 1px 0 #000; }
+.tiktok svg { width: 26px; height: 26px; filter: drop-shadow(-1.5px -1px 0 #25f4ee) drop-shadow(1.5px 1px 0 #fe2c55); }
+.tiktok b { font-weight: 700; }
+
 /* ── Footer ── */
 footer { padding: clamp(40px, 7vw, 80px) 0 calc(40px + env(safe-area-inset-bottom)); font-size: 16px; color: var(--ink-soft); }
 footer .row { display: flex; flex-wrap: wrap; gap: 14px 30px; justify-content: space-between; align-items: center; }
@@ -353,7 +370,8 @@ footer details p { margin-top: 10px; }
 /* ── Wider screens ── */
 @media (min-width: 880px) {
   .hero-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); }
-  .play-grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr); }
+  .play-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); }
+  .board-card { width: min(100%, 430px); }
   .rules { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .big-grid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
   .notify-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); }
@@ -441,25 +459,28 @@ footer details p { margin-top: 10px; }
     <div class="wrap play-grid">
       <div>
         <span class="sign">Stop 1 · try it</span>
-        <h2>Four packages. One way through.</h2>
-        <p class="section-lede">Level 5 from the game, right here. No download, no sign-up: put your thumb on the van and drag. Most ways round end in a dead end.</p>
+        <h2>One road. One way through.</h2>
+        <p class="section-lede">Two real levels from the game, right here. No download, no sign-up: put your thumb on the van and drag.</p>
         <ol class="how">
           <li><span><b>Drag from the van</b> along the road, then let go. It drives what you drew.</span></li>
-          <li><span>Packages come off the belt in order. <b>The house marked 1 is next.</b></span></li>
+          <li><span>Packages come out the back of the van in order. <b>The shining house is next.</b></span></li>
           <li><span>The road breaks up behind you, so <b>every street is one-shot.</b></span></li>
         </ol>
       </div>
       <div>
         <div class="board-card">
+          <p class="game-level" id="game-level"></p>
           <div class="board">
-            <svg id="game" viewBox="0 0 500 840" role="img" aria-label="A playable level of Last Mile: a grid of streets with a yellow, a blue, a red and a purple house, and the van at the bottom."></svg>
+            <svg id="game" viewBox="0 0 500 870" role="img" aria-label="A playable level of Last Mile: a grid of streets with coloured houses, the van, and the packages it's carrying."></svg>
             <div id="grip" role="application" aria-label="The van. Drag from here along the road to draw a route."></div>
           </div>
           <div class="stamp" id="game-stamp" aria-hidden="true">DELIVERED!</div>
           <p class="game-msg" id="game-msg" role="status" aria-live="polite">Drag from the van.</p>
+          <p class="game-tip" id="game-tip">Stuck? Try driving by the shining house first.</p>
           <div class="game-actions">
             <button class="btn plain" type="button" id="game-retry" hidden>Have another go</button>
-            <a class="btn go" href="#notify" id="game-next" hidden data-track="lastmile-cta-demo">I want the other 44</a>
+            <button class="btn go" type="button" id="game-harder" hidden data-track="lastmile-demo-harder">Try a harder one</button>
+            <a class="btn go" href="#notify" id="game-next" hidden data-track="lastmile-cta-demo">I want the other 43</a>
           </div>
         </div>
       </div>
@@ -478,7 +499,7 @@ footer details p { margin-top: 10px; }
           <i class="tape" aria-hidden="true"></i>
           <div class="no"><span>RULE 01</span><span>THIS WAY UP</span></div>
           <h3>Top of the stack first.</h3>
-          <p>Packages go out in order. House 1 is next.</p>
+          <p>Last in, first out. The shining house is next.</p>
           <figure class="shot"><img src="media/plan.jpg" alt="A route drawn round a block of houses. Each house has a number matching the package's place on the conveyor belt below." loading="lazy" width="720" height="1560"></figure>
         </article>
         <article class="label">
@@ -573,6 +594,7 @@ footer details p { margin-top: 10px; }
           <li>Playtesters get early builds on their iPhone, and a say in what changes.</li>
           <li>Nobody else gets your details. Ever.</li>
         </ul>
+        <a class="tiktok" href="https://www.tiktok.com/@lastmilegame" target="_blank" rel="noopener" data-track="lastmile-tiktok"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.6 2h-3.4v13.4a3.1 3.1 0 1 1-3.1-3.1c.3 0 .6 0 .9.1V8.9a6.6 6.6 0 1 0 5.6 6.5V8.6a8.2 8.2 0 0 0 4.8 1.5V6.7a4.8 4.8 0 0 1-4.8-4.7z"/></svg><span>Follow <b>@lastmilegame</b> on TikTok</span></a>
       </div>
       <div class="waybill">
         <div class="wb-head">
@@ -623,7 +645,7 @@ footer details p { margin-top: 10px; }
       </div>
       <p class="studio-name">a <b>Door Bowl</b> game</p>
       <p class="studio-sub hand">it's a door. you know what to do.</p>
-      <p class="indie">Last Mile is a <b>fully indie-developed title from Door Bowl Games</b>. Made by hand, one wrecked road at a time.</p>
+      <p class="indie">Last Mile is a <b>fully indie-developed title from Door Bowl Games</b>.</p>
     </div>
   </div>
 </section>
@@ -635,6 +657,7 @@ footer details p { margin-top: 10px; }
       <nav>
         <a href="/" data-track="lastmile-foot-home">More of Steven's things</a>
         <a href="/frontiers-celestia/" data-track="lastmile-foot-celestia">Frontiers Celestia</a>
+        <a href="https://www.tiktok.com/@lastmilegame" target="_blank" rel="noopener" data-track="lastmile-foot-tiktok">TikTok</a>
       </nav>
     </div>
     <details>
@@ -763,125 +786,245 @@ document.addEventListener('click', e => {
   });
 })();
 
-/* ── The playable level: level 5 of the game ("Rush Hour"), cut down to its bones. Same rules: only the package
-      at the front of the belt can go out, to a house right beside the road; and each tile of road
-      can be driven once. Drawn as SVG so it's sharp at any size. ── */
+/* ── The playable levels: level 5 ("Rush Hour"), then level 12 ("Long Haul") once you've cleared it, cut
+      down to their bones. Same rules as the game: only the package at the back doors can go out, to a house
+      right beside the road; and each tile of road can be driven once. The house that wants the next package
+      shines. The load is the van in cutaway: the next package waits out on the tail lift, a little bigger
+      than the rest. Drawn as SVG so it's sharp at any size. ── */
 (() => {
   const svg = document.getElementById('game');
   if (!svg) return;
   const NS = 'http://www.w3.org/2000/svg';
   const T = 100;
-  const MAP = [
-    '# # # # #',
-    '# y . b #',
-    '# # # # #',
-    '# . r . #',
-    '# # # # #',
-    '# p . . #',
-    '# # S # #',
-  ].map(row => row.split(' '));
+  const LEVELS = [
+    { number: 5, title: 'Rush Hour', out: ['blue', 'red', 'yellow', 'purple'], map: [
+      '# # # # #',
+      '# y . b #',
+      '# # # # #',
+      '# . r . #',
+      '# # # # #',
+      '# p . . #',
+      '# # S # #'] },
+    { number: 12, title: 'Long Haul', out: ['blue', 'yellow', 'purple', 'yellow', 'blue', 'yellow'], map: [
+      '. . . p . .',
+      '. # # # # .',
+      '. # y y # .',
+      '. # # # # .',
+      '. # b . . .',
+      '. # # S # .',
+      '. # . . # .',
+      'y # # # # b'] },
+  ];
   const NAMES = { r: 'red', y: 'yellow', b: 'blue', p: 'purple' };
   const HEX = { red: '#ff5d5d', yellow: '#ffc53d', blue: '#4d8dff', purple: '#a26bf5' };
   const DARK = { red: '#c94040', yellow: '#d19a1c', blue: '#3468c4', purple: '#7a48c9' };
-  const ORDER = ['blue', 'red', 'yellow', 'purple'];   // the belt, front first
-  const W = MAP[0].length * T, H = MAP.length * T, VH = H + 140, BELT_Y = H + 70;
   const key = (x, y) => x + ',' + y;
-  const roads = new Set(), houses = [];
-  let start = null;
-  MAP.forEach((row, y) => row.forEach((c, x) => {
-    if (c === '#' || c === 'S') roads.add(key(x, y));
-    if (c === 'S') start = { x, y };
-    if (NAMES[c]) houses.push({ x, y, color: NAMES[c] });
-  }));
+  const centre = p => ({ x: p.x * T + T / 2, y: p.y * T + T / 2 });
+  const same = (a, b) => a && b && a.x === b.x && a.y === b.y;
+  const beside = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
   const el = (name, attrs = {}, parent = svg) => {
     const node = document.createElementNS(NS, name);
     for (const k in attrs) node.setAttribute(k, attrs[k]);
     parent.append(node);
     return node;
   };
-  const centre = p => ({ x: p.x * T + T / 2, y: p.y * T + T / 2 });
-  const same = (a, b) => a && b && a.x === b.x && a.y === b.y;
-  const beside = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+  const mix = (hex, t, to = '#ffffff') => {
+    const n = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    const a = n(hex), b = n(to);
+    return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join('');
+  };
 
-  /* Ground, trees, road */
-  el('rect', { x: 0, y: 0, width: W, height: H, rx: 26, fill: '#a8d98a' });
-  MAP.forEach((row, y) => row.forEach((c, x) => {
-    if (c === '.' && (x + y) % 2 === 0) el('rect', { x: x * T + 6, y: y * T + 6, width: T - 12, height: T - 12, rx: 18, fill: '#9ed17f' });
-    if (NAMES[c]) el('rect', { x: x * T + 6, y: y * T + 6, width: T - 12, height: T - 12, rx: 18, fill: '#c4e8a9' });
-  }));
-  for (const [x, y] of [[2, 1], [1, 3], [3, 5]]) {
-    el('circle', { cx: x * T + 50, cy: y * T + 58, r: 19, fill: 'rgba(0,0,0,.12)' });
-    el('circle', { cx: x * T + 50, cy: y * T + 50, r: 19, fill: '#5fae5b' });
-    el('circle', { cx: x * T + 44, cy: y * T + 44, r: 8, fill: '#7cc472' });
-  }
-  for (const pass of [0, 1]) {
-    const fill = pass ? '#596273' : '#444b59', dy = pass ? 0 : 5;
-    for (const k of roads) {
-      const [x, y] = k.split(',').map(Number);
-      el('rect', { x: x * T + 12, y: y * T + 12 + dy, width: 76, height: 76, rx: 20, fill });
-      if (roads.has(key(x + 1, y))) el('rect', { x: x * T + 50, y: y * T + 12 + dy, width: 100, height: 76, fill });
-      if (roads.has(key(x, y + 1))) el('rect', { x: x * T + 12, y: y * T + 50 + dy, width: 76, height: 100, fill });
-    }
-  }
-  for (const k of roads) {
-    const [x, y] = k.split(',').map(Number);
-    for (const [dx, dy] of [[1, 0], [0, 1]]) {
-      if (roads.has(key(x + dx, y + dy))) el('line', { x1: x * T + 50, y1: y * T + 50, x2: (x + dx) * T + 50, y2: (y + dy) * T + 50, stroke: 'rgba(255,255,255,.32)', 'stroke-width': 3.5, 'stroke-dasharray': '11 11', 'stroke-linecap': 'round' });
-    }
-  }
-  el('circle', { cx: start.x * T + 50, cy: start.y * T + 50, r: 36, fill: 'none', stroke: '#ffd166', 'stroke-width': 4.5 });
-
-  const wreckLayer = el('g');
-  const pathLayer = el('g');
-  const houseLayer = el('g');
-  const mark = el('g', { visibility: 'hidden' });
-  el('circle', { r: 24, fill: '#fff' }, mark); el('circle', { r: 20, fill: '#ff3b3b' }, mark);
-  el('path', { d: 'M-8-8L8 8M8-8L-8 8', stroke: '#fff', 'stroke-width': 6, 'stroke-linecap': 'round' }, mark);
-  const vanAt = el('g');
-  const vanTurn = el('g', {}, vanAt);
-  const ring = el('circle', { r: 40, fill: 'none', stroke: '#fff', 'stroke-width': 4, opacity: 0.8 }, vanAt);
-  ring.innerHTML = '<animate attributeName="r" values="36;58" dur="1.3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="1.3s" repeatCount="indefinite"/>';
-  el('rect', { x: -40, y: -22, width: 80, height: 50, rx: 14, fill: 'rgba(0,0,0,.2)' }, vanTurn);
-  for (const [wx, wy] of [[-27, -29], [15, -29], [-27, 21], [15, 21]]) el('rect', { x: wx, y: wy, width: 16, height: 9, rx: 3, fill: '#2b2f38' }, vanTurn);
-  el('rect', { x: -38, y: -24, width: 76, height: 48, rx: 14, fill: '#fffaf2' }, vanTurn);
-  el('path', { d: 'M14-24h10a14 14 0 0 1 14 14v20a14 14 0 0 1-14 14H14z', fill: '#3b4a6b' }, vanTurn);
-  el('rect', { x: 19, y: -17, width: 10, height: 34, rx: 5, fill: '#9cc4ea' }, vanTurn);
-  const cargo = el('rect', { x: -26, y: -15, width: 30, height: 30, rx: 7 }, vanTurn);
-  el('rect', { x: -14, y: -15, width: 6, height: 30, fill: 'rgba(255,255,255,.55)' }, vanTurn);
-
-  /* Houses: body, roof, a number tag (its package's place on the belt) and a tick once delivered */
-  for (const h of houses) {
-    const c = centre(h);
-    const g = el('g', { transform: `translate(${c.x} ${c.y + 30})` }, houseLayer);
-    el('rect', { x: -38, y: -6, width: 76, height: 10, rx: 5, fill: 'rgba(0,0,0,.13)' }, g);
-    h.wall = el('rect', { x: -31, y: -40, width: 62, height: 40, rx: 5 }, g);
-    h.roof = el('path', { d: 'M-38-37L0-70L38-37z', 'stroke-width': 5, 'stroke-linejoin': 'round' }, g);
-    h.door = el('rect', { x: -7, y: -21, width: 14, height: 21, rx: 4 }, g);
-    h.tag = el('g', { transform: 'translate(-31 -58)' }, g);
-    h.tagDisc = el('circle', { r: 15, stroke: '#fff', 'stroke-width': 3.5 }, h.tag);
-    h.tagText = el('text', { 'text-anchor': 'middle', y: 6.5, 'font-family': 'Fredoka, sans-serif', 'font-weight': 700, 'font-size': 19, fill: '#3b3346' }, h.tag);
-    h.tick = el('g', { transform: 'translate(28 -58)' }, g);
-    h.tickDisc = el('circle', { r: 15 }, h.tick);
-    h.tickMark = el('path', { d: 'M-6.5 0l4.5 4.5 9-9', fill: 'none', 'stroke-width': 3.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, h.tick);
-  }
-
-  /* The belt under the board */
-  const PITCH = 104, FIRST = W / 2 - (ORDER.length - 1) * PITCH / 2;
-  const slotX = i => FIRST + i * PITCH;
-  const beltL = FIRST - 66, beltW = (ORDER.length - 1) * PITCH + 132;
-  el('rect', { x: beltL, y: BELT_Y - 41, width: beltW, height: 96, rx: 26, fill: '#3a4150' });
-  el('rect', { x: beltL, y: BELT_Y - 48, width: beltW, height: 96, rx: 26, fill: '#4b5364' });
-  el('rect', { x: FIRST - 40, y: BELT_Y - 40, width: 80, height: 80, rx: 18, fill: '#ffc53d' });
-  el('rect', { x: FIRST - 34, y: BELT_Y - 34, width: 68, height: 68, rx: 13, fill: '#5d667a' });
-  const beltLayer = el('g');
-  let boxes = [];
-
-  let route, plan, queue, done, busy, drawing, over, touched = false;
   const msg = document.getElementById('game-msg');
   const retry = document.getElementById('game-retry');
   const next = document.getElementById('game-next');
+  const harder = document.getElementById('game-harder');
   const stamp = document.getElementById('game-stamp');
+  const label = document.getElementById('game-level');
+  const tip = document.getElementById('game-tip');
+  const grip = document.getElementById('grip');
   const say = (text, tone = '') => { msg.textContent = text; msg.className = 'game-msg' + (tone ? ' ' + tone : ''); };
+
+  let lv, W, H, VH, roads, houses, start, ORDER;
+  let route, plan, queue, done, busy, drawing, over, touched = false;
+  let wreckLayer, pathLayer, mark, vanAt, vanTurn, ring, cargo, loadLayer, boxes, slots;
+
+  /* ── Build a level: board, houses, the van, and the van's load in cutaway underneath ── */
+  function build(index) {
+    lv = LEVELS[index];
+    const MAP = lv.map.map(row => row.split(' '));
+    ORDER = lv.out;
+    W = MAP[0].length * T; H = MAP.length * T; VH = H + 170;
+    svg.setAttribute('viewBox', `0 0 ${W} ${VH}`);
+    svg.replaceChildren();
+    roads = new Set(); houses = []; start = null;
+    MAP.forEach((row, y) => row.forEach((c, x) => {
+      if (c === '#' || c === 'S') roads.add(key(x, y));
+      if (c === 'S') start = { x, y };
+      if (NAMES[c]) houses.push({ x, y, color: NAMES[c] });
+    }));
+    label.textContent = `Level ${lv.number} · “${lv.title}”`;
+
+    const defs = el('defs');
+    const grad = el('radialGradient', { id: 'aura-glow' }, defs);
+    el('stop', { offset: '0%', 'stop-color': '#fff3a0', 'stop-opacity': 1 }, grad);
+    el('stop', { offset: '62%', 'stop-color': '#ffd23d', 'stop-opacity': 0.95 }, grad);
+    el('stop', { offset: '100%', 'stop-color': '#ffc53d', 'stop-opacity': 0 }, grad);
+    el('rect', { x: 0, y: 0, width: W, height: H, rx: 26, fill: '#a8d98a' });
+    MAP.forEach((row, y) => row.forEach((c, x) => {
+      if (c === '.' && (x + y) % 2 === 0) el('rect', { x: x * T + 6, y: y * T + 6, width: T - 12, height: T - 12, rx: 18, fill: '#9ed17f' });
+      if (NAMES[c]) el('rect', { x: x * T + 6, y: y * T + 6, width: T - 12, height: T - 12, rx: 18, fill: '#c4e8a9' });
+    }));
+    // Trees on a few of the empty lots.
+    MAP.forEach((row, y) => row.forEach((c, x) => {
+      if (c !== '.' || (x * 7 + y * 3) % 3 !== 0) return;
+      el('circle', { cx: x * T + 50, cy: y * T + 58, r: 19, fill: 'rgba(0,0,0,.12)' });
+      el('circle', { cx: x * T + 50, cy: y * T + 50, r: 19, fill: '#5fae5b' });
+      el('circle', { cx: x * T + 44, cy: y * T + 44, r: 8, fill: '#7cc472' });
+    }));
+    for (const pass of [0, 1]) {
+      const fill = pass ? '#596273' : '#444b59', dy = pass ? 0 : 5;
+      for (const k of roads) {
+        const [x, y] = k.split(',').map(Number);
+        el('rect', { x: x * T + 12, y: y * T + 12 + dy, width: 76, height: 76, rx: 20, fill });
+        if (roads.has(key(x + 1, y))) el('rect', { x: x * T + 50, y: y * T + 12 + dy, width: 100, height: 76, fill });
+        if (roads.has(key(x, y + 1))) el('rect', { x: x * T + 12, y: y * T + 50 + dy, width: 76, height: 100, fill });
+      }
+    }
+    for (const k of roads) {
+      const [x, y] = k.split(',').map(Number);
+      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+        if (roads.has(key(x + dx, y + dy))) el('line', { x1: x * T + 50, y1: y * T + 50, x2: (x + dx) * T + 50, y2: (y + dy) * T + 50, stroke: 'rgba(255,255,255,.32)', 'stroke-width': 3.5, 'stroke-dasharray': '11 11', 'stroke-linecap': 'round' });
+      }
+    }
+    el('circle', { cx: start.x * T + 50, cy: start.y * T + 50, r: 36, fill: 'none', stroke: '#ffd166', 'stroke-width': 4.5 });
+
+    wreckLayer = el('g');
+    pathLayer = el('g');
+    const houseLayer = el('g');
+    mark = el('g', { visibility: 'hidden' });
+    el('circle', { r: 24, fill: '#fff' }, mark); el('circle', { r: 20, fill: '#ff3b3b' }, mark);
+    el('path', { d: 'M-8-8L8 8M8-8L-8 8', stroke: '#fff', 'stroke-width': 6, 'stroke-linecap': 'round' }, mark);
+
+    /* Houses: a glow behind any that wants the next package, then the house, then a tick once delivered */
+    for (const h of houses) {
+      const c = centre(h);
+      const g = el('g', { transform: `translate(${c.x} ${c.y + 30})` }, houseLayer);
+      h.aura = el('g', { class: 'aura' }, g);
+      el('circle', { cx: 0, cy: -32, r: 66, fill: 'url(#aura-glow)', class: 'glow' }, h.aura);
+      el('circle', { cx: 0, cy: -32, r: 50, fill: 'none', stroke: '#ffb31f', 'stroke-width': 5, class: 'halo' }, h.aura);
+      for (const [sx, sy, sz] of [[-40, -66, 7], [42, -50, 5.5], [-36, 4, 4.5], [38, 6, 6]]) {
+        el('path', { d: `M${sx} ${sy - sz}L${sx + sz * 0.3} ${sy - sz * 0.3}L${sx + sz} ${sy}L${sx + sz * 0.3} ${sy + sz * 0.3}L${sx} ${sy + sz}L${sx - sz * 0.3} ${sy + sz * 0.3}L${sx - sz} ${sy}L${sx - sz * 0.3} ${sy - sz * 0.3}z`, fill: '#fff6c9', class: 'twinkle' }, h.aura);
+      }
+      el('rect', { x: -38, y: -6, width: 76, height: 10, rx: 5, fill: 'rgba(0,0,0,.13)' }, g);
+      h.wall = el('rect', { x: -31, y: -40, width: 62, height: 40, rx: 5 }, g);
+      h.roof = el('path', { d: 'M-38-37L0-70L38-37z', 'stroke-width': 5, 'stroke-linejoin': 'round' }, g);
+      h.door = el('rect', { x: -7, y: -21, width: 14, height: 21, rx: 4 }, g);
+      h.tick = el('g', { transform: 'translate(28 -58)' }, g);
+      h.tickDisc = el('circle', { r: 15 }, h.tick);
+      h.tickMark = el('path', { d: 'M-6.5 0l4.5 4.5 9-9', fill: 'none', 'stroke-width': 3.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, h.tick);
+    }
+
+    /* The van on the board */
+    vanAt = el('g');
+    vanTurn = el('g', {}, vanAt);
+    ring = el('circle', { r: 40, fill: 'none', stroke: '#fff', 'stroke-width': 4, opacity: 0.8 }, vanAt);
+    ring.innerHTML = '<animate attributeName="r" values="36;58" dur="1.3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="1.3s" repeatCount="indefinite"/>';
+    el('rect', { x: -40, y: -22, width: 80, height: 50, rx: 14, fill: 'rgba(0,0,0,.2)' }, vanTurn);
+    for (const [wx, wy] of [[-27, -29], [15, -29], [-27, 21], [15, 21]]) el('rect', { x: wx, y: wy, width: 16, height: 9, rx: 3, fill: '#2b2f38' }, vanTurn);
+    el('rect', { x: -38, y: -24, width: 76, height: 48, rx: 14, fill: '#fffaf2' }, vanTurn);
+    el('path', { d: 'M14-24h10a14 14 0 0 1 14 14v20a14 14 0 0 1-14 14H14z', fill: '#3b4a6b' }, vanTurn);
+    el('rect', { x: 19, y: -17, width: 10, height: 34, rx: 5, fill: '#9cc4ea' }, vanTurn);
+    cargo = el('rect', { x: -26, y: -15, width: 30, height: 30, rx: 7 }, vanTurn);
+    el('rect', { x: -14, y: -15, width: 6, height: 30, fill: 'rgba(255,255,255,.55)' }, vanTurn);
+
+    buildTruck();
+  }
+
+  /* The van's load, in cutaway under the board: cab on the left, packages inside, back doors open on the
+     right, and the next package out on the tail lift, a touch bigger, with a gold glow. */
+  function buildTruck() {
+    const n = ORDER.length;
+    const PITCH = 76, GAP = 98;
+    const width = 266 + (n - 2) * PITCH;
+    const R = W / 2 + width / 2 - 48;               // the next package's x
+    const Y = H + 80;                               // the load's centre line
+    const door = R - 50;
+    const holdL = R - GAP - (n - 2) * PITCH - 42;
+    const cabL = holdL - 84;
+    slots = q => q === 0 ? { x: R, y: Y - 7, k: 1.22 } : { x: R - GAP - (q - 1) * PITCH, y: Y, k: 1 };
+    const g = el('g');
+    el('ellipse', { cx: (cabL + R + 48) / 2, cy: Y + 64, rx: width / 2, ry: 7, fill: 'rgba(59,51,70,.12)' }, g);
+    el('rect', { x: cabL + 10, y: Y + 30, width: door - cabL - 10, height: 14, rx: 5, fill: '#3a4150' }, g);
+    // The hold: cream body, dark inside, open at the back.
+    el('rect', { x: holdL - 8, y: Y - 50, width: door - holdL + 8, height: 92, rx: 14, fill: '#e3d7c2' }, g);
+    el('rect', { x: holdL - 8, y: Y - 54, width: door - holdL + 8, height: 92, rx: 14, fill: '#fffaf2' }, g);
+    el('rect', { x: holdL, y: Y - 44, width: door - holdL, height: 76, rx: 9, fill: '#4b5364' }, g);
+    el('rect', { x: holdL, y: Y + 26, width: door - holdL, height: 6, fill: '#3a4150' }, g);
+    for (let q = 1; q < n - 1; q++) {
+      const x = slots(q).x + PITCH / 2;
+      el('path', { d: `M${x - 4} ${Y - 13}l8 13-8 13`, stroke: 'rgba(255,255,255,.16)', 'stroke-width': 5, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+    }
+    // The door, rolled up into a canopy, and the tail lift.
+    el('rect', { x: door - 4, y: Y - 54, width: R + 48 - door + 4, height: 11, rx: 5, fill: '#fffaf2', stroke: '#e3d7c2', 'stroke-width': 2 }, g);
+    el('line', { x1: door, y1: Y + 46, x2: R + 20, y2: Y + 38, stroke: '#3a4150', 'stroke-width': 5, 'stroke-linecap': 'round' }, g);
+    el('rect', { x: door - 4, y: Y + 33, width: R + 48 - door + 4, height: 10, rx: 4, fill: '#e0941a' }, g);
+    el('rect', { x: door - 4, y: Y + 33, width: R + 48 - door + 4, height: 7, rx: 3.5, fill: '#ffc53d' }, g);
+    el('rect', { x: R - 46, y: Y - 52, width: 92, height: 88, rx: 18, fill: 'rgba(255,197,61,.28)' }, g);
+    // The cab, facing left.
+    el('rect', { x: cabL, y: Y - 24, width: 78, height: 70, rx: 16, fill: '#2c3852' }, g);
+    el('rect', { x: cabL, y: Y - 28, width: 78, height: 70, rx: 16, fill: '#3b4a6b' }, g);
+    el('path', { d: `M${cabL + 10} ${Y + 4}L${cabL + 22} ${Y - 18}H${cabL + 52}V${Y + 4}z`, fill: '#9cc4ea' }, g);
+    el('circle', { cx: cabL + 8, cy: Y + 20, r: 5.5, fill: '#ffe28a' }, g);
+    for (const x of [cabL + 38, door - 40]) {
+      el('circle', { cx: x, cy: Y + 48, r: 17, fill: '#2b2f38' }, g);
+      el('circle', { cx: x, cy: Y + 48, r: 7, fill: '#9aa3b5' }, g);
+    }
+    const nextLabel = el('text', { x: R, y: Y + 74, 'text-anchor': 'middle', 'font-family': 'Space Mono, monospace', 'font-weight': 700, 'font-size': 15, 'letter-spacing': 2, fill: '#3b3346' }, g);
+    nextLabel.textContent = 'NEXT';
+    loadLayer = el('g');
+  }
+
+  /* Packages slide with a little overshoot. Tweened by hand (CSS transitions on SVG groups can leave ghosts). */
+  const moving = new Set();
+  let raf = 0;
+  const backOut = u => 1 + 2.4 * Math.pow(u - 1, 3) + 1.4 * Math.pow(u - 1, 2);
+  function setBox(b, at) {
+    b.at = at;
+    b.g.setAttribute('transform', `translate(${at.x} ${at.y}) scale(${at.k})`);
+  }
+  function tween(b, to, dur, then) {
+    b.from = { ...b.at }; b.to = to; b.t0 = performance.now(); b.dur = dur; b.then = then;
+    moving.add(b);
+    if (!raf) raf = requestAnimationFrame(step);
+  }
+  function step(now) {
+    raf = 0;
+    for (const b of [...moving]) {
+      const u = Math.min(1, (now - b.t0) / b.dur), e = b.to.fade ? u : backOut(u);
+      setBox(b, { x: b.from.x + (b.to.x - b.from.x) * e, y: b.from.y + (b.to.y - b.from.y) * e, k: b.from.k + (b.to.k - b.from.k) * e });
+      if (b.to.fade) b.g.setAttribute('opacity', 1 - u);
+      if (u >= 1) { moving.delete(b); if (b.then) b.then(); }
+    }
+    if (moving.size) raf = requestAnimationFrame(step);
+  }
+  function buildLoad() {
+    moving.clear();
+    loadLayer.replaceChildren();
+    boxes = queue.map(color => {
+      const g = el('g', {}, loadLayer);
+      el('rect', { x: -30, y: -26, width: 60, height: 60, rx: 12, fill: DARK[color] }, g);
+      el('rect', { x: -30, y: -30, width: 60, height: 60, rx: 12, fill: HEX[color] }, g);
+      el('rect', { x: -5, y: -30, width: 10, height: 60, fill: 'rgba(255,255,255,.5)' }, g);
+      return { g, color };
+    });
+    placeLoad();
+  }
+  function placeLoad(animate) {
+    boxes.forEach((b, q) => {
+      const s = slots(q);
+      if (animate && b.at) tween(b, s, 300); else setBox(b, s);
+    });
+  }
 
   /* What a plan would do: the package on top along each stretch, and the houses it fills. */
   function foresee(tiles) {
@@ -903,7 +1046,6 @@ document.addEventListener('click', e => {
   const canEnter = p => roads.has(key(p.x, p.y)) && !used(p);
 
   function paint() {
-    /* The route being planned, tinted by what's on top */
     pathLayer.replaceChildren();
     const view = foresee(plan.length ? plan : [head()]);
     for (let pass = 0; pass < 2; pass++) {
@@ -914,73 +1056,58 @@ document.addEventListener('click', e => {
         el('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: pass ? HEX[tint] : '#fffdf6', 'stroke-width': pass ? 17 : 30, 'stroke-linecap': 'round' }, pathLayer);
       }
     }
-    /* Houses */
     for (const h of houses) {
       const gone = done.has(h), planned = !gone && view.filled.has(h);
       h.wall.setAttribute('fill', gone ? '#f1eee9' : mix(HEX[h.color], 0.72));
       h.roof.setAttribute('fill', gone ? mix(HEX[h.color], 0.5, '#b9b9b9') : HEX[h.color]);
       h.roof.setAttribute('stroke', h.roof.getAttribute('fill'));
       h.door.setAttribute('fill', gone ? '#a9a39b' : DARK[h.color]);
-      const place = view.q.indexOf(h.color) + 1;
-      h.tag.setAttribute('visibility', !gone && !planned && place ? 'visible' : 'hidden');
-      h.tagDisc.setAttribute('fill', place === 1 ? '#ffc53d' : '#f3ead9');
-      h.tagText.textContent = place || '';
+      // The house that wants the next package (as things will stand at the end of the plan) shines.
+      h.aura.classList.toggle('on', !gone && !planned && view.q.length > 0 && h.color === view.q[0]);
       h.tick.setAttribute('visibility', gone || planned ? 'visible' : 'hidden');
       h.tickDisc.setAttribute('fill', gone ? '#35c27a' : '#fff');
       h.tickDisc.setAttribute('stroke', gone ? 'none' : '#35c27a');
       h.tickDisc.setAttribute('stroke-width', gone ? 0 : 3);
       h.tickMark.setAttribute('stroke', gone ? '#fff' : '#35c27a');
     }
-    /* Belt: packages the plan uses up fade */
     const fading = queue.length - view.q.length;
     boxes.forEach((b, i) => b.g.setAttribute('opacity', i < fading ? 0.38 : 1));
     cargo.setAttribute('fill', queue[0] ? HEX[queue[0]] : '#ece4d6');
   }
-  function mix(hex, t, to = '#ffffff') {
-    const n = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
-    const a = n(hex), b = n(to);
-    return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join('');
-  }
-  function buildBelt() {
-    beltLayer.replaceChildren();
-    boxes = queue.map((color, i) => {
-      const g = el('g', {}, beltLayer);
-      g.style.transform = `translate(${slotX(i)}px, ${BELT_Y}px)`;
-      g.style.transition = 'transform .28s cubic-bezier(.3,1.5,.5,1), opacity .2s';
-      el('rect', { x: -31, y: -27, width: 62, height: 62, rx: 13, fill: DARK[color] }, g);
-      el('rect', { x: -31, y: -31, width: 62, height: 62, rx: 13, fill: HEX[color] }, g);
-      el('rect', { x: -5, y: -31, width: 10, height: 62, fill: 'rgba(255,255,255,.5)' }, g);
-      const n = el('g', { transform: 'translate(0 44)' }, g);
-      el('circle', { r: 14, fill: '#3a4150' }, n);
-      const disc = el('circle', { r: 11.5 }, n);
-      const text = el('text', { 'text-anchor': 'middle', y: 5.5, 'font-family': 'Fredoka, sans-serif', 'font-weight': 700, 'font-size': 16, fill: '#3b3346' }, n);
-      return { g, color, disc, text };
-    });
-    numberBelt();
-  }
-  function numberBelt() {
-    boxes.forEach((b, n) => {
-      b.g.style.transform = `translate(${slotX(n)}px, ${BELT_Y}px)`;
-      b.disc.setAttribute('fill', n === 0 ? '#ffc53d' : '#f3ead9');
-      b.text.textContent = n + 1;
-    });
-  }
   function placeVan(pos, angle) {
     vanAt.setAttribute('transform', `translate(${pos.x} ${pos.y})`);
     if (angle !== undefined) vanTurn.setAttribute('transform', `rotate(${angle})`);
+  }
+  function placeGrip() {
+    const c = centre(route[route.length - 1]);
+    grip.style.left = (c.x - 80) / W * 100 + '%';
+    grip.style.top = (c.y - 80) / VH * 100 + '%';
+    grip.style.width = 160 / W * 100 + '%';
+    grip.style.height = 160 / VH * 100 + '%';
+    grip.style.display = over ? 'none' : '';
+  }
+  function heading() {
+    for (const [dx, dy, a] of [[0, -1, -90], [1, 0, 0], [-1, 0, 180], [0, 1, 90]]) {
+      if (roads.has(key(start.x + dx, start.y + dy))) return a;
+    }
+    return 0;
   }
   function reset() {
     route = [start]; plan = []; queue = [...ORDER]; done = new Set(); busy = false; drawing = false; over = false;
     wreckLayer.replaceChildren();
     mark.setAttribute('visibility', 'hidden');
     stamp.classList.remove('on');
-    retry.hidden = true; next.hidden = true;
+    retry.hidden = true; next.hidden = true; harder.hidden = true; tip.hidden = false;
     ring.setAttribute('visibility', 'visible');
-    buildBelt();
-    placeVan(centre(start), 0);
+    buildLoad();
+    placeVan(centre(start), heading());
     placeGrip();
     say(touched ? 'Fresh road. Drag from the van.' : 'Drag from the van.');
     paint();
+  }
+  function load(index) {
+    build(index);
+    reset();
   }
   function wreck(p, prev, nextTile) {
     const c = centre(p);
@@ -1029,13 +1156,6 @@ document.addEventListener('click', e => {
       if (roads.has(key(step.x, step.y))) showX(h, step);      // torn-up road, or the route itself: the line stops here
       return;
     }
-  }
-  const grip = document.getElementById('grip');
-  function placeGrip() {
-    const c = centre(route[route.length - 1]);
-    grip.style.left = (c.x - 80) / W * 100 + '%';
-    grip.style.top = (c.y - 80) / VH * 100 + '%';
-    grip.style.display = over ? 'none' : '';
   }
   grip.addEventListener('pointerdown', e => {
     if (busy || over) return;
@@ -1091,10 +1211,9 @@ document.addEventListener('click', e => {
             if (!done.has(h) && h.color === queue[0] && beside(h, at)) {
               done.add(h); queue.shift(); again = true; gave = true;
               const first = boxes.shift();
-              first.g.style.transform = `translate(${slotX(0)}px, ${BELT_Y - 65}px)`;
-              first.g.setAttribute('opacity', 0);
-              setTimeout(() => first.g.remove(), 300);
-              numberBelt();
+              const s = slots(0);
+              tween(first, { x: s.x, y: s.y - 70, k: 0.5, fade: true }, 260, () => first.g.remove());
+              placeLoad(true);
               break;
             }
           }
@@ -1116,26 +1235,38 @@ document.addEventListener('click', e => {
       over = true;
       placeGrip();
       stamp.classList.add('on');
-      say("That was level 5. There are 45, and they stop being this nice about it.", 'good');
-      next.hidden = false; retry.hidden = false; retry.textContent = 'Play it again';
-      track('link', 'lastmile-demo-win');
+      tip.hidden = true;
+      retry.hidden = false; retry.textContent = 'Play it again';
+      if (lv === LEVELS[0]) {
+        say('Delivered! Ready for a bigger one?', 'good');
+        harder.hidden = false;
+      } else {
+        say(`That was level ${lv.number}. There are 45, and they get a lot less forgiving.`, 'good');
+        next.hidden = false;
+      }
+      track('link', `lastmile-demo-win-${lv.number}`);
       return;
     }
     const moves = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => canEnter({ x: here.x + dx, y: here.y + dy }));
     if (!moves) {
       over = true;
       placeGrip();
-      say('Stuck. The road behind you is rubble, and there are still packages on the belt.', 'bad');
+      say('Stuck! The road behind you is rubble. Try driving by the shining house first.', 'bad');
       retry.hidden = false; retry.textContent = 'Have another go';
-      track('link', 'lastmile-demo-stuck');
+      track('link', `lastmile-demo-stuck-${lv.number}`);
       return;
     }
     placeGrip();
     ring.setAttribute('visibility', 'visible');
-    say(nope ? "That house isn't next: only the front of the belt can go out. Keep going from the van." : 'Nice. Keep going from the van.');
+    say(nope ? "That house isn't next. Only the package at the back doors can go out." : 'Nice. Keep going from the van.');
   }
   retry.addEventListener('click', reset);
-  reset();
+  harder.addEventListener('click', () => {
+    load(1);
+    say('Level 12. Six packages, and only one way round. Drag from the van.');
+    document.getElementById('play').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  load(0);
 })();
 </script>
 <script>
