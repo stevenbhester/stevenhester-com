@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Last Mile privacy policy</title>
+<link rel="icon" type="image/svg+xml" href="../icon.svg">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="canonical" href="https://www.stevenhester.com/last-mile/privacy/">
+<meta name="theme-color" content="#f3ead9">
+<meta name="description" content="What Last Mile, the delivery puzzle for iPhone, collects, why, and how to have it deleted. Short version: almost nothing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* Last Mile's privacy policy: the landing page's paper, ink and road, set as a plain readable page. */
+:root {
+  --paper: #f3ead9;
+  --paper-deep: #e9dcc4;
+  --card: #fffaf0;
+  --ink: #3b3346;
+  --ink-soft: #6c6477;
+  --road: #596273;
+  --road-edge: #444b59;
+  --accent: #ff7a59;
+  --accent-deep: #d95a3c;
+  --good: #35c27a;
+  --f-display: "Fredoka", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --f-body: "Nunito", ui-rounded, system-ui, sans-serif;
+  --f-mono: "Space Mono", ui-monospace, Menlo, Consolas, monospace;
+  --gutter: clamp(16px, 5vw, 56px);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 600 17px/1.6 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-underline-offset: 0.2em; text-decoration-thickness: 2px; text-decoration-color: rgba(255, 122, 89, 0.7); }
+a:hover { text-decoration-color: var(--accent); }
+svg { display: block; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; line-height: 1.08; margin: 0; letter-spacing: -0.01em; }
+p, ul { margin: 0; }
+.wrap { width: min(760px, 100% - 2 * var(--gutter)); margin-inline: auto; }
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 18px 0 0; font: 700 clamp(12px, 3.4vw, 14px)/1 var(--f-mono); letter-spacing: 0.02em; white-space: nowrap; }
+.top a { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; }
+.top a:hover { text-decoration: underline; }
+.top .bowl { width: 26px; height: 26px; }
+
+.sign {
+  display: inline-block;
+  font: 700 13px/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: #fff; background: #2f8f5b;
+  padding: 9px 12px 8px; border-radius: 7px;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85), 0 3px 0 #1f6b41;
+  transform: rotate(-1.5deg);
+}
+header.title { padding: clamp(34px, 8vw, 72px) 0 clamp(20px, 4vw, 30px); }
+h1 { font-size: clamp(44px, 11vw, 84px); margin-top: 18px; letter-spacing: -0.03em; }
+.lede { font-size: clamp(18px, 2.6vw, 21px); margin-top: 16px; max-width: 36em; }
+.dated { font: 400 13px/1.4 var(--f-mono); color: var(--ink-soft); margin-top: 14px; }
+
+/* The road between the title and the page, as on the landing page. */
+.road { height: 26px; border-radius: 13px; background: var(--road); box-shadow: 0 5px 0 var(--road-edge); position: relative; overflow: hidden; margin: 6px 0 clamp(28px, 5vw, 40px); }
+.road::after { content: ""; position: absolute; left: 14px; right: 14px; top: 50%; height: 4px; margin-top: -2px; background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.55) 0 26px, transparent 26px 48px); border-radius: 2px; }
+
+.card {
+  background: var(--card);
+  border-radius: 26px;
+  padding: clamp(20px, 4.5vw, 34px);
+  box-shadow: 0 6px 0 var(--paper-deep), 0 18px 30px -22px rgba(59, 51, 70, 0.45);
+  margin-bottom: clamp(20px, 4vw, 28px);
+}
+.card h2 { font-size: clamp(26px, 5vw, 34px); }
+.card h3 { font-size: 20px; margin-top: 22px; }
+.card p, .card ul { margin-top: 10px; }
+.card ul { padding-left: 1.2em; }
+.card li { margin-top: 6px; }
+.card li::marker { color: var(--accent); }
+
+.short { border: 3px solid var(--good); }
+.short ul { list-style: none; padding: 0; }
+.short li { position: relative; padding-left: 36px; margin-top: 12px; }
+.short li::before {
+  content: ""; position: absolute; left: 0; top: 0.2em; width: 24px; height: 24px; border-radius: 7px;
+  background: var(--good) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4 10.5l4 4 8-9' stroke='%23fff' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 17px no-repeat;
+  box-shadow: 0 3px 0 #25935a;
+}
+
+.sent { margin-top: 12px; display: grid; gap: 8px; }
+.sent div { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); gap: 4px 16px; padding: 10px 14px; background: var(--paper); border-radius: 14px; }
+.sent b { font-family: var(--f-display); font-weight: 600; }
+@media (max-width: 560px) { .sent div { grid-template-columns: minmax(0, 1fr); } }
+
+.note { font-size: 15px; color: var(--ink-soft); }
+code { font: 400 0.88em var(--f-mono); background: var(--paper); padding: 0.1em 0.35em; border-radius: 6px; }
+
+footer { padding: 18px 0 calc(44px + env(safe-area-inset-bottom)); font-size: 15px; color: var(--ink-soft); }
+footer .row { display: flex; flex-wrap: wrap; gap: 10px 26px; justify-content: space-between; align-items: center; }
+footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="bowl" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="18" fill="#cdc2b3"/><circle cx="20" cy="20" r="13.5" fill="#73334f"/>
+      <circle cx="20" cy="20" r="18" fill="none" stroke="#455c99" stroke-width="2.4"/>
+      <rect x="28" y="16" width="9" height="8" rx="2" fill="#a84a47"/><circle cx="15" cy="16" r="2.4" fill="#d1c28f"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="wrap top">
+  <a href="/"><svg class="bowl" aria-hidden="true"><use href="#bowl"/></svg> a Door Bowl game</a>
+  <a href="../">Back to Last Mile</a>
+</header>
+
+<main class="wrap">
+  <header class="title">
+    <span class="sign">Privacy</span>
+    <h1>What Last Mile keeps</h1>
+    <p class="lede">Last Mile is a small iPhone puzzle game made by one person, Steven Hester, as Door Bowl Games. It has no accounts, no ads and no tracking, and nothing about you is ever sold. Here is everything it does collect, and why.</p>
+    <p class="dated">Last updated 13 November 2026</p>
+  </header>
+  <div class="road" aria-hidden="true"></div>
+
+  <section class="card short" aria-labelledby="short">
+    <h2 id="short">The short version</h2>
+    <ul>
+      <li>Your progress and settings stay on your phone. There's no account to sign in to.</li>
+      <li>The game only sends something about you when you send Steven a bug report or feedback, and then only what's listed below.</li>
+      <li>There are no ad networks, analytics or tracking in the game. The ads and Dollaroos in it are pretend, and there's nothing to buy.</li>
+      <li>If you sign up on the website, your email (and phone number, if you give one) is used to tell you about Last Mile and nothing else.</li>
+      <li>You can have anything you've sent deleted. Just ask.</li>
+    </ul>
+  </section>
+
+  <section class="card" aria-labelledby="game">
+    <h2 id="game">In the game</h2>
+
+    <h3>Your progress and settings</h3>
+    <p>Levels done, stars, gas, Dollaroos, unlocked paint jobs and your options are saved on your phone and nowhere else. Deleting the app deletes them.</p>
+
+    <h3>Feedback and bug reports</h3>
+    <p>Options has a <b>Feedback / Bug report</b> button. Nothing is sent until you write something and tap <b>Submit to Steven</b>. A report contains:</p>
+    <div class="sent">
+      <div><b>Your message</b><span>What you typed, and whether it's a bug or an idea.</span></div>
+      <div><b>Where you were</b><span>For example "Level 12" or "Map".</span></div>
+      <div><b>A screenshot</b><span>Only if "Include a screenshot" is ticked. It's ticked to start with, and the card shows you the picture, so untick it to leave it out.</span></div>
+      <div><b>The game's recent log</b><span>The game's own notes on what it did lately: screens opened, levels played, errors. It doesn't contain anything from outside the game.</span></div>
+      <div><b>Game and phone details</b><span>Game version, phone model, iOS version, screen size, a summary of your progress (levels done, gas, Dollaroos) and your settings.</span></div>
+    </div>
+    <p>It goes to Steven's own server, which files it in a private GitHub repository that only Steven can see, with the screenshot and log stored alongside. Your IP address is kept in the server's memory for up to a day, only to stop anyone flooding it with reports, and isn't saved with the report. Reports are kept until Steven deletes them. After sending, the game shows a report number; quote it if you'd like yours deleted.</p>
+
+    <h3>Checking for updates</h3>
+    <p>When you open the game it downloads a small file from GitHub that names the newest version, so it can tell you when there's an update. Nothing about you is sent with it, though GitHub sees the request like any visit to a website.</p>
+
+    <h3>Daily reminders</h3>
+    <p>If you allow notifications, the game schedules its daily puzzle reminders on your phone. They don't go through any server.</p>
+
+    <h3>Sharing a result</h3>
+    <p>Sharing opens Messages with your result filled in, or copies it. You choose whether and to whom it's sent; the game doesn't send it anywhere itself.</p>
+  </section>
+
+  <section class="card" aria-labelledby="testflight">
+    <h2 id="testflight">Testing with TestFlight</h2>
+    <p>While Last Mile is being tested, you install it through Apple's TestFlight app. Apple shares some testing information with Steven: which build you installed, how many sessions and crashes there were, crash reports, and any feedback or screenshots you send through TestFlight. Depending on how you joined, that can include your name or email address. Apple handles this under <a href="https://www.apple.com/legal/privacy/" rel="noopener">Apple's privacy policy</a>.</p>
+  </section>
+
+  <section class="card" aria-labelledby="site">
+    <h2 id="site">On the website</h2>
+
+    <h3>Signing up</h3>
+    <p>The form on <a href="../">the Last Mile page</a> asks for your email, and optionally your name, a phone number, what phone you have, and whether you'd like to playtest. These go into a list on Steven's own server. They're used to tell you when Last Mile is out, to text you if you gave a number, and to invite you to playtest if you ticked the box. There's no mailing-list company, and nobody else gets them. Reply to any message about Last Mile and you'll be taken off the list.</p>
+
+    <h3>Visits and clicks</h3>
+    <p>The page counts visits, which buttons and links get clicked, how the try-a-level game went, and which link or ad brought you there. It does this with a random id kept in your browser's local storage. There are no cookies, and IP addresses aren't stored. Only Steven can see these numbers.</p>
+
+    <h3>Fonts and hosting</h3>
+    <p>The site is hosted on GitHub Pages and loads its fonts from Google Fonts. Both see your visit like any website request, under their own privacy policies.</p>
+  </section>
+
+  <section class="card" aria-labelledby="who">
+    <h2 id="who">Who else is involved</h2>
+    <p>Steven doesn't sell, rent or share your information, and none of it is used for advertising. These services do hold or carry it for him:</p>
+    <ul>
+      <li><b>Heroku</b> (Salesforce) runs Steven's server and the database that holds website sign-ups.</li>
+      <li><b>GitHub</b> stores bug reports in a private repository, hosts this website and serves the update-check file.</li>
+      <li><b>Apple</b> runs TestFlight and, later, the App Store.</li>
+      <li><b>Google Fonts</b> serves the website's fonts.</li>
+    </ul>
+    <p>If you follow the link to Last Mile's TikTok, TikTok's own privacy policy applies there.</p>
+  </section>
+
+  <section class="card" aria-labelledby="choices">
+    <h2 id="choices">Deleting things, and getting in touch</h2>
+    <ul>
+      <li><b>Game progress:</b> delete the app.</li>
+      <li><b>A bug report or feedback:</b> ask Steven, with the report number if you have it, and it'll be deleted.</li>
+      <li><b>Website sign-up:</b> reply to any message about Last Mile, and you'll be taken off the list.</li>
+    </ul>
+    <p>To ask about any of this, send a note from the game (Options, then <b>Feedback / Bug report</b>, then "An idea / feedback"), or reply to any email from Steven about Last Mile.</p>
+
+    <h3>Children</h3>
+    <p>Last Mile isn't aimed at children under 13, and Steven doesn't knowingly collect personal information from them. If you think a child has sent something, get in touch and it'll be deleted.</p>
+
+    <h3>Changes</h3>
+    <p>If this policy changes, the date at the top will change too. Anything bigger, like the game starting to collect something new, will also be mentioned in the game's patch notes.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap row">
+    <span>Last Mile is made by Steven Hester, as Door Bowl Games.</span>
+    <nav>
+      <a href="../">Last Mile</a>
+      <a href="/">More of Steven's things</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
