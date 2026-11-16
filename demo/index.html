@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game sketches: Defrag, Even Steven, Batch Run</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#f3ead9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap">
+<style>
+:root {
+  --paper: #f3ead9; --card: #fffaf0; --ink: #3b3346; --ink-soft: #6c6477;
+  --accent: #ff7a59; --accent-deep: #d95a3c; --good: #35c27a;
+  --red: #ff5d5d; --blue: #4d8dff; --yellow: #ffc53d; --purple: #a26bf5; --green: #35c27a; --pink: #ff7ab8;
+  --f-display: "Fredoka", ui-rounded, system-ui, sans-serif;
+  --f-body: "Nunito", ui-rounded, system-ui, sans-serif;
+  --f-mono: "Space Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 700 17px/1.45 var(--f-body); -webkit-font-smoothing: antialiased; }
+h1, h2 { font-family: var(--f-display); margin: 0; line-height: 1.05; }
+p { margin: 0; }
+.wrap { width: min(560px, 100% - 32px); margin: 0 auto; padding: 28px 0 60px; }
+header h1 { font-size: clamp(30px, 7vw, 40px); }
+header p { color: var(--ink-soft); margin-top: 6px; }
+
+.tabs { display: flex; gap: 8px; margin: 22px 0 16px; }
+.tab { flex: 1; font: 700 17px/1 var(--f-display); padding: 13px 6px 14px; border: 0; border-radius: 999px; cursor: pointer;
+  background: #fff; color: var(--ink); box-shadow: 0 4px 0 #d8cdb8; -webkit-tap-highlight-color: transparent; }
+.tab[aria-selected="true"] { background: var(--accent); color: #fff; box-shadow: 0 4px 0 var(--accent-deep); }
+.tab:active { transform: translateY(3px); box-shadow: 0 1px 0 #d8cdb8; }
+
+.card { background: var(--card); border-radius: 22px; padding: 18px 16px 20px; box-shadow: 0 10px 30px -18px rgba(59,51,70,.5); }
+.pitch { font-size: 16px; }
+.how { margin: 12px 0 0; padding: 12px 14px; background: #f6efe2; border-radius: 14px; font-size: 15px; }
+.how b { font-family: var(--f-display); font-weight: 600; }
+.how ol { margin: 6px 0 0; padding-left: 20px; }
+.hud { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 16px 2px 10px; font-family: var(--f-mono); font-size: 14px; color: var(--ink-soft); }
+.hud strong { color: var(--ink); font-size: 16px; }
+.msg { min-height: 26px; text-align: center; font-family: var(--f-display); font-weight: 600; font-size: 18px; margin: 12px 0 4px; }
+.row { display: flex; gap: 10px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+.btn { font: 700 16px/1 var(--f-display); padding: 12px 18px 13px; border: 0; border-radius: 999px; cursor: pointer; color: #fff;
+  background: var(--accent); box-shadow: 0 4px 0 var(--accent-deep); -webkit-tap-highlight-color: transparent; }
+.btn.plain { background: #fff; color: var(--ink); box-shadow: 0 4px 0 #d8cdb8; }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--accent-deep); }
+.note { margin-top: 18px; font-size: 13px; color: var(--ink-soft); text-align: center; }
+
+/* ── Defrag ── */
+.disk { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 10px; background: #2b2f3a; border-radius: 14px; user-select: none; touch-action: manipulation; }
+.blk { aspect-ratio: 1; border-radius: 5px; background: #3a3f4c; transition: transform .12s, filter .2s, opacity .2s; }
+.blk.sys { background: repeating-linear-gradient(45deg, #59606f 0 4px, #4d5361 4px 8px); }
+.blk.file { cursor: pointer; }
+.blk.file.dim { opacity: .38; }
+.blk.file.fits { animation: glow 1.2s ease-in-out infinite; }
+.blk.file.done { box-shadow: inset 0 0 0 2px rgba(255,255,255,.55); cursor: default; animation: none; }
+.blk.pop { animation: pop .22s ease-out; }
+@keyframes glow { 50% { filter: brightness(1.28); transform: scale(1.06); } }
+@keyframes pop { 0% { transform: scale(.4); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+.legend { display: flex; gap: 14px; justify-content: center; margin-top: 8px; font-size: 13px; color: var(--ink-soft); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 5px; }
+
+/* ── Even Steven ── */
+.queue { display: flex; align-items: flex-end; justify-content: center; gap: 10px; min-height: 76px; margin-bottom: 8px; }
+.queue .slot { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--ink-soft); font-family: var(--f-mono); }
+.queue .slot.now .piece { outline: 3px solid var(--ink); outline-offset: 2px; }
+.piece { width: 54px; border-radius: 8px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.15); }
+.jars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.jarcol { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.kid { font-size: 34px; line-height: 1; transition: transform .2s; }
+.kid.cheer { transform: translateY(-8px) scale(1.15); }
+.jar { position: relative; width: 100%; max-width: 110px; border: 4px solid #b9d7e6; border-top: 0; border-radius: 0 0 18px 18px;
+  background: rgba(220,240,250,.55); display: flex; flex-direction: column-reverse; padding: 4px; gap: 2px; overflow: hidden; }
+.jar .piece { width: 100%; border-radius: 6px; }
+.jar .line { position: absolute; left: 0; right: 0; border-top: 3px dashed var(--accent); pointer-events: none; }
+.jar .line span { position: absolute; right: 4px; top: -18px; font: 700 11px var(--f-mono); color: var(--accent-deep); }
+.jarcol:active .jar { transform: translateY(2px); }
+.jar.shake { animation: shake .4s; border-color: var(--red); }
+.jar.cash { animation: cash .45s; }
+.count { font-family: var(--f-mono); font-size: 13px; color: var(--ink-soft); }
+@keyframes shake { 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-4px); } }
+@keyframes cash { 50% { transform: scale(1.06); filter: brightness(1.2); } }
+
+/* ── Batch Run ── */
+.block { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 10px; background: #c9e8b4; border-radius: 16px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.house { position: relative; aspect-ratio: 1; border-radius: 10px; background: #fff; display: grid; place-items: center; box-shadow: 0 3px 0 #b2c9a3; }
+.house .order { width: 58%; height: 58%; border-radius: 6px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); transition: transform .15s; }
+.house.inpath { background: #fff3c4; }
+.house.inpath .order { transform: scale(1.18); }
+.house.reach .order { animation: glow 1.2s ease-in-out infinite; }
+.house.got .order { transform: scale(0); }
+.house.van .order { opacity: .25; }
+.vanchip { position: absolute; font-size: 30px; line-height: 1; pointer-events: none; transition: left .11s linear, top .11s linear; transform: translate(-50%, -55%); z-index: 3; }
+.block svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.tip { position: absolute; pointer-events: none; z-index: 4; font: 700 14px var(--f-display); color: var(--accent-deep); transform: translate(-50%, -50%); animation: rise .7s forwards; }
+@keyframes rise { to { transform: translate(-50%, -160%); opacity: 0; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Three game sketches</h1>
+    <p>Rough playable versions of each idea. Placeholder art, real rules.</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="defrag">Defrag</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="even">Even Steven</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="batch">Batch Run</button>
+  </nav>
+
+  <!-- DEFRAG -->
+  <section class="card" id="p-defrag">
+    <p class="pitch">Remember watching your PC defragment? Now you run it.</p>
+    <div class="how"><b>How to play</b>
+      <ol>
+        <li>Each color is one file, broken into scattered pieces.</li>
+        <li>Tap a glowing file. Its pieces stream into one solid block in the first gap big enough to hold it (the disk reads left to right, top to bottom).</li>
+        <li>Files that don't fit anywhere yet are dimmed. Moving one file frees up space for others. Get every file in one piece.</li>
+      </ol>
+    </div>
+    <div class="hud"><span>Disk <strong id="df-level">1</strong>/4</span><span>Fragmented <strong id="df-frag">100%</strong></span></div>
+    <div class="disk" id="df-disk"></div>
+    <div class="legend"><span><i style="background:#3a3f4c"></i>Free space</span><span><i style="background:#59606f"></i>System (won't move)</span></div>
+    <p class="msg" id="df-msg"></p>
+    <div class="row"><button class="btn plain" id="df-retry">Retry disk</button><button class="btn" id="df-next" hidden>Next disk</button></div>
+  </section>
+
+  <!-- EVEN STEVEN -->
+  <section class="card" id="p-even" hidden>
+    <p class="pitch">Candy keeps coming and three kids are watching. Keep it fair.</p>
+    <div class="how"><b>How to play</b>
+      <ol>
+        <li>The outlined candy is next. Tap a jar to drop it in. You can see what's coming after it.</li>
+        <li>When all three jars are exactly level at or above the dashed line, everyone cashes out and the jars empty.</li>
+        <li>Higher cash-outs pay more. Overfill a jar and the run ends. The line creeps up as you go.</li>
+      </ol>
+    </div>
+    <div class="hud"><span>Score <strong id="es-score">0</strong></span><span>Best <strong id="es-best">0</strong></span></div>
+    <div class="queue" id="es-queue"></div>
+    <div class="jars" id="es-jars"></div>
+    <p class="msg" id="es-msg"></p>
+    <div class="row"><button class="btn" id="es-restart" hidden>Play again</button></div>
+  </section>
+
+  <!-- BATCH RUN -->
+  <section class="card" id="p-batch" hidden>
+    <p class="pitch">You're the driver, and every house on the block has an order.</p>
+    <div class="how"><b>How to play</b>
+      <ol>
+        <li>Drag from the van through neighboring houses that want the same color. Glowing houses are where a run can start.</li>
+        <li>Let go and the van drives the run, dropping a package at each house. It parks where the run ends.</li>
+        <li>Delivered houses place new orders. Runs of 5+ earn the van an extra run. Hit the delivery goal before you're out of runs.</li>
+      </ol>
+    </div>
+    <div class="hud"><span>Delivered <strong id="br-done">0</strong>/<span id="br-goal">40</span></span><span>Runs left <strong id="br-runs">12</strong></span></div>
+    <div class="block" id="br-block"><svg id="br-svg"></svg></div>
+    <p class="msg" id="br-msg"></p>
+    <div class="row"><button class="btn" id="br-restart" hidden>Play again</button></div>
+  </section>
+
+  <p class="note">Sound on for the full effect. Works best on a phone.</p>
+</main>
+
+<script>
+/* ── shared: tiny synth for ticks and thunks ── */
+let AC = null;
+function audio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
+function blip(freq, dur = 0.08, type = 'triangle', vol = 0.14) {
+  const ac = audio(); if (!ac) return;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+  o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + dur + 0.02);
+}
+function buzz(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
+const rand = n => Math.floor(Math.random() * n);
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const COLORS = ['#ff5d5d', '#4d8dff', '#ffc53d', '#a26bf5', '#35c27a', '#ff7ab8'];
+
+/* ── tabs ── */
+const started = {};
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === t));
+  ['defrag', 'even', 'batch'].forEach(k => document.getElementById('p-' + k).hidden = k !== t.dataset.tab);
+  start(t.dataset.tab);
+}));
+function start(k) { if (started[k]) return; started[k] = true; ({ defrag: dfInit, even: esInit, batch: brInit })[k](); }
+
+/* ════════ DEFRAG ════════ */
+const DF_COLS = 8, DF_ROWS = 6, DF_N = DF_COLS * DF_ROWS;
+const DF_LEVELS = [
+  { files: [3, 4, 3], free: 11 },
+  { files: [4, 4, 3, 3], free: 9 },
+  { files: [5, 4, 4, 3], free: 8 },
+  { files: [5, 5, 4, 3, 3], free: 8 },
+];
+const FREE = -1, SYS = -2;
+let df = null;
+
+function dfFindRun(cells, f, n) {
+  outer: for (let s = 0; s + n <= DF_N; s++) {
+    for (let i = s; i < s + n; i++) if (cells[i] !== FREE && cells[i] !== f) continue outer;
+    return s;
+  }
+  return -1;
+}
+function dfContig(cells, f) {
+  const idx = []; cells.forEach((c, i) => c === f && idx.push(i));
+  return idx[idx.length - 1] - idx[0] === idx.length - 1;
+}
+function dfApply(cells, f, n, s) {
+  const c = cells.slice();
+  for (let i = 0; i < DF_N; i++) if (c[i] === f && (i < s || i >= s + n)) c[i] = FREE;
+  for (let i = s; i < s + n; i++) c[i] = f;
+  return c;
+}
+// Explores every order of moves; counts winning and dead-end outcomes.
+function dfSolve(cells, sizes, done, st) {
+  let any = false, fit = false;
+  for (let f = 0; f < sizes.length; f++) {
+    if (done[f]) continue;
+    const s = dfFindRun(cells, f, sizes[f]); if (s < 0) continue;
+    fit = true;
+    const d2 = done.slice(); d2[f] = true;
+    if (d2.every(Boolean)) { st.win++; any = true; }
+    else if (dfSolve(dfApply(cells, f, sizes[f], s), sizes, d2, st)) any = true;
+  }
+  if (!fit) st.lose++;
+  return any;
+}
+function dfGenerate(lv) {
+  const { files, free } = DF_LEVELS[lv];
+  for (let tries = 0; tries < 4000; tries++) {
+    const bag = [];
+    files.forEach((n, f) => { for (let i = 0; i < n; i++) bag.push(f); });
+    for (let i = 0; i < free; i++) bag.push(FREE);
+    while (bag.length < DF_N) bag.push(SYS);
+    const cells = shuffle(bag);
+    if (files.some((_, f) => dfContig(cells, f))) continue;
+    const st = { win: 0, lose: 0 };
+    const ok = dfSolve(cells, files, files.map(() => false), st);
+    if (!ok) continue;
+    if (lv > 0 && st.lose === 0) continue;          // later disks need a way to get stuck
+    if (lv >= 2 && st.win > st.lose) continue;      // and it should be easy-ish to get stuck
+    return cells;
+  }
+  return null;
+}
+function dfInit() {
+  const disk = document.getElementById('df-disk');
+  for (let i = 0; i < DF_N; i++) { const b = document.createElement('div'); b.className = 'blk'; b.dataset.i = i; disk.appendChild(b); }
+  disk.addEventListener('click', e => { const b = e.target.closest('.blk'); if (b) dfTap(+b.dataset.i); });
+  document.getElementById('df-retry').onclick = () => dfLoad(df.lv, df.start);
+  document.getElementById('df-next').onclick = () => dfLoad((df.lv + 1) % DF_LEVELS.length);
+  dfLoad(0);
+}
+function dfLoad(lv, cells) {
+  const start = cells || dfGenerate(lv);
+  df = { lv, start, cells: start.slice(), sizes: DF_LEVELS[lv].files, done: DF_LEVELS[lv].files.map(() => false), busy: false };
+  document.getElementById('df-level').textContent = lv + 1;
+  document.getElementById('df-msg').textContent = '';
+  document.getElementById('df-next').hidden = true;
+  dfRender();
+}
+function dfRender(popIdx) {
+  const blks = document.querySelectorAll('#df-disk .blk');
+  const fits = df.sizes.map((n, f) => !df.done[f] && dfFindRun(df.cells, f, n) >= 0);
+  df.cells.forEach((c, i) => {
+    const b = blks[i];
+    b.className = 'blk'; b.style.background = '';
+    if (c === SYS) b.classList.add('sys');
+    else if (c >= 0) {
+      b.classList.add('file'); b.style.background = COLORS[c];
+      if (df.done[c]) b.classList.add('done'); else b.classList.add(fits[c] ? 'fits' : 'dim');
+    }
+    if (popIdx === i) b.classList.add('pop');
+  });
+  const total = df.sizes.reduce((a, b) => a + b, 0);
+  const left = df.sizes.reduce((a, n, f) => a + (df.done[f] ? 0 : n), 0);
+  document.getElementById('df-frag').textContent = Math.round(100 * left / total) + '%';
+}
+function dfTap(i) {
+  if (df.busy) return;
+  const f = df.cells[i]; if (f < 0 || df.done[f]) return;
+  audio();
+  const n = df.sizes[f], s = dfFindRun(df.cells, f, n);
+  if (s < 0) { blip(140, 0.12, 'square', 0.08); buzz(20); return; }
+  const sources = [], targets = [];
+  for (let k = 0; k < DF_N; k++) if (df.cells[k] === f && (k < s || k >= s + n)) sources.push(k);
+  for (let k = s; k < s + n; k++) if (df.cells[k] !== f) targets.push(k);
+  df.busy = true;
+  sources.forEach((src, j) => setTimeout(() => {
+    df.cells[src] = FREE; df.cells[targets[j]] = f;
+    dfRender(targets[j]); blip(520 + j * 90, 0.05, 'square', 0.06); buzz(8);
+    if (j === sources.length - 1) setTimeout(() => { df.done[f] = true; df.busy = false; dfRender(); blip(880, 0.15); dfCheck(); }, 120);
+  }, j * 95));
+}
+function dfCheck() {
+  const msg = document.getElementById('df-msg');
+  if (df.done.every(Boolean)) {
+    msg.textContent = df.lv === DF_LEVELS.length - 1 ? 'Defragmentation complete. All disks clean!' : 'Disk clean!';
+    [660, 830, 990].forEach((fq, k) => setTimeout(() => blip(fq, 0.18), k * 110));
+    document.getElementById('df-next').hidden = false;
+    document.getElementById('df-next').textContent = df.lv === DF_LEVELS.length - 1 ? 'Start over' : 'Next disk';
+  } else if (!df.sizes.some((n, f) => !df.done[f] && dfFindRun(df.cells, f, n) >= 0)) {
+    msg.textContent = 'Disk full. No file fits anywhere. Retry?';
+    blip(180, 0.3, 'sawtooth', 0.08);
+  }
+}
+
+/* ════════ EVEN STEVEN ════════ */
+const ES_CAP = 10, UNIT = 22;
+let es = null;
+function esPiece() { const r = Math.random(); return { size: r < 0.4 ? 1 : r < 0.8 ? 2 : 3, color: COLORS[rand(COLORS.length)] }; }
+function esInit() {
+  const jars = document.getElementById('es-jars');
+  for (let j = 0; j < 3; j++) {
+    const col = document.createElement('div'); col.className = 'jarcol'; col.dataset.j = j;
+    col.innerHTML = `<div class="kid">🙂</div><div class="jar" style="height:${ES_CAP * UNIT + 12}px"><div class="line"><span></span></div></div><div class="count">0/${ES_CAP}</div>`;
+    col.addEventListener('click', () => esDrop(j));
+    jars.appendChild(col);
+  }
+  document.getElementById('es-restart').onclick = esNew;
+  esNew();
+}
+function esNew() {
+  es = { jars: [[], [], []], queue: [esPiece(), esPiece(), esPiece(), esPiece()], score: 0, line: 4, cashes: 0, over: false, busy: false };
+  document.getElementById('es-msg').textContent = 'Level the jars at the line to cash out.';
+  document.getElementById('es-restart').hidden = true;
+  esRender();
+}
+const esH = j => es.jars[j].reduce((a, p) => a + p.size, 0);
+function esRender() {
+  const q = document.getElementById('es-queue');
+  q.innerHTML = es.queue.map((p, k) => `<div class="slot ${k === 0 ? 'now' : ''}"><div class="piece" style="height:${p.size * UNIT}px;background:${p.color}"></div>${k === 0 ? 'next' : ''}</div>`).join('');
+  const hs = [0, 1, 2].map(esH), mn = Math.min(...hs), mx = Math.max(...hs);
+  document.querySelectorAll('.jarcol').forEach((col, j) => {
+    const jar = col.querySelector('.jar');
+    jar.querySelectorAll('.piece').forEach(x => x.remove());
+    es.jars[j].forEach(p => { const d = document.createElement('div'); d.className = 'piece'; d.style.height = (p.size * UNIT - 2) + 'px'; d.style.background = p.color; jar.appendChild(d); });
+    const line = jar.querySelector('.line');
+    line.style.bottom = (4 + es.line * UNIT) + 'px';
+    line.querySelector('span').textContent = j === 2 ? es.line : '';
+    col.querySelector('.count').textContent = `${hs[j]}/${ES_CAP}`;
+    col.querySelector('.kid').textContent = es.over && hs[j] > ES_CAP - 0 && j === es.spilled ? '😱' : mn === mx ? '🙂' : hs[j] === mn ? '🥺' : hs[j] === mx ? '😋' : '🙂';
+  });
+  document.getElementById('es-score').textContent = es.score;
+  document.getElementById('es-best').textContent = Math.max(es.score, +localStorage.getItem('es-best') || 0);
+}
+function esDrop(j) {
+  if (es.over || es.busy) return;
+  audio();
+  const p = es.queue[0];
+  if (esH(j) + p.size > ES_CAP) {
+    es.over = true; es.spilled = j;
+    const jar = document.querySelectorAll('.jar')[j]; jar.classList.add('shake'); setTimeout(() => jar.classList.remove('shake'), 400);
+    blip(150, 0.4, 'sawtooth', 0.09); buzz([30, 40, 30]);
+    try { if (es.score > (+localStorage.getItem('es-best') || 0)) localStorage.setItem('es-best', es.score); } catch (e) {}
+    document.getElementById('es-msg').textContent = `Spilled! That jar only had room for ${ES_CAP - esH(j)}. Final score ${es.score}.`;
+    document.getElementById('es-restart').hidden = false;
+    esRender(); return;
+  }
+  es.jars[j].push(p); es.queue.shift(); es.queue.push(esPiece());
+  blip(300 + esH(j) * 40, 0.07); buzz(10);
+  esRender();
+  const hs = [0, 1, 2].map(esH);
+  if (hs[0] === hs[1] && hs[1] === hs[2] && hs[0] >= es.line) {
+    es.busy = true;
+    const pay = hs[0] * 3 * (hs[0] - es.line + 1);
+    setTimeout(() => {
+      document.querySelectorAll('.jar').forEach(x => x.classList.add('cash'));
+      document.querySelectorAll('.kid').forEach(k => { k.textContent = '🤩'; k.classList.add('cheer'); });
+      [523, 659, 784, 1047].forEach((fq, k) => setTimeout(() => blip(fq, 0.14), k * 80)); buzz(40);
+      es.score += pay; es.cashes++;
+      const bonus = hs[0] > es.line ? ` (+${hs[0] - es.line} over the line, x${hs[0] - es.line + 1})` : '';
+      let note = `Fair and square! +${pay}${bonus}`;
+      if (es.cashes % 3 === 0 && es.line < 8) { es.line++; note += ` · Line rises to ${es.line}`; }
+      document.getElementById('es-msg').textContent = note;
+      setTimeout(() => {
+        es.jars = [[], [], []]; es.busy = false;
+        document.querySelectorAll('.jar').forEach(x => x.classList.remove('cash'));
+        document.querySelectorAll('.kid').forEach(k => k.classList.remove('cheer'));
+        esRender();
+      }, 550);
+    }, 220);
+  } else if (hs[0] === hs[1] && hs[1] === hs[2]) {
+    document.getElementById('es-msg').textContent = `Level, but below the line (${es.line}). Keep going.`;
+  }
+}
+
+/* ════════ BATCH RUN ════════ */
+const BR_COLS = 6, BR_ROWS = 7, BR_N = BR_COLS * BR_ROWS, BR_COLORS = 4, BR_GOAL = 40, BR_RUNS = 12;
+let br = null;
+const brNbrs = i => { const r = Math.floor(i / BR_COLS), c = i % BR_COLS, out = [];
+  if (r > 0) out.push(i - BR_COLS); if (r < BR_ROWS - 1) out.push(i + BR_COLS); if (c > 0) out.push(i - 1); if (c < BR_COLS - 1) out.push(i + 1); return out; };
+const brAdj = (a, b) => brNbrs(a).includes(b);
+// New orders lean toward a neighbor's color, so clusters grow and long runs show up.
+function brNewOrder(i, orders) {
+  if (Math.random() < 0.45) { const n = brNbrs(i); return orders[n[rand(n.length)]]; }
+  return rand(BR_COLORS);
+}
+function brInit() {
+  const block = document.getElementById('br-block');
+  for (let i = 0; i < BR_N; i++) { const h = document.createElement('div'); h.className = 'house'; h.dataset.i = i; h.innerHTML = '<div class="order"></div>'; block.appendChild(h); }
+  const van = document.createElement('div'); van.className = 'vanchip'; van.id = 'br-van'; van.textContent = '🚐'; block.appendChild(van);
+  document.getElementById('br-goal').textContent = BR_GOAL;
+  document.getElementById('br-restart').onclick = brNew;
+
+  const cellAt = (x, y) => { const el = document.elementFromPoint(x, y); const h = el && el.closest('.house'); return h ? +h.dataset.i : -1; };
+  let dragging = false;
+  block.addEventListener('pointerdown', e => { if (br.busy || br.over) return; audio(); dragging = true; br.path = []; brExtend(cellAt(e.clientX, e.clientY)); });
+  window.addEventListener('pointermove', e => { if (dragging) brExtend(cellAt(e.clientX, e.clientY)); });
+  window.addEventListener('pointerup', () => { if (!dragging) return; dragging = false; brGo(); });
+  window.addEventListener('resize', () => br && brRender());
+  brNew();
+}
+function brNew() {
+  const orders = []; for (let i = 0; i < BR_N; i++) orders.push(rand(BR_COLORS));
+  for (let i = 0; i < BR_N; i++) if (Math.random() < 0.35) orders[i] = brNewOrder(i, orders);
+  br = { orders, van: Math.floor(BR_ROWS / 2) * BR_COLS + 2, path: [], delivered: 0, runs: BR_RUNS, busy: false, over: false, got: new Set() };
+  document.getElementById('br-msg').textContent = 'Drag from the van through matching neighbors.';
+  document.getElementById('br-restart').hidden = true;
+  brRender();
+}
+function brCenter(i) {
+  const h = document.querySelectorAll('#br-block .house')[i];
+  return { x: h.offsetLeft + h.offsetWidth / 2, y: h.offsetTop + h.offsetHeight / 2 };
+}
+function brExtend(i) {
+  if (i < 0 || i === br.van) return;
+  const p = br.path;
+  if (p.length >= 2 && i === p[p.length - 2]) { p.pop(); blip(300, 0.04); brRender(); return; }
+  if (p.includes(i)) return;
+  const last = p.length ? p[p.length - 1] : br.van;
+  if (!brAdj(last, i)) return;
+  if (p.length && br.orders[i] !== br.orders[p[0]]) return;
+  p.push(i); blip(400 + p.length * 60, 0.05, 'square', 0.05); buzz(6);
+  brRender();
+}
+function brRender() {
+  const houses = document.querySelectorAll('#br-block .house');
+  const reach = br.path.length ? [] : brNbrs(br.van);
+  houses.forEach((h, i) => {
+    h.className = 'house';
+    if (br.path.includes(i)) h.classList.add('inpath');
+    if (reach.includes(i) && !br.busy && !br.over) h.classList.add('reach');
+    if (br.got.has(i)) h.classList.add('got');
+    if (i === br.van) h.classList.add('van');
+    h.querySelector('.order').style.background = COLORS[br.orders[i]];
+  });
+  const v = brCenter(br.van), van = document.getElementById('br-van');
+  van.style.left = v.x + 'px'; van.style.top = v.y + 'px';
+  const pts = [br.van, ...br.path].map(brCenter).map(c => `${c.x},${c.y}`).join(' ');
+  const col = br.path.length ? COLORS[br.orders[br.path[0]]] : 'transparent';
+  document.getElementById('br-svg').innerHTML = br.path.length && !br.busy ? `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>` : '';
+  document.getElementById('br-done').textContent = br.delivered;
+  document.getElementById('br-runs').textContent = br.runs;
+}
+function brGo() {
+  const path = br.path.slice();
+  if (!path.length) return;
+  br.busy = true; br.runs--;
+  path.forEach((cell, k) => setTimeout(() => {
+    br.van = cell; br.got.add(cell); br.delivered++;
+    blip(330 * Math.pow(1.06, k * 2), 0.09); buzz(12);
+    brRender();
+    if (k === path.length - 1) setTimeout(() => brFinish(path), 260);
+  }, 130 * (k + 1)));
+  br.path = []; brRender();
+}
+function brFinish(path) {
+  path.forEach(i => { br.orders[i] = brNewOrder(i, br.orders); });
+  br.got.clear(); br.busy = false;
+  const msg = document.getElementById('br-msg');
+  msg.textContent = path.length >= 5 ? `${path.length}-stop run! +1 run` : path.length >= 3 ? `${path.length} stops. Nice.` : `${path.length} stop${path.length > 1 ? 's' : ''}.`;
+  if (path.length >= 5) {
+    br.runs++;
+    const c = brCenter(br.van), t = document.createElement('div'); t.className = 'tip'; t.textContent = '+1 run';
+    t.style.left = c.x + 'px'; t.style.top = c.y + 'px'; document.getElementById('br-block').appendChild(t); setTimeout(() => t.remove(), 750);
+    [660, 880].forEach((fq, k) => setTimeout(() => blip(fq, 0.12), k * 90));
+  }
+  if (br.delivered >= BR_GOAL) {
+    br.over = true; msg.textContent = `Route done with ${br.runs} run${br.runs === 1 ? '' : 's'} to spare!`;
+    [523, 659, 784, 1047].forEach((fq, k) => setTimeout(() => blip(fq, 0.15), k * 90));
+    document.getElementById('br-restart').hidden = false;
+  } else if (br.runs <= 0) {
+    br.over = true; msg.textContent = `Out of runs at ${br.delivered}/${BR_GOAL}. Try again?`;
+    blip(180, 0.3, 'sawtooth', 0.08);
+    document.getElementById('br-restart').hidden = false;
+  }
+  brRender();
+}
+
+start('defrag');
+</script>
+</body>
+</html>
