@@ -62,6 +62,17 @@ td.all{border-left:1px solid var(--line)}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .bar .acts{display:flex;gap:8px}
 .muted{color:var(--soft)}
+h2{font-family:var(--display);font-weight:600;font-size:20px;margin:6px 0 0}
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+table.people{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}
+.people th,.people td{padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+.people thead th{position:static;font-weight:600;font-size:12px;color:var(--soft);vertical-align:bottom;min-width:0}
+.people thead tr.grp th{color:var(--fg);font-family:var(--display);font-size:13px;text-align:center;border-bottom:0;padding-bottom:0}
+.people th:first-child,.people td:first-child{text-align:left;position:sticky;left:0;background:var(--panel)}
+.people tbody tr:last-child td{border-bottom:0}
+.people td.sep,.people th.sep{border-left:1px solid var(--line)}
+.people .dd{color:var(--diff);font-weight:600}.people .ff{color:var(--fun);font-weight:600}.people .xx{color:var(--frus);font-weight:600}
+.people .nil{color:var(--soft)}
 </style>
 </head>
 <body>
@@ -130,8 +141,9 @@ function build(rows) {
     const id = String(r.device || "").slice(0, 8);
     if (!id) continue;
     const st = r.stats || {};
-    if (!devs.has(id)) devs.set(id, { id, cells: {}, furthest: 0, last: "", phone: "", tz: "", build: "", n_rated: 0 });
+    if (!devs.has(id)) devs.set(id, { id, cells: {}, furthest: 0, last: "", phone: "", tz: "", build: "", n_rated: 0, sessions: new Set(), runs: {} });
     const d = devs.get(id);
+    if (r.session) d.sessions.add(String(r.session));
     const at = String(r.receivedAt || "").slice(0, 16);
     if (at > d.last) d.last = at;
     d.build = String(r.version || d.build);
@@ -142,6 +154,11 @@ function build(rows) {
     if (!m) continue;
     const n = Number(m[1]);
     const won = st.record !== "play" || st.outcome === "won";
+    // The job's latest record stands for it (the game's counts add up over its tries until a win).
+    // A win's seconds_active already holds every try; an unfinished try adds this one's seconds.
+    const run = { secs: (Number(st.seconds_active) || 0) + (won ? 0 : Number(st.seconds_this_try) || 0) };
+    for (const [k, f] of [["hints", "hints"], ["calls", "radio"], ["undos", "undos"], ["restarts", "restarts"]]) if (f in st) run[k] = Number(st[f]) || 0;
+    if (!(d.runs[n] && d.runs[n].won && !won)) d.runs[n] = { ...run, won };
     const c = d.cells[n] || (d.cells[n] = { won: false, played: true });
     if (won) { c.won = true; d.furthest = Math.max(d.furthest, n); }
     if (r.title) { c.title = String(r.title); T[n] = String(r.title); }
@@ -153,6 +170,7 @@ function build(rows) {
   }
   // (A phone with only a couple of records is a test run, not a tester.)
   P = [...devs.values()].filter(d => Object.keys(d.cells).length >= 3).sort((a, b) => b.furthest - a.furthest);
+  for (const d of P) d.n_rated = Object.values(d.cells).filter(c => c.d || c.f || c.x).length;     // (jobs rated, not ratings sent)
 }
 
 function rings(d, f, x, size = 52) {
@@ -180,6 +198,10 @@ function render() {
       <div class="acts"><button class="btn quiet" type="button" id="refresh">Refresh</button><button class="btn quiet" type="button" id="out">Forget key</button></div>
     </div>
     <p class="sub">Each column is one tester's phone, each row a job. Shaded cells are jobs that tester has reached. Where they rated a job, three nested rings show their scores out of 5: the further round a ring goes, the higher the score. Hover or tap a cell for the numbers, or a job number for its title.</p>
+    <h2>Testers</h2>
+    <div class="tscroll"><table class="people" id="people"></table></div>
+    <p class="foot">Ratings are out of 5, shown as each tester's average / median over the jobs they rated. "Job ${PAST} on" leaves out jobs 1 to ${PAST - 1}, the tutorial and easy jobs, where help is still unlimited. Time and help are per job played, from each job's latest record (all its tries together); help counts only start where a tester's build began sending them.</p>
+    <h2>Job by job</h2>
     <div class="key" id="key"></div>
     <div class="scroller"><table id="grid"></table></div>
     <p class="foot" id="foot"></p>`;
@@ -193,6 +215,7 @@ function render() {
     [dot(true), 'Beaten, not rated', ''],
     [dot(false), 'Played, not beaten', ''],
   ].map(([s, a, b]) => `<div class="item">${s}<div><b>${a}</b>${b ? `<small>${b}</small>` : ''}</div></div>`).join('');
+  peopleTable();
   if (!P.length) { document.getElementById('grid').innerHTML = '<tbody><tr><td class="muted" style="padding:20px">No tester records yet.</td></tr></tbody>'; return; }
   const maxJob = Math.max(...P.map(p => p.furthest), ...P.flatMap(p => Object.keys(p.cells).map(Number)));
   let h = '<thead><tr><th><span class="ph">Job</span></th>';
@@ -222,6 +245,39 @@ function render() {
   grid.addEventListener('pointermove', e => { const td = e.target.closest('td, th[data-job]'); td ? show(e, td) : hide(); });
   grid.addEventListener('pointerleave', hide);
   document.querySelector('.scroller').addEventListener('scroll', hide);
+}
+
+// The testers table: one row each. Ratings averaged over all their rated jobs, and again from job PAST on.
+const PAST = 11;
+function peopleTable() {
+  const mean = v => v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  const f1 = v => v == null ? '<span class="nil">–</span>' : v.toFixed(1);
+  const secs = v => v == null ? '<span class="nil">–</span>' : (v >= 60 ? `${Math.floor(v / 60)}:${String(Math.round(v % 60)).padStart(2, '0')}` : `${Math.round(v)}s`);
+  let h = `<thead><tr class="grp"><th></th><th></th><th></th><th></th><th class="sep" colspan="3">Ratings, all jobs (average / median)</th><th class="sep" colspan="3">Ratings, job ${PAST} on (average / median)</th><th class="sep" colspan="5">Per job played</th></tr>
+    <tr><th>Tester</th><th>Furthest job</th><th>Sessions</th><th>Jobs rated</th>
+    <th class="sep">Difficulty</th><th>Fun</th><th>Frustration</th>
+    <th class="sep">Difficulty</th><th>Fun</th><th>Frustration</th>
+    <th class="sep">Time</th><th>Hints</th><th>Calls</th><th>Undos</th><th>Restarts</th></tr></thead><tbody>`;
+  P.forEach((p, i) => {
+    const rated = Object.entries(p.cells).filter(([, c]) => c.d || c.f || c.x).map(([n, c]) => ({ n: +n, ...c }));
+    const later = rated.filter(c => c.n >= PAST);
+    // Each rating cell: "average / median" of that score over the jobs.
+    const av = (list, k) => {
+      const v = list.map(c => c[k]).filter(Boolean).sort((a, b) => a - b);
+      if (!v.length) return '<span class="nil">–</span>';
+      const mid = v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2;
+      return `${mean(v).toFixed(1)} <span class="muted">/</span> ${mid.toFixed(1)}`;
+    };
+    const runs = Object.values(p.runs);
+    const per = k => mean(runs.filter(r => k in r).map(r => r[k]));
+    const tz = tzName(p.tz);
+    h += `<tr><td><b>Tester ${i + 1}</b> <span class="muted">${esc(phoneName(p.phone))}${tz ? ' · ' + esc(tz) : ''}</span></td>
+      <td>${p.furthest}</td><td>${p.sessions.size}</td><td>${rated.length}</td>
+      <td class="sep dd">${av(rated, 'd')}</td><td class="ff">${av(rated, 'f')}</td><td class="xx">${av(rated, 'x')}</td>
+      <td class="sep dd">${av(later, 'd')}</td><td class="ff">${av(later, 'f')}</td><td class="xx">${av(later, 'x')}</td>
+      <td class="sep">${secs(per('secs'))}</td><td>${f1(per('hints'))}</td><td>${f1(per('calls'))}</td><td>${f1(per('undos'))}</td><td>${f1(per('restarts'))}</td></tr>`;
+  });
+  document.getElementById('people').innerHTML = h + '</tbody>';
 }
 
 // Tooltip
