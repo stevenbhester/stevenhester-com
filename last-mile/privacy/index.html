@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 <link rel="canonical" href="https://www.stevenhester.com/last-mile/privacy/">
 <meta name="theme-color" content="#f3ead9">
-<meta name="description" content="What Last Mile, the delivery puzzle for iPhone, collects, why, and how to have it deleted. Short version: almost nothing.">
+<meta name="description" content="What Last Mile, the delivery puzzle for iPhone, collects, why, and how to turn it off or have it deleted. Short version: anonymous play stats, nothing about who you are.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap">
@@ -125,8 +125,8 @@ footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
   <header class="title">
     <span class="sign">Privacy</span>
     <h1>What Last Mile keeps</h1>
-    <p class="lede">Last Mile is a small iPhone puzzle game made by one person, Steven Hester, as Door Bowl Games. It has no accounts, no ads and no tracking, and nothing about you is ever sold. Here is everything it does collect, and why.</p>
-    <p class="dated">Last updated 13 November 2026</p>
+    <p class="lede">Last Mile is a small iPhone puzzle game made by one person, Steven Hester, as Door Bowl Games. It has no accounts, no real ads and no tracking, and nothing about you is ever sold. Here is everything it does collect, and why.</p>
+    <p class="dated">Last updated 15 November 2026</p>
   </header>
   <div class="road" aria-hidden="true"></div>
 
@@ -134,8 +134,9 @@ footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
     <h2 id="short">The short version</h2>
     <ul>
       <li>Your progress and settings stay on your phone. There's no account to sign in to.</li>
-      <li>The game only sends something about you when you send Steven a bug report or feedback, and then only what's listed below.</li>
-      <li>There are no ad networks, analytics or tracking in the game. The ads and Dollaroos you see are placeholders for ads and in-app purchases the game might have one day. For now they're pretend: no advertiser is involved and no real money changes hands.</li>
+      <li>The game sends Steven anonymous play stats: how each job went (time, undos, hints, retries, how it ended), with your phone model and time zone. They go under a random id the game makes up, never your name, email or Apple ID. You can turn them off in Options.</li>
+      <li>It also sends your daily puzzle results (for the "How everyone did" page), job ratings if you turn rating on, and bug reports or feedback when you write one. Each is listed below.</li>
+      <li>There are no ad networks, third-party analytics or tracking in the game. The ads you see are placeholders for ads the game might have one day. For now they're pretend: no advertiser is involved and no real money changes hands.</li>
       <li>If you sign up on the website, your email (and phone number, if you give one) is used to tell you about Last Mile and nothing else.</li>
       <li>You can have anything you've sent deleted. Just ask, at <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#108;&#97;&#115;&#116;&#109;&#105;&#108;&#101;&#64;&#115;&#116;&#101;&#118;&#101;&#110;&#104;&#101;&#115;&#116;&#101;&#114;&#46;&#99;&#111;&#109;">&#108;&#97;&#115;&#116;&#109;&#105;&#108;&#101;&#64;&#115;&#116;&#101;&#118;&#101;&#110;&#104;&#101;&#115;&#116;&#101;&#114;&#46;&#99;&#111;&#109;</a>.</li>
     </ul>
@@ -145,33 +146,54 @@ footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
     <h2 id="game">In the game</h2>
 
     <h3>Your progress and settings</h3>
-    <p>Levels done, stars, gas, Dollaroos, unlocked paint jobs and your options are saved on your phone and nowhere else. Deleting the app deletes them.</p>
+    <p>Jobs done, gas, unlocked rides and paint jobs, and your options are saved on your phone and nowhere else. Deleting the app deletes them.</p>
+
+    <h3>Your random player id</h3>
+    <p>The first time the game sends any of the things below, it makes up a random code (32 letters and numbers) and keeps it on your phone. Everything it sends goes under that code, so Steven can tell that two results came from the same phone without knowing whose phone it is. It isn't connected to your name, email, Apple ID or the phone's own identifiers, and it's never used to track you anywhere else. Deleting the app deletes it; a reinstall starts with a new one.</p>
+
+    <h3>Play stats</h3>
+    <p>When you finish a job, give up on it, skip it or switch away from the game in the middle of one, the game sends a short record of how it went, so Steven can see which jobs are too hard, too easy or confusing. A record contains:</p>
+    <div class="sent">
+      <div><b>The job</b><span>Which job, daily puzzle or detour it was, and which version of its layout.</span></div>
+      <div><b>How it went</b><span>Whether it was won, left, skipped or interrupted; time spent; tries and restarts; undos and hints used; how often the van got stuck; how far along the route you got.</span></div>
+      <div><b>Your game</b><span>How many jobs you've done, gas, and the settings that change how you play (steering, headlights, sideways and the like).</span></div>
+      <div><b>Your phone</b><span>Phone model (for example "iPhone16,2"), iOS version, and the time zone the phone's clock is set to. Nothing more precise about where you are: no GPS and no city.</span></div>
+      <div><b>Ids</b><span>Your random player id, a random id for this time you opened the app, and the game version.</span></div>
+    </div>
+    <p>To stop sending them, turn off <b>Send play stats</b> in Options. Records already sent stay until deleted (see the end of this page).</p>
+
+    <h3>Job ratings</h3>
+    <p>If you turn on <b>Rate jobs</b> (it's off to start with, and offered once after job 5), a short card after each win asks how hard, how fun and how frustrating the job was, with a few tags and an optional note. Your answers go with that job's play stats record. Notes are read by Steven only; don't put anything personal in them.</p>
+
+    <h3>Daily puzzle results</h3>
+    <p>When you play the daily puzzle, the game sends your result for the day: solved or not, score, time, tries, route length, undos, the badges you earned and the game version, under your random player id. Everyone's results are added up for the "How everyone did" page, which only ever shows totals, never anyone's own result.</p>
 
     <h3>Feedback and bug reports</h3>
     <p>Options has a <b>Feedback / Bug report</b> button. Nothing is sent until you write something and tap <b>Submit to Steven</b>. A report contains:</p>
     <div class="sent">
       <div><b>Your message</b><span>What you typed, and whether it's a bug or an idea.</span></div>
-      <div><b>Where you were</b><span>For example "Level 12" or "Map".</span></div>
+      <div><b>Where you were</b><span>For example "Level 12" (job 12) or "Map".</span></div>
       <div><b>A screenshot</b><span>Only if "Include a screenshot" is ticked. It's ticked to start with, and the card shows you the picture, so untick it to leave it out.</span></div>
-      <div><b>The game's recent log</b><span>The game's own notes on what it did lately: screens opened, levels played, errors. It doesn't contain anything from outside the game.</span></div>
-      <div><b>Game and phone details</b><span>Game version, phone model, iOS version, screen size, a summary of your progress (levels done, gas, Dollaroos) and your settings.</span></div>
+      <div><b>The game's recent log</b><span>The game's own notes on what it did lately: screens opened, jobs played, errors. It doesn't contain anything from outside the game.</span></div>
+      <div><b>Game and phone details</b><span>Game version, phone model, iOS version, screen size, the phone's time zone, a summary of your progress (jobs done, gas) and your settings.</span></div>
+      <div><b>Your random player id</b><span>So Steven can look at the play stats that go with your report, or delete everything under that id if you ask.</span></div>
     </div>
     <p>It goes to Steven's own server, which files it in a private GitHub repository that only Steven can see, with the screenshot and log stored alongside. Your IP address is kept in the server's memory for up to a day, only to stop anyone flooding it with reports, and isn't saved with the report. Reports are kept until Steven deletes them. After sending, the game shows a report number; quote it if you'd like yours deleted.</p>
 
     <h3>Checking for updates</h3>
     <p>When you open the game it downloads a small file from GitHub that names the newest version, so it can tell you when there's an update. Nothing about you is sent with it, though GitHub sees the request like any visit to a website.</p>
 
-    <h3>Daily reminders</h3>
-    <p>If you allow notifications, the game schedules its daily puzzle reminders on your phone. They don't go through any server.</p>
+    <h3>Reminders</h3>
+    <p>If you allow notifications, the game schedules its reminders (a new daily puzzle, your streak, a big update) on your phone. You choose which ones under <b>Notifications</b> in Options. They're scheduled on the phone itself and don't go through any server.</p>
 
     <h3>Sharing a result</h3>
-    <p>Sharing opens Messages with your result filled in, or copies it. You choose whether and to whom it's sent; the game doesn't send it anywhere itself.</p>
+    <p>Sharing opens your phone's share sheet with your result (a picture and a line of text) filled in. You choose whether, where and to whom it's sent; the game doesn't send it anywhere itself.</p>
 
-    <h3>Placeholder ads and Dollaroos</h3>
-    <p>The ads you watch for extra undos and the Door Bowl Dollaroos you spend on gas are stand-ins. They hold the places where Last Mile might one day show real ads or sell things through in-app purchases, so the game can be tested with them in place. Today, they're entirely pretend:</p>
+    <h3>Placeholder ads and purchases</h3>
+    <p>The ads you watch for gas and the "Last Mile Premium" you'll see mentioned are stand-ins. They hold the places where Last Mile might one day show real ads or sell things through in-app purchases, so the game can be tested with them in place. Today, they're entirely pretend:</p>
     <ul>
-      <li>The ads are built into the game (a pretend trailer for Steven's other game). No ad network is involved, nothing is downloaded, and nothing about you goes to an advertiser.</li>
-      <li>Dollaroos are play money. They can't be bought with real money or cashed out, and the game has no payment code at all.</li>
+      <li>The ads are built into the game: trailers for Last Mile itself and for Steven's other game, Frontiers Celestia, and spoof commercials from Hoardly Inc., the game's made-up villain company (you can turn those off in Options). No ad network is involved, nothing is downloaded, and nothing about you goes to an advertiser. The game remembers the last few ads you saw, on your phone, so it doesn't show you the same one again too soon.</li>
+      <li>Nothing can be bought with real money, and the game has no payment code at all. A "Playtest now" button in the Frontiers Celestia trailer just opens that game's page on this website.</li>
     </ul>
     <p>If real ads or purchases are added later, this policy will be updated before they arrive, saying which ad network or payment service is involved and what it collects. Any purchases would go through Apple's own in-app purchase system, so Steven would never see your card details.</p>
   </section>
@@ -198,7 +220,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
     <h2 id="who">Who else is involved</h2>
     <p>Steven doesn't sell, rent or share your information, and none of it is used for advertising. These services do hold or carry it for him:</p>
     <ul>
-      <li><b>Heroku</b> (Salesforce) runs Steven's server and the database that holds website sign-ups.</li>
+      <li><b>Heroku</b> (Salesforce) runs Steven's server and the database that holds play stats, job ratings, daily results and website sign-ups. Like any server it sees your IP address when the game sends something; it's kept in memory for a short while, only to stop anyone flooding the server, and never stored with what you sent.</li>
       <li><b>GitHub</b> stores bug reports in a private repository, hosts this website and serves the update-check file.</li>
       <li><b>Apple</b> runs TestFlight and, later, the App Store.</li>
       <li><b>Google Fonts</b> serves the website's fonts.</li>
@@ -210,6 +232,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
     <h2 id="choices">Deleting things, and getting in touch</h2>
     <ul>
       <li><b>Game progress:</b> delete the app.</li>
+      <li><b>Play stats, ratings and daily results:</b> turn off <b>Send play stats</b> and <b>Rate jobs</b> in Options to stop sending them. To have what's been sent deleted, send a bug report from the game saying so (it carries your random player id, which is how Steven finds yours), or email Steven with your phone model and roughly when you played. Steven can't tell which records are yours any other way.</li>
       <li><b>A bug report or feedback:</b> ask Steven, with the report number if you have it, and it'll be deleted.</li>
       <li><b>Website sign-up:</b> reply to any message about Last Mile, or email <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#108;&#97;&#115;&#116;&#109;&#105;&#108;&#101;&#64;&#115;&#116;&#101;&#118;&#101;&#110;&#104;&#101;&#115;&#116;&#101;&#114;&#46;&#99;&#111;&#109;">&#108;&#97;&#115;&#116;&#109;&#105;&#108;&#101;&#64;&#115;&#116;&#101;&#118;&#101;&#110;&#104;&#101;&#115;&#116;&#101;&#114;&#46;&#99;&#111;&#109;</a>, and you'll be taken off the list.</li>
     </ul>
