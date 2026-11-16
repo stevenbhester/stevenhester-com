@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Game sketches: Defrag, Even Steven, Batch Run</title>
+<title>Game sketches</title>
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="theme-color" content="#f3ead9">
@@ -97,23 +97,76 @@ header p { color: var(--ink-soft); margin-top: 6px; }
 .block svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
 .tip { position: absolute; pointer-events: none; z-index: 4; font: 700 14px var(--f-display); color: var(--accent-deep); transform: translate(-50%, -50%); animation: rise .7s forwards; }
 @keyframes rise { to { transform: translate(-50%, -160%); opacity: 0; } }
+
+/* ── tab groups + canvas games ── */
+.tabgroup { margin: 18px 0 0; }
+.tabgroup + .tabgroup { margin-top: 12px; }
+.tabgroup small { display: block; font: 700 12px var(--f-mono); color: var(--ink-soft); text-transform: uppercase; letter-spacing: .08em; margin: 0 4px 7px; }
+.tabgroup .tabs { margin: 0; }
+.tabs.old .tab { font-size: 15px; padding: 10px 6px 11px; }
+#panels { margin-top: 16px; }
+canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: manipulation; user-select: none; -webkit-user-select: none; cursor: pointer; }
+.how.one { font-size: 15.5px; }
+.seeds { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+.seed { border: 0; border-radius: 14px; padding: 10px 0 9px; font: 700 17px/1 var(--f-display); color: #fff; cursor: pointer; text-shadow: 0 1px 0 rgba(0,0,0,.25);
+  box-shadow: 0 4px 0 rgba(0,0,0,.22); -webkit-tap-highlight-color: transparent; transition: opacity .2s, transform .08s; }
+.seed:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.22); }
+.seed[disabled] { opacity: .28; cursor: default; }
 </style>
 </head>
 <body>
 <main class="wrap">
   <header>
-    <h1>Three game sketches</h1>
+    <h1>Game sketches</h1>
     <p>Rough playable versions of each idea. Placeholder art, real rules.</p>
   </header>
 
-  <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" aria-selected="true" data-tab="defrag">Defrag</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="even">Even Steven</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="batch">Batch Run</button>
-  </nav>
+  <div class="tabgroup"><small>New</small>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="boba">Boba Burst</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="drop">Drop Ship</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="bloom">Bloom</button>
+    </nav>
+  </div>
+  <div class="tabgroup"><small>Earlier</small>
+    <nav class="tabs old" role="tablist">
+      <button class="tab" role="tab" aria-selected="false" data-tab="defrag">Defrag</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="even">Even Steven</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="batch">Batch Run</button>
+    </nav>
+  </div>
+  <div id="panels">
+
+  <!-- BOBA BURST -->
+  <section class="card" id="p-boba">
+    <p class="how one" style="margin-top:0"><b>Tap a pearl to plump it.</b> A full pearl bursts and squirts four ways, plumping whatever it hits. Clear the tray before you run out of taps. Big chains earn taps back.</p>
+    <div class="hud"><span>Tray <strong id="bb-tray">1</strong>/5</span><span>Taps left <strong id="bb-taps">0</strong></span></div>
+    <canvas class="game" id="bb-cv"></canvas>
+    <p class="msg" id="bb-msg"></p>
+    <div class="row"><button class="btn plain" id="bb-retry">Retry tray</button><button class="btn" id="bb-next" hidden>Next tray</button></div>
+  </section>
+
+  <!-- DROP SHIP -->
+  <section class="card" id="p-drop" hidden>
+    <p class="how one" style="margin-top:0"><b>Tap along the top to drop packages.</b> They bounce down into the trucks. A full truck drives off and a new one pulls in. Gold pegs split a package in two. Ship 6 trucks before you run out.</p>
+    <div class="hud"><span>Shipped <strong id="ds-shipped">0</strong>/6</span><span>Packages <strong id="ds-stock">0</strong></span></div>
+    <canvas class="game" id="ds-cv"></canvas>
+    <p class="msg" id="ds-msg"></p>
+    <div class="row"><button class="btn" id="ds-restart" hidden>Play again</button></div>
+  </section>
+
+  <!-- BLOOM -->
+  <section class="card" id="p-bloom" hidden>
+    <p class="how one" style="margin-top:0"><b>Tap a color.</b> Every bud of that color touching your garden bursts into bloom, and so does any bud touching those. Get the whole plot blooming before you run out of taps.</p>
+    <div class="hud"><span>Garden <strong id="bl-n">1</strong></span><span>Taps left <strong id="bl-taps">0</strong></span></div>
+    <canvas class="game" id="bl-cv"></canvas>
+    <div class="seeds" id="bl-seeds"></div>
+    <p class="msg" id="bl-msg"></p>
+    <div class="row"><button class="btn plain" id="bl-retry">Retry</button><button class="btn" id="bl-new">New garden</button></div>
+  </section>
 
   <!-- DEFRAG -->
-  <section class="card" id="p-defrag">
+  <section class="card" id="p-defrag" hidden>
     <p class="pitch">Remember watching your PC defragment? Now you run it.</p>
     <div class="how"><b>How to play</b>
       <ol>
@@ -162,6 +215,8 @@ header p { color: var(--ink-soft); margin-top: 6px; }
     <div class="row"><button class="btn" id="br-restart" hidden>Play again</button></div>
   </section>
 
+  </div>
+
   <p class="note">Sound on for the full effect. Works best on a phone.</p>
 </main>
 
@@ -181,14 +236,471 @@ const rand = n => Math.floor(Math.random() * n);
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 const COLORS = ['#ff5d5d', '#4d8dff', '#ffc53d', '#a26bf5', '#35c27a', '#ff7ab8'];
 
-/* ── tabs ── */
-const started = {};
+/* ── tabs + frame loop ── */
+const started = {}, loops = {};
+let current = null, lastT = 0, MUTE = false;
+const KEYS = ['boba', 'drop', 'bloom', 'defrag', 'even', 'batch'];
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === t));
-  ['defrag', 'even', 'batch'].forEach(k => document.getElementById('p-' + k).hidden = k !== t.dataset.tab);
+  KEYS.forEach(k => document.getElementById('p-' + k).hidden = k !== t.dataset.tab);
   start(t.dataset.tab);
 }));
-function start(k) { if (started[k]) return; started[k] = true; ({ defrag: dfInit, even: esInit, batch: brInit })[k](); }
+function start(k) {
+  current = k;
+  if (started[k]) return; started[k] = true;
+  ({ boba: bbInit, drop: dsInit, bloom: blInit, defrag: dfInit, even: esInit, batch: brInit })[k]();
+}
+requestAnimationFrame(function raf(t) {
+  const dt = Math.min(0.033, (t - lastT) / 1000 || 0); lastT = t;
+  if (loops[current]) loops[current](dt);
+  requestAnimationFrame(raf);
+});
+
+/* ── canvas helpers ── */
+function fitCanvas(cv, w, h) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  cv.width = w * dpr; cv.height = h * dpr; cv.style.aspectRatio = w + ' / ' + h;
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return ctx;
+}
+function cvPoint(cv, e, w) { const r = cv.getBoundingClientRect(), s = w / r.width; return { x: (e.clientX - r.left) * s, y: (e.clientY - r.top) * s }; }
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+const TAU = Math.PI * 2;
+const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28];
+function note(i, dur = 0.12, vol = 0.1) { if (!MUTE) blip(262 * Math.pow(2, PENTA[Math.min(i, PENTA.length - 1)] / 12), dur, 'triangle', vol); }
+function Fx() { this.p = []; this.txt = []; }
+Fx.prototype.burst = function (x, y, color, n, spd, size, g) {
+  for (let k = 0; k < n; k++) {
+    const a = Math.random() * TAU, s = spd * (0.4 + Math.random() * 0.8);
+    this.p.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0, max: 0.35 + Math.random() * 0.35,
+      color: Array.isArray(color) ? color[rand(color.length)] : color, size: size * (0.6 + Math.random() * 0.8), g: g || 0 });
+  }
+};
+Fx.prototype.confetti = function (w) {
+  for (let k = 0; k < 80; k++) this.p.push({ x: Math.random() * w, y: -10 - Math.random() * 80, vx: (Math.random() - 0.5) * 90, vy: 60 + Math.random() * 140,
+    life: 0, max: 1.6 + Math.random(), color: COLORS[rand(COLORS.length)], size: 3 + Math.random() * 3, g: 170 });
+};
+Fx.prototype.say = function (x, y, text, color) { this.txt.push({ x, y, text, color: color || '#fff', life: 0 }); };
+Fx.prototype.step = function (dt) {
+  for (const q of this.p) { q.life += dt; q.vy += q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; }
+  this.p = this.p.filter(q => q.life < q.max);
+  for (const t of this.txt) { t.life += dt; t.y -= 34 * dt; }
+  this.txt = this.txt.filter(t => t.life < 1.1);
+};
+Fx.prototype.draw = function (ctx) {
+  for (const q of this.p) { ctx.globalAlpha = 1 - q.life / q.max; ctx.fillStyle = q.color; ctx.beginPath(); ctx.arc(q.x, q.y, q.size, 0, TAU); ctx.fill(); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const t of this.txt) {
+    const s = Math.min(1, t.life * 8);
+    ctx.globalAlpha = Math.min(1, (1.1 - t.life) * 3); ctx.font = `700 ${Math.round(22 * s)}px Fredoka, system-ui, sans-serif`;
+    ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(40,30,55,.75)'; ctx.strokeText(t.text, t.x, t.y); ctx.fillStyle = t.color; ctx.fillText(t.text, t.x, t.y);
+  }
+  ctx.globalAlpha = 1;
+};
+
+/* ════════ BOBA BURST ════════ */
+const BB_C = 5, BB_R = 6, BB_S = 72, BB_W = 360, BB_H = 432, BB_TICK = 0.095;
+const BB_TRAYS = [
+  { empty: 0.20, w: [0.42, 0.30, 0.28] },
+  { empty: 0.22, w: [0.48, 0.30, 0.22] },
+  { empty: 0.25, w: [0.52, 0.30, 0.18] },
+  { empty: 0.27, w: [0.56, 0.29, 0.15] },
+  { empty: 0.30, w: [0.60, 0.28, 0.12] },
+];
+const BB_COL = ['', '#b9a3ff', '#ff8fb8', '#ffb23d'], BB_RAD = [0, 14, 21, 28];
+let bb = null, bbCtx = null;
+
+function bbBurst(st, i, ev) {
+  st.grid[i] = 0; st.bursts++;
+  const c = i % BB_C, r = (i / BB_C) | 0;
+  [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => st.shots.push({ c, r, dx, dy }));
+  if (ev) ev.bursts.push(i);
+}
+// One beat: every flying drop moves a cell and plumps whatever it lands on.
+function bbTick(st, ev) {
+  const next = [], pend = [];
+  for (const s of st.shots) {
+    s.c += s.dx; s.r += s.dy;
+    if (s.c < 0 || s.c >= BB_C || s.r < 0 || s.r >= BB_R) continue;
+    const i = s.r * BB_C + s.c;
+    if (st.grid[i] > 0) { st.grid[i]++; if (ev) ev.hits.push(i); if (st.grid[i] >= 4 && !pend.includes(i)) pend.push(i); continue; }
+    next.push(s);
+  }
+  st.shots = next;
+  pend.forEach(i => bbBurst(st, i, ev));
+}
+function bbChain(grid, i) {
+  const st = { grid, shots: [], bursts: 0 };
+  grid[i]++; if (grid[i] >= 4) bbBurst(st, i);
+  let guard = 0; while (st.shots.length && guard++ < 500) bbTick(st);
+  return st.bursts;
+}
+// A simple player: pop the full pearl with the biggest chain, else plump the biggest pearl.
+function bbBot(grid0) {
+  const g = grid0.slice(); let taps = 0, spent = 0;
+  while (g.some(v => v > 0) && spent < 300) {
+    let best = -1, bestB = -1;
+    for (let i = 0; i < g.length; i++) { if (g[i] !== 3) continue; const b = bbChain(g.slice(), i); if (b > bestB) { bestB = b; best = i; } }
+    if (best < 0) { let hi = 0; for (let i = 0; i < g.length; i++) if (g[i] > hi) { hi = g[i]; best = i; } }
+    const b = bbChain(g, best); spent++; taps += 1 - Math.floor(b / 4);
+  }
+  return taps;
+}
+function bbGenerate(n) {
+  const t = BB_TRAYS[n], grid = [];
+  for (let i = 0; i < BB_C * BB_R; i++) {
+    if (Math.random() < t.empty) { grid.push(0); continue; }
+    const x = Math.random(); grid.push(x < t.w[0] ? 1 : x < t.w[0] + t.w[1] ? 2 : 3);
+  }
+  if (!grid.includes(3)) grid[rand(grid.length)] = 3;
+  return grid;
+}
+function bbInit() {
+  const cv = document.getElementById('bb-cv'); bbCtx = fitCanvas(cv, BB_W, BB_H);
+  cv.addEventListener('pointerdown', e => { const p = cvPoint(cv, e, BB_W); bbTap(p.x, p.y); });
+  document.getElementById('bb-retry').onclick = () => bbLoad(bb.tray, bb.start);
+  document.getElementById('bb-next').onclick = () => bbLoad((bb.tray + 1) % BB_TRAYS.length);
+  loops.boba = bbFrame;
+  bbLoad(0);
+}
+function bbLoad(tray, grid) {
+  const start = grid || bbGenerate(tray);
+  const budget = Math.max(5, bbBot(start) + 3);
+  bb = { tray, start, grid: start.slice(), shots: [], bursts: 0, taps: budget, budget, acc: 0, busy: false, over: false,
+    sc: start.map(() => 0), shake: 0, rings: [], fx: new Fx(), t: 0, intro: 0 };
+  document.getElementById('bb-tray').textContent = tray + 1;
+  document.getElementById('bb-msg').textContent = '';
+  document.getElementById('bb-next').hidden = true;
+  bbHud();
+}
+function bbHud() { document.getElementById('bb-taps').textContent = bb.taps; }
+const bbXY = i => ({ x: (i % BB_C) * BB_S + BB_S / 2, y: ((i / BB_C) | 0) * BB_S + BB_S / 2 });
+function bbPopFx(i) {
+  const { x, y } = bbXY(i);
+  bb.fx.burst(x, y, ['#ffb23d', '#ffd98a', '#fff1d6'], 12, 190, 4.5);
+  bb.rings.push({ x, y, life: 0 });
+  bb.shake = Math.min(9, bb.shake + 2.2);
+  blip(240 * Math.pow(1.07, Math.min(bb.bursts, 24)), 0.13, 'triangle', 0.13); buzz(10);
+}
+function bbTap(x, y) {
+  if (!bb || bb.over || bb.busy) return;
+  const c = Math.min(BB_C - 1, (x / BB_S) | 0), r = Math.min(BB_R - 1, (y / BB_S) | 0), i = r * BB_C + c;
+  audio();
+  if (bb.grid[i] === 0) { blip(150, 0.06, 'square', 0.04); return; }
+  bb.taps--; bb.bursts = 0; bb.grid[i]++; bb.sc[i] = 1.45;
+  blip(330 + bb.grid[i] * 70, 0.07); buzz(8);
+  if (bb.grid[i] >= 4) { bbBurst(bb, i); bbPopFx(i); }
+  bb.acc = 0; bb.busy = bb.shots.length > 0;
+  bbHud();
+  if (!bb.busy) bbSettle();
+}
+function bbSettle() {
+  const n = bb.bursts, bonus = Math.floor(n / 4);
+  if (bonus) { bb.taps += bonus; bb.fx.say(BB_W / 2, BB_H / 2, `Chain x${n}!  +${bonus} tap${bonus > 1 ? 's' : ''}`, '#ffe08a'); note(8); setTimeout(() => note(10), 90); }
+  else if (n >= 2) bb.fx.say(BB_W / 2, BB_H / 2, `Chain x${n}`, '#fff');
+  const msg = document.getElementById('bb-msg');
+  if (!bb.grid.some(v => v > 0)) {
+    bb.over = true; bb.fx.confetti(BB_W);
+    msg.textContent = bb.tray === BB_TRAYS.length - 1 ? 'Every tray cleared!' : `Tray cleared with ${bb.taps} tap${bb.taps === 1 ? '' : 's'} to spare!`;
+    [0, 2, 4, 7].forEach((k, j) => setTimeout(() => note(k + 5, 0.18), j * 100));
+    const nx = document.getElementById('bb-next'); nx.hidden = false; nx.textContent = bb.tray === BB_TRAYS.length - 1 ? 'Start over' : 'Next tray';
+  } else if (bb.taps <= 0) {
+    bb.over = true; msg.textContent = 'Out of taps. Retry the tray?'; blip(170, 0.3, 'sawtooth', 0.07);
+  }
+  bbHud();
+}
+function bbFrame(dt) {
+  const b = bb, ctx = bbCtx; if (!b) return;
+  b.t += dt; b.intro = Math.min(1, b.intro + dt * 2.2);
+  if (b.busy) {
+    b.acc += dt;
+    while (b.acc >= BB_TICK && b.busy) {
+      b.acc -= BB_TICK;
+      const ev = { bursts: [], hits: [] };
+      bbTick(b, ev);
+      ev.hits.forEach(i => { b.sc[i] = 1.35; });
+      if (ev.hits.length && !ev.bursts.length) blip(420 + b.bursts * 18, 0.05, 'sine', 0.07);
+      ev.bursts.forEach(bbPopFx);
+      if (!b.shots.length) { b.busy = false; bbSettle(); }
+    }
+  }
+  b.fx.step(dt); b.shake *= Math.pow(0.002, dt);
+  b.rings.forEach(r => r.life += dt); b.rings = b.rings.filter(r => r.life < 0.4);
+
+  ctx.save();
+  ctx.clearRect(0, 0, BB_W, BB_H);
+  if (b.shake > 0.3) ctx.translate((Math.random() - 0.5) * b.shake, (Math.random() - 0.5) * b.shake);
+  ctx.fillStyle = '#2f2440'; rr(ctx, 0, 0, BB_W, BB_H, 16); ctx.fill();
+  for (let i = 0; i < b.grid.length; i++) {
+    const { x, y } = bbXY(i), lv = Math.min(3, b.grid[i]);
+    ctx.fillStyle = 'rgba(255,255,255,.045)'; ctx.beginPath(); ctx.arc(x, y, 31, 0, TAU); ctx.fill();
+    b.sc[i] += ((lv ? 1 : 0) - b.sc[i]) * Math.min(1, dt * 11);
+    if (!lv) continue;
+    const inScale = Math.min(1, Math.max(0, b.intro * 2.2 - (i % BB_C + ((i / BB_C) | 0)) * 0.11));
+    let rad = BB_RAD[lv] * b.sc[i] * inScale, ox = 0, oy = 0;
+    if (lv === 3) { rad += Math.sin(b.t * 9 + i) * 1.6; ox = Math.sin(b.t * 31 + i * 3) * 1.1; oy = Math.cos(b.t * 27 + i) * 1.1;
+      ctx.strokeStyle = `rgba(255,210,120,${0.35 + 0.25 * Math.sin(b.t * 9 + i)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, rad + 5, 0, TAU); ctx.stroke(); }
+    if (rad <= 0.5) continue;
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x + ox, y + oy + rad * 0.85, rad * 0.8, rad * 0.28, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = BB_COL[lv]; ctx.beginPath(); ctx.arc(x + ox, y + oy, rad, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(x + ox - rad * 0.32, y + oy - rad * 0.36, rad * 0.26, rad * 0.16, -0.6, 0, TAU); ctx.fill();
+  }
+  const p = b.busy ? Math.min(1, b.acc / BB_TICK) : 0;
+  for (const s of b.shots) {
+    const x = (s.c + s.dx * p) * BB_S + BB_S / 2, y = (s.r + s.dy * p) * BB_S + BB_S / 2;
+    ctx.fillStyle = 'rgba(255,241,214,.35)'; ctx.beginPath(); ctx.arc(x - s.dx * 9, y - s.dy * 9, 5, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#fff1d6'; ctx.beginPath(); ctx.arc(x, y, 7, 0, TAU); ctx.fill();
+  }
+  for (const r of b.rings) { ctx.globalAlpha = 1 - r.life / 0.4; ctx.strokeStyle = '#ffe2a8'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(r.x, r.y, 20 + r.life * 110, 0, TAU); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+  b.fx.draw(ctx);
+  ctx.restore();
+}
+
+/* ════════ DROP SHIP ════════ */
+const DS_W = 360, DS_H = 520, DS_GOAL = 6, DS_STOCK = 36, DS_R = 8, DS_CATCH = 448;
+const DS_TRUCK = ['#ff7a59', '#4d8dff', '#35c27a', '#a26bf5', '#ffc53d', '#ff7ab8'];
+let ds = null, dsCtx = null;
+function dsTruck() { return { need: 4 + rand(6), gap: 0, load: 0, off: 120, v: 0, state: 'arriving', bump: 0, color: DS_TRUCK[rand(DS_TRUCK.length)] }; }
+function dsNew() {
+  const pegs = [];
+  for (let r = 0; r < 7; r++) {
+    const y = 104 + r * 42, odd = r % 2;
+    for (let k = 0; k < (odd ? 7 : 8); k++) pegs.push({ x: (odd ? 45 : 22.5) + 45 * k, y, r: 6, row: r, flash: 0, cool: 0 });
+  }
+  shuffle(pegs.filter(p => p.row >= 1 && p.row <= 4 && p.x > 40 && p.x < 320)).slice(0, 5).forEach(p => { p.gold = true; p.r = 8; });
+  [120, 240].forEach(x => [400, 412, 424, 436].forEach(y => pegs.push({ x, y, r: 4, div: true, flash: 0, cool: 0 })));
+  ds = { pegs, balls: [], trucks: [dsTruck(), dsTruck(), dsTruck()], stock: DS_STOCK, shipped: 0, over: false, won: false,
+    fx: new Fx(), t: 0, lastDrop: -1, lastTick: 0, dropped: 0, endWait: 0 };
+  ds.trucks.forEach((t, k) => { t.off = 120 + k * 50; });
+  document.getElementById('ds-msg').textContent = '';
+  document.getElementById('ds-restart').hidden = true;
+  dsHud();
+}
+function dsHud() { document.getElementById('ds-shipped').textContent = ds.shipped; document.getElementById('ds-stock').textContent = ds.stock; }
+function dsInit() {
+  const cv = document.getElementById('ds-cv'); dsCtx = fitCanvas(cv, DS_W, DS_H);
+  cv.addEventListener('pointerdown', e => { audio(); dsDrop(cvPoint(cv, e, DS_W).x); });
+  document.getElementById('ds-restart').onclick = dsNew;
+  loops.drop = dt => { dsStep(dt); dsDraw(); };
+  dsNew();
+}
+function dsDrop(x) {
+  const d = ds; if (d.won || d.stock <= 0 || d.t - d.lastDrop < 0.08) return;
+  d.lastDrop = d.t; d.stock--; d.dropped++;
+  d.balls.push({ x: Math.max(12, Math.min(DS_W - 12, x)), y: 26, vx: (Math.random() - 0.5) * 30, vy: 40, rot: 0, gen: 0 });
+  if (!MUTE) { blip(520, 0.05, 'sine', 0.08); buzz(6); }
+  dsHud();
+}
+function dsHit(b, p) {
+  const d = ds; p.flash = 0.16;
+  if (!MUTE && d.t - d.lastTick > 0.04) { d.lastTick = d.t; blip(p.gold ? 1100 : 620 + (p.row || 6) * 55, 0.035, 'sine', 0.045); }
+  if (p.gold && p.cool <= 0 && b.gen < 2) {
+    p.cool = 0.12; b.gen++;
+    d.balls.push({ x: b.x, y: b.y, vx: -b.vx + (Math.random() - 0.5) * 80, vy: b.vy * 0.7 - 60, rot: 0, gen: b.gen });
+    d.fx.burst(p.x, p.y, ['#ffc53d', '#fff1b8'], 10, 150, 3.5);
+    d.fx.say(p.x, p.y - 14, 'x2', '#ffe08a');
+    if (!MUTE) { note(9, 0.1, 0.09); buzz(8); }
+  }
+}
+function dsStep(dt) {
+  const d = ds; if (!d) return; d.t += dt;
+  for (const p of d.pegs) { if (p.flash > 0) p.flash -= dt; if (p.cool > 0) p.cool -= dt; }
+  d.trucks.forEach((tr, k) => {
+    tr.bump = Math.max(0, tr.bump - dt * 6);
+    if (tr.state === 'arriving') { if (tr.gap > 0) { tr.gap -= dt; return; } tr.off += (0 - tr.off) * Math.min(1, dt * 7); if (tr.off < 1) { tr.off = 0; tr.state = 'parked'; } }
+    else if (tr.state === 'leaving') {
+      tr.wait -= dt; if (tr.wait > 0) return;
+      tr.v += 900 * dt; tr.off += tr.v * dt;
+      if (Math.random() < 0.6) d.fx.burst(k * 120 + 28 + Math.random() * 60, 462 + Math.min(tr.off, 50), '#cfd6e4', 1, 30, 5);
+      if (tr.off > 140) { d.trucks[k] = dsTruck(); d.trucks[k].gap = 0.9; }
+    }
+  });
+  const h = dt / 2;
+  for (let s = 0; s < 2; s++) for (const b of d.balls) {
+    b.vy += 1000 * h; b.x += b.vx * h; b.y += b.vy * h; b.rot += b.vx * h * 0.06;
+    if (b.x < DS_R) { b.x = DS_R; b.vx = Math.abs(b.vx) * 0.6; }
+    if (b.x > DS_W - DS_R) { b.x = DS_W - DS_R; b.vx = -Math.abs(b.vx) * 0.6; }
+    for (const p of d.pegs) {
+      const dx = b.x - p.x, dy = b.y - p.y, lim = DS_R + p.r, dd = dx * dx + dy * dy;
+      if (dd >= lim * lim) continue;
+      const dist = Math.sqrt(dd) || 0.01, nx = dx / dist, ny = dy / dist;
+      b.x = p.x + nx * lim; b.y = p.y + ny * lim;
+      const vn = b.vx * nx + b.vy * ny;
+      if (vn < 0) { b.vx -= 1.5 * vn * nx; b.vy -= 1.5 * vn * ny; b.vx += (Math.random() - 0.5) * 50; dsHit(b, p); }
+    }
+  }
+  d.balls = d.balls.filter(b => {
+    if (b.y < DS_CATCH) return true;
+    const k = Math.min(2, Math.max(0, (b.x / 120) | 0)), tr = d.trucks[k];
+    if (tr.state !== 'leaving' && tr.off < 30 && tr.load < tr.need) {
+      tr.load++; tr.bump = 1;
+      if (!MUTE) { blip(200 + tr.load * 28, 0.09, 'triangle', 0.13); buzz(10); }
+      d.fx.burst(b.x, DS_CATCH + 4, ['#e9b97a', '#fff1d6'], 5, 90, 3);
+      if (tr.load >= tr.need) dsShip(k);
+    } else { d.fx.burst(b.x, DS_CATCH + 10, '#8e9bb8', 6, 80, 3); if (!MUTE) blip(130, 0.06, 'square', 0.04); }
+    return false;
+  });
+  d.fx.step(dt);
+  if (!d.over && d.stock === 0 && d.balls.length === 0) {
+    d.endWait += dt;
+    if (d.endWait > 0.5) { d.over = true; if (!MUTE) { document.getElementById('ds-msg').textContent = `Out of packages at ${d.shipped}/${DS_GOAL} trucks. Go again?`; document.getElementById('ds-restart').hidden = false; blip(170, 0.3, 'sawtooth', 0.07); } }
+  }
+}
+function dsShip(k) {
+  const d = ds, tr = d.trucks[k]; tr.state = 'leaving'; tr.v = 0; tr.wait = 0.28; d.shipped++;
+  d.fx.say(k * 120 + 60, 430, 'Shipped!', '#b8ffd6');
+  if (!MUTE) { [4, 7, 9].forEach((n, j) => setTimeout(() => note(n, 0.14, 0.11), j * 70)); buzz(30); dsHud(); }
+  if (d.shipped >= DS_GOAL && !d.won) {
+    d.won = true; d.over = true; d.fx.confetti(DS_W);
+    if (!MUTE) { document.getElementById('ds-msg').textContent = `All ${DS_GOAL} trucks out with ${d.stock} package${d.stock === 1 ? '' : 's'} to spare!`; document.getElementById('ds-restart').hidden = false;
+      [5, 7, 9, 12].forEach((n, j) => setTimeout(() => note(n, 0.2), 300 + j * 110)); }
+  }
+}
+function dsDraw() {
+  const d = ds, ctx = dsCtx; if (!d) return;
+  ctx.clearRect(0, 0, DS_W, DS_H);
+  ctx.fillStyle = '#27324a'; rr(ctx, 0, 0, DS_W, DS_H, 16); ctx.fill();
+  ctx.fillStyle = '#33415f'; rr(ctx, 0, 0, DS_W, 58, 16); ctx.fill(); ctx.fillRect(0, 30, DS_W, 28);
+  ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(8, 58); ctx.lineTo(DS_W - 8, 58); ctx.stroke(); ctx.setLineDash([]);
+  if (d.dropped < 3) { ctx.globalAlpha = 0.6 + 0.4 * Math.sin(d.t * 5); ctx.fillStyle = '#fff'; ctx.font = '700 17px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('▼  TAP UP HERE TO DROP  ▼', DS_W / 2, 30); ctx.globalAlpha = 1; }
+  ctx.fillStyle = '#1e2738'; ctx.fillRect(0, 444, DS_W, DS_H - 444 - 16); rr(ctx, 0, DS_H - 40, DS_W, 40, 16); ctx.fill();
+  for (const p of d.pegs) {
+    const f = Math.max(0, p.flash) / 0.16;
+    if (p.gold) { ctx.fillStyle = `rgba(255,197,61,${0.22 + 0.12 * Math.sin(d.t * 6 + p.x)})`; ctx.beginPath(); ctx.arc(p.x, p.y, 15 + f * 5, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = p.gold ? '#ffc53d' : p.div ? '#56658a' : f > 0 ? '#ffffff' : '#9fb3d9';
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r + f * 2.5, 0, TAU); ctx.fill();
+    if (p.gold) { ctx.fillStyle = '#6b4a00'; ctx.font = '700 9px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('x2', p.x, p.y + 0.5); }
+  }
+  d.trucks.forEach((tr, k) => {
+    const cx = k * 120 + 60, y = 454 + tr.off - tr.bump * 4;
+    ctx.fillStyle = '#141a26'; ctx.beginPath(); ctx.arc(cx - 30, y + 44, 8, 0, TAU); ctx.arc(cx + 30, y + 44, 8, 0, TAU); ctx.fill();
+    ctx.fillStyle = tr.color; rr(ctx, cx + 20, y + 14, 26, 28, 6); ctx.fill();
+    ctx.fillStyle = '#d7ecff'; rr(ctx, cx + 30, y + 18, 12, 10, 3); ctx.fill();
+    ctx.fillStyle = tr.color; rr(ctx, cx - 48, y, 68, 42, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; rr(ctx, cx - 43, y + 5, 58, 32, 4); ctx.fill();
+    const fill = tr.load / tr.need;
+    if (fill > 0) { ctx.fillStyle = '#e0aa6c'; rr(ctx, cx - 43, y + 5 + 32 * (1 - fill), 58, 32 * fill, 4); ctx.fill(); }
+    ctx.fillStyle = '#fff'; ctx.font = '700 20px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(tr.load >= tr.need ? '✓' : String(tr.need - tr.load), cx - 14, y + 22);
+  });
+  for (const b of d.balls) {
+    ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.rot);
+    ctx.fillStyle = '#d99a5b'; rr(ctx, -7.5, -7.5, 15, 15, 3); ctx.fill();
+    ctx.fillStyle = '#f5d9aa'; ctx.fillRect(-2, -7.5, 4, 15);
+    ctx.restore();
+  }
+  d.fx.draw(ctx);
+}
+
+/* ════════ BLOOM ════════ */
+const BL_C = 8, BL_R = 9, BL_S = 45, BL_N = BL_C * BL_R, BL_W = 360, BL_H = 405;
+const BL_COL = ['#ff5d7a', '#ffb52e', '#4f9dff', '#a97bff', '#14b8a6'];
+const BL_ORIGIN = 4 * BL_C + 4;
+let bl = null, blCtx = null, blCount = 0;
+const blNbrs = i => { const r = (i / BL_C) | 0, c = i % BL_C, o = [];
+  if (r > 0) o.push(i - BL_C); if (r < BL_R - 1) o.push(i + BL_C); if (c > 0) o.push(i - 1); if (c < BL_C - 1) o.push(i + 1); return o; };
+// Buds of color c that would bloom now, each with how many steps the bloom travels to reach it.
+function blGain(cells, inG, c) {
+  const seen = new Set(), q = [], out = [];
+  for (let i = 0; i < BL_N; i++) if (inG[i]) for (const n of blNbrs(i)) if (!inG[n] && cells[n] === c && !seen.has(n)) { seen.add(n); q.push([n, 1]); }
+  while (q.length) { const [i, d] = q.shift(); out.push({ i, d }); for (const n of blNbrs(i)) if (!inG[n] && cells[n] === c && !seen.has(n)) { seen.add(n); q.push([n, d + 1]); } }
+  return out;
+}
+function blGreedy(cells, inG0) {
+  const inG = inG0.slice(); let taps = 0;
+  while (inG.includes(false) && taps < 99) {
+    let best = null;
+    for (let c = 0; c < BL_COL.length; c++) { const g = blGain(cells, inG, c); if (!best || g.length > best.length) best = g; }
+    if (!best.length) break;
+    best.forEach(g => { inG[g.i] = true; }); taps++;
+  }
+  return taps;
+}
+function blInit() {
+  const cv = document.getElementById('bl-cv'); blCtx = fitCanvas(cv, BL_W, BL_H);
+  cv.addEventListener('pointerdown', e => { const p = cvPoint(cv, e, BL_W), i = Math.min(BL_R - 1, (p.y / BL_S) | 0) * BL_C + Math.min(BL_C - 1, (p.x / BL_S) | 0); if (bl && !bl.inG[i]) blPick(bl.cells[i]); });
+  const seeds = document.getElementById('bl-seeds');
+  BL_COL.forEach((col, c) => { const b = document.createElement('button'); b.className = 'seed'; b.style.background = col; b.onclick = () => blPick(c); seeds.appendChild(b); });
+  document.getElementById('bl-retry').onclick = () => blLoad(bl.cells);
+  document.getElementById('bl-new').onclick = () => { blCount++; blLoad(); };
+  loops.bloom = blFrame;
+  blLoad();
+}
+function blLoad(keep) {
+  let cells = keep;
+  if (!cells) { cells = []; for (let i = 0; i < BL_N; i++) cells.push(rand(BL_COL.length)); for (let i = 0; i < BL_N; i++) if (Math.random() < 0.3) { const n = blNbrs(i); cells[i] = cells[n[rand(n.length)]]; } }
+  const inG = cells.map(() => false); inG[BL_ORIGIN] = true;
+  blGain(cells, inG, cells[BL_ORIGIN]).forEach(g => { inG[g.i] = true; });
+  const taps = blGreedy(cells, inG) + 2;
+  bl = { cells, inG, shown: inG.slice(), s: inG.map(v => v ? 1 : 0), v: cells.map(() => 0), pend: [], taps, over: false, fx: new Fx(), t: 0, order: 0, ph: cells.map(() => Math.random() * TAU), hot: new Set() };
+  document.getElementById('bl-n').textContent = blCount + 1;
+  document.getElementById('bl-msg').textContent = '';
+  blHud();
+}
+function blHud() {
+  document.getElementById('bl-taps').textContent = bl.taps;
+  bl.hot = new Set();
+  document.querySelectorAll('#bl-seeds .seed').forEach((b, c) => {
+    const g = blGain(bl.cells, bl.inG, c); g.forEach(x => bl.hot.add(x.i));
+    b.textContent = g.length ? '+' + g.length : '·'; b.disabled = !g.length || bl.over;
+  });
+}
+function blPick(c) {
+  if (!bl || bl.over || bl.pend.length) return;
+  audio();
+  const g = blGain(bl.cells, bl.inG, c);
+  if (!g.length) { blip(150, 0.06, 'square', 0.04); return; }
+  bl.taps--; bl.order = 0;
+  g.forEach(x => { bl.inG[x.i] = true; bl.pend.push({ i: x.i, at: bl.t + (x.d - 1) * 0.07 + Math.random() * 0.03 }); });
+  bl.pend.sort((a, b) => a.at - b.at);
+  if (g.length >= 8) bl.fx.say(BL_W / 2, BL_H / 2, `+${g.length} blooms!`, '#fff');
+  blHud();
+}
+function blDone() {
+  const msg = document.getElementById('bl-msg');
+  if (!bl.inG.includes(false)) {
+    bl.over = true; bl.fx.confetti(BL_W);
+    msg.textContent = `Full bloom with ${bl.taps} tap${bl.taps === 1 ? '' : 's'} to spare!`;
+    const or = (BL_ORIGIN / BL_C) | 0, oc = BL_ORIGIN % BL_C;
+    for (let i = 0; i < BL_N; i++) { const d = Math.hypot(((i / BL_C) | 0) - or, (i % BL_C) - oc); setTimeout(() => { if (bl.over) bl.v[i] = 7; }, d * 70); }
+    [0, 2, 4, 5, 7, 9].forEach((k, j) => setTimeout(() => note(k + 3, 0.2), j * 90));
+    blHud();
+  } else if (bl.taps <= 0) {
+    bl.over = true; msg.textContent = `Out of taps with ${bl.inG.filter(v => !v).length} buds left. Retry?`; blip(170, 0.3, 'sawtooth', 0.07); blHud();
+  }
+}
+function blFrame(dt) {
+  const b = bl, ctx = blCtx; if (!b) return; b.t += dt;
+  while (b.pend.length && b.pend[0].at <= b.t) {
+    const { i } = b.pend.shift(); b.shown[i] = true; b.s[i] = 0.15; b.v[i] = 9;
+    const x = (i % BL_C) * BL_S + BL_S / 2, y = ((i / BL_C) | 0) * BL_S + BL_S / 2;
+    b.fx.burst(x, y, [BL_COL[b.cells[i]], '#fff6c2'], 7, 120, 3.5, 120);
+    note(Math.min(12, b.order++), 0.1, 0.08); buzz(6);
+    if (!b.pend.length) blDone();
+  }
+  b.fx.step(dt);
+  ctx.clearRect(0, 0, BL_W, BL_H);
+  ctx.fillStyle = '#b9e09a'; rr(ctx, 0, 0, BL_W, BL_H, 16); ctx.fill();
+  for (let i = 0; i < BL_N; i++) {
+    const cx = (i % BL_C) * BL_S + BL_S / 2, cy = ((i / BL_C) | 0) * BL_S + BL_S / 2, col = BL_COL[b.cells[i]];
+    if (b.shown[i]) {
+      ctx.fillStyle = 'rgba(255,255,255,.3)'; rr(ctx, cx - 21, cy - 21, 42, 42, 10); ctx.fill();
+      b.v[i] += (260 * (1 - b.s[i]) - 13 * b.v[i]) * dt; b.s[i] += b.v[i] * dt;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.sin(b.t * 1.6 + b.ph[i]) * 0.14); ctx.scale(b.s[i], b.s[i]);
+      ctx.fillStyle = col; for (let k = 0; k < 5; k++) { const a = k * TAU / 5 - Math.PI / 2; ctx.beginPath(); ctx.arc(Math.cos(a) * 9.5, Math.sin(a) * 9.5, 8.6, 0, TAU); ctx.fill(); }
+      ctx.fillStyle = '#fff6c2'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, TAU); ctx.fill();
+      ctx.restore();
+    } else {
+      const hot = b.hot.has(i) && !b.over, pulse = hot ? 1 + 0.16 * Math.sin(b.t * 6 + b.ph[i]) : 1;
+      ctx.fillStyle = 'rgba(70,110,50,.16)'; rr(ctx, cx - 21, cy - 21, 42, 42, 10); ctx.fill();
+      ctx.fillStyle = '#6fae54'; ctx.beginPath(); ctx.ellipse(cx - 7, cy + 7, 7, 3.5, 0.6, 0, TAU); ctx.ellipse(cx + 7, cy + 7, 7, 3.5, -0.6, 0, TAU); ctx.fill();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx, cy, 8.5 * pulse, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.arc(cx - 2.5, cy - 3, 2.6, 0, TAU); ctx.fill();
+      if (hot) { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 11.5 * pulse, 0, TAU); ctx.stroke(); }
+    }
+  }
+  b.fx.draw(ctx);
+}
 
 /* ════════ DEFRAG ════════ */
 const DF_COLS = 8, DF_ROWS = 6, DF_N = DF_COLS * DF_ROWS;
@@ -495,7 +1007,7 @@ function brFinish(path) {
   brRender();
 }
 
-start('defrag');
+start('boba');
 </script>
 </body>
 </html>
