@@ -10,7 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Inter:wght@400;500;600&display=swap">
 <style>
-/* Layout: a header with the key, then one scrolling grid — jobs down, players across, rings in each cell. */
+/* Layout: one column of collapsible sections (highlights, engine vs players, testers, job by job). On a
+   phone the testers table turns into a card per tester and the job grid shrinks. */
 :root{
   --bg:#f6f4fb; --panel:#ffffff; --fg:#2b2233; --soft:#6f6780; --line:#e4e0ee; --reach:#efecf6;
   --diff:#ff5a4e; --fun:#22b46b; --frus:#7b5cff; --dot:#8f86a3;
@@ -23,56 +24,117 @@
 :root[data-theme="dark"]{
   --bg:#17141f; --panel:#201c2b; --fg:#efeaf7; --soft:#a49cb6; --line:#332d42; --reach:#29243a;
   --diff:#ff6b5f; --fun:#3fd486; --frus:#9a83ff; --dot:#8b829e; color-scheme:dark}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
-.wrap{max-width:1100px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
-h1{font-family:var(--display);font-weight:600;font-size:30px;margin:0;text-wrap:balance}
-.sub{color:var(--soft);margin:0;max-width:65ch}
-.key{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 18px}
-.key .item{display:flex;align-items:center;gap:10px;min-width:0}
-.key svg{flex:none}
-.key b{font-weight:600}
-.key small{color:var(--soft);display:block;font-size:12px}
-.scroller{overflow:auto;max-height:78vh;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
-table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
-th,td{padding:0}
-thead th{position:sticky;top:0;z-index:2;background:var(--panel);border-bottom:1px solid var(--line);vertical-align:bottom;padding:12px 6px 10px;min-width:74px;text-align:center}
-thead th:first-child{left:0;z-index:3;text-align:left;padding-left:14px}
-.ph{font-family:var(--display);font-weight:600;font-size:15px}
-.meta{color:var(--soft);font-size:11px;font-weight:400;line-height:1.3}
-.far{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--reach);color:var(--fg)}
-tbody th{position:sticky;left:0;z-index:1;background:var(--panel);text-align:center;font-weight:400;padding:0 6px;border-right:1px solid var(--line);white-space:nowrap;width:34px;cursor:default}
-thead th:first-child{min-width:0;width:34px;padding-left:6px;text-align:center}
-.jn{font-family:var(--display);font-weight:600;font-size:15px}
-td{text-align:center;height:60px}
-td.r{background:var(--reach)}
-tr.zone td,tr.zone th{border-top:1px solid var(--line)}
-td svg{display:block;margin:auto;cursor:default}
-td.all{border-left:1px solid var(--line)}
-#tip{position:fixed;z-index:20;pointer-events:none;background:var(--fg);color:var(--bg);border-radius:12px;padding:10px 12px;font-size:12px;max-width:260px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-#tip b{font-family:var(--display);font-size:14px;font-weight:600}
-.foot{color:var(--soft);font-size:12px;max-width:75ch}
-.gate{max-width:420px;margin:12vh auto 0;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:12px}
-.gate label{font-weight:600}
-.gate input[type=password]{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
-.gate .check{font-weight:400;display:flex;gap:8px;align-items:center;color:var(--soft)}
-.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:11px 16px;background:var(--frus);color:#fff;cursor:pointer}
-.btn.quiet{background:var(--reach);color:var(--fg)}
-.btn:focus-visible,input:focus-visible{outline:3px solid var(--fun);outline-offset:2px}
-.error{color:var(--diff);min-height:1em;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--display);font-weight:600;font-size:28px;margin:0;line-height:1.1}
+.muted{color:var(--soft)}
+.small{font-size:12px}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .bar .acts{display:flex;gap:8px}
-.muted{color:var(--soft)}
-h2{font-family:var(--display);font-weight:600;font-size:20px;margin:6px 0 0}
-.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:9px 14px;background:var(--frus);color:#fff;cursor:pointer}
+.btn.quiet{background:var(--reach);color:var(--fg)}
+.btn:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--fun);outline-offset:2px}
+
+/* Sections */
+details.sec{background:var(--panel);border:1px solid var(--line);border-radius:16px}
+details.sec>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:baseline;gap:10px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary h2{font-family:var(--display);font-weight:600;font-size:19px;margin:0}
+details.sec>summary .hint{color:var(--soft);font-size:12px;margin-left:auto;white-space:nowrap}
+details.sec>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--soft);border-bottom:2px solid var(--soft);transform:rotate(45deg);margin-left:6px;align-self:center;flex:none}
+details.sec[open]>summary::after{transform:rotate(-135deg)}
+details.sec>summary:has(.hint)::after{margin-left:6px}
+.body{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+.note{color:var(--soft);font-size:12px;max-width:75ch;margin:0}
+
+/* Highlights */
+.tops{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.top{border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.top h3{font-family:var(--display);font-weight:600;font-size:15px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.top h3 i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.top ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.top li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline}
+.top li .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top li .v{font-weight:600;font-variant-numeric:tabular-nums}
+.top li .s{grid-column:1/-1;color:var(--soft);font-size:11px;margin-top:-2px}
+
+/* Engine vs players */
+.tiers{display:flex;flex-direction:column;gap:8px}
+.tier{display:grid;grid-template-columns:76px 1fr 92px;gap:10px;align-items:center}
+.tier .nm{font-weight:600}
+.track{position:relative;height:12px;border-radius:99px;background:var(--reach)}
+.track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--diff)}
+.track .tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--soft);opacity:.5}
+.tier .v{font-variant-numeric:tabular-nums;text-align:right;font-size:12px}
+.verdict{border-left:3px solid var(--frus);padding:4px 0 4px 10px;margin:0}
+.surp{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+
+/* Testers: a table on wide screens, a card each on phones */
+.tscroll{overflow-x:auto}
 table.people{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}
 .people th,.people td{padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
-.people thead th{position:static;font-weight:600;font-size:12px;color:var(--soft);vertical-align:bottom;min-width:0}
+.people thead th{font-weight:600;font-size:12px;color:var(--soft);vertical-align:bottom}
 .people thead tr.grp th{color:var(--fg);font-family:var(--display);font-size:13px;text-align:center;border-bottom:0;padding-bottom:0}
 .people th:first-child,.people td:first-child{text-align:left;position:sticky;left:0;background:var(--panel)}
 .people tbody tr:last-child td{border-bottom:0}
-.people td.sep,.people th.sep{border-left:1px solid var(--line)}
-.people .dd{color:var(--diff);font-weight:600}.people .ff{color:var(--fun);font-weight:600}.people .xx{color:var(--frus);font-weight:600}
-.people .nil{color:var(--soft)}
+.people .sep{border-left:1px solid var(--line)}
+.dd{color:var(--diff);font-weight:600}.ff{color:var(--fun);font-weight:600}.xx{color:var(--frus);font-weight:600}
+.nil{color:var(--soft);font-weight:400}
+.cards{display:none;flex-direction:column;gap:8px}
+.card{border:1px solid var(--line);border-radius:12px}
+.card>summary{list-style:none;cursor:pointer;padding:10px 12px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary b{font-family:var(--display);font-size:15px}
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--reach)}
+.cgrid{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:6px 10px;padding:0 12px 12px;font-variant-numeric:tabular-nums;font-size:13px}
+.cgrid .h{color:var(--soft);font-size:11px}
+.cgrid .r{color:var(--soft)}
+.help{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0 12px 12px;text-align:center;font-variant-numeric:tabular-nums}
+.help div{background:var(--reach);border-radius:8px;padding:6px 2px}
+.help small{display:block;color:var(--soft);font-size:10px}
+
+/* Job by job grid */
+.key{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center}
+.key .item{display:flex;align-items:center;gap:10px;min-width:0}
+.key svg{flex:none}
+.key small{color:var(--soft);display:block;font-size:12px}
+.scroller{overflow:auto;max-height:78vh;border:1px solid var(--line);border-radius:12px}
+#grid{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+#grid th,#grid td{padding:0}
+#grid thead th{position:sticky;top:0;z-index:2;background:var(--panel);border-bottom:1px solid var(--line);vertical-align:bottom;padding:10px 4px 8px;min-width:66px;text-align:center}
+#grid thead th:first-child{left:0;z-index:3;min-width:0;width:34px}
+#grid .ph{font-family:var(--display);font-weight:600;font-size:14px}
+#grid .meta{color:var(--soft);font-size:11px;font-weight:400;line-height:1.3}
+#grid .far{display:inline-block;margin-top:4px;font-size:11px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--reach)}
+#grid tbody th{position:sticky;left:0;z-index:1;background:var(--panel);text-align:center;font-weight:400;padding:0 6px;border-right:1px solid var(--line);width:34px;cursor:default}
+#grid .jn{font-family:var(--display);font-weight:600;font-size:14px}
+#grid td{text-align:center;height:58px}
+#grid td.r{background:var(--reach)}
+#grid tr.zone td,#grid tr.zone th{border-top:1px solid var(--line)}
+#grid td svg{display:block;margin:auto}
+#grid td.all{border-left:1px solid var(--line)}
+
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--fg);color:var(--bg);border-radius:12px;padding:10px 12px;font-size:12px;max-width:260px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#tip b{font-family:var(--display);font-size:14px;font-weight:600}
+
+.gate{max-width:420px;margin:12vh auto 0;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:12px}
+.gate label{font-weight:600}
+.gate input[type=password]{font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.gate .check{font-weight:400;display:flex;gap:8px;align-items:center;color:var(--soft)}
+.error{color:var(--diff);min-height:1em;margin:0}
+
+@media (max-width:720px){
+  h1{font-size:24px}
+  .tscroll{display:none}
+  .cards{display:flex}
+  #grid thead th{min-width:46px;padding:8px 2px 6px}
+  #grid .meta{display:none}
+  #grid td{height:46px}
+  #grid td svg{width:40px;height:40px}
+  .tier{grid-template-columns:64px 1fr 80px}
+  details.sec>summary .hint{display:none}
+  .top li:nth-child(n+4){display:none}
+}
 </style>
 </head>
 <body>
@@ -81,7 +143,8 @@ table.people{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nu
 <script>
 // Last Mile's testers: how far each got, and what they rated each job. The ratings come live from the
 // MusicGrid server's GET /lm/ratings, which only answers with the admin key (the same one as /stats/).
-// Nothing is shown, or even fetched, without it.
+// Nothing is shown, or even fetched, without it. engine.json (next to this page) is what the level
+// engine planned for each job: its tier and its score, no maps or titles. It's made from the game repo.
 const API = "https://music-grid-io-42616e204fd3.herokuapp.com";
 const app = document.getElementById("app");
 const store = {
@@ -90,11 +153,18 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch {} },
 };
 let key = store.get("sh:adminKey") || "";
-let P = [], T = {};
+let P = [], T = {}, ROWS = [], ENGINE = {};
+const PAST = 11;          // "job 11 on": past the tutorial and easy jobs, where help gets limited
 
 // Anyone can send a rating, so everything a tester's phone sent is escaped before it's shown.
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const num = v => { const n = Number(v); return n >= 1 && n <= 5 ? n : null; };
+const mean = v => v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+const median = v => { if (!v.length) return null; const s = [...v].sort((a, b) => a - b); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const NIL = '<span class="nil">–</span>';
+const f1 = v => v == null ? NIL : v.toFixed(1);
+const am = v => v.length ? `${mean(v).toFixed(1)} <span class="nil">/</span> ${median(v).toFixed(1)}` : NIL;
+const secs = v => v == null ? NIL : (v >= 60 ? `${Math.floor(v / 60)}:${String(Math.round(v % 60)).padStart(2, '0')}` : `${Math.round(v)}s`);
 
 function gate(message = "") {
   app.innerHTML = `
@@ -128,15 +198,29 @@ async function load() {
   if (res.status === 401) { store.del("sh:adminKey"); key = ""; return gate("That key didn't work. Check ADMIN_KEY in the MusicGrid Heroku config vars."); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return gate(data.error || `The server answered with an error (${res.status}).`);
+  try { ENGINE = (await (await fetch("engine.json", { cache: "no-cache" })).json()).jobs || {}; } catch { ENGINE = {}; }
   build(data.ratings || []);
   render();
 }
+
+// Which layout of its job a rating was for (1 = the first), as tools/ratings.py works it out: the game
+// sends it since build 24, and before that the job's fingerprint finds it in the layouts' history.
+function layoutOf(r) {
+  const v = Number((r.stats || {}).level_version);
+  if (v) return v;
+  const fps = (ENGINE[r.level] || {}).fps || [];
+  const fp = Number(r.levelFp);
+  for (let i = fps.length - 1; i >= 0; i--) if (fps[i] === fp) return i + 1;
+  return 0;
+}
+const isCurrent = r => { const e = ENGINE[r.level]; return e && e.fps && layoutOf(r) === e.fps.length; };
 
 // One column per phone: the jobs it reached and its latest rating of each (as tools/ratings.py reads them).
 function build(rows) {
   rows.sort((a, b) => String(a.receivedAt).localeCompare(String(b.receivedAt)));
   const devs = new Map();
   T = {};
+  ROWS = [];
   for (const r of rows) {
     const id = String(r.device || "").slice(0, 8);
     if (!id) continue;
@@ -165,12 +249,21 @@ function build(rows) {
     const dd = num(r.difficulty), ff = num(r.fun), xx = num(r.frustration);
     if (dd || ff || xx) {
       Object.assign(c, { d: dd, f: ff, x: xx, v: String(r.version || ""), tags: Array.isArray(r.tags) ? r.tags.map(String) : [], note: String(r.note || "") });
-      d.n_rated++;
+      ROWS.push({ dev: id, n, title: String(r.title || ""), d: dd, f: ff, x: xx, cur: isCurrent(r), layout: layoutOf(r) });
     }
   }
   // (A phone with only a couple of records is a test run, not a tester.)
   P = [...devs.values()].filter(d => Object.keys(d.cells).length >= 3).sort((a, b) => b.furthest - a.furthest);
   for (const d of P) d.n_rated = Object.values(d.cells).filter(c => c.d || c.f || c.x).length;     // (jobs rated, not ratings sent)
+  const keep = new Set(P.map(p => p.id));
+  ROWS = ROWS.filter(r => keep.has(r.dev));
+}
+
+// Each tester's latest rating of each layout: what the highlights and the engine check count.
+function latestRatings() {
+  const by = new Map();
+  for (const r of ROWS) by.set(`${r.dev}|${r.n}|${r.layout}|${r.title}`, r);
+  return [...by.values()];
 }
 
 function rings(d, f, x, size = 52) {
@@ -190,23 +283,151 @@ const PHONES = { 'iPhone17,1': 'iPhone 16 Pro', 'iPhone17,2': 'iPhone 16 Pro Max
 const phoneName = p => PHONES[p] || (p && p !== '?' ? p : 'Unknown phone');
 const tzName = t => { const m = /\(UTC([+-]\d+):\d+\)/.exec(t || ''); if (!m) return ''; return ({ '-5': 'Eastern', '-6': 'Central', '-7': 'Mountain', '-8': 'Pacific', '+0': 'UK' })[m[1]] || 'UTC' + m[1]; };
 const buildOf = v => (/\((\d+)\)/.exec(v || '') || [])[1] || '?';
+const wide = () => matchMedia('(min-width: 721px)').matches;
+
+function section(id, title, hint, open, body) {
+  return `<details class="sec" id="${id}" ${open ? 'open' : ''}><summary><h2>${title}</h2>${hint ? `<span class="hint">${hint}</span>` : ''}</summary><div class="body">${body}</div></details>`;
+}
 
 function render() {
+  const total = P.reduce((a, p) => a + p.n_rated, 0);
+  const latest = P.length ? fmtTime(P.map(p => p.last).sort().pop()) : '';
   app.innerHTML = `
     <div class="bar">
-      <h1>Who got how far</h1>
+      <div><h1>Last Mile testers</h1><div class="muted small">${P.length} testers · ${total} jobs rated · latest ${esc(latest)}</div></div>
       <div class="acts"><button class="btn quiet" type="button" id="refresh">Refresh</button><button class="btn quiet" type="button" id="out">Forget key</button></div>
     </div>
-    <p class="sub">Each column is one tester's phone, each row a job. Shaded cells are jobs that tester has reached. Where they rated a job, three nested rings show their scores out of 5: the further round a ring goes, the higher the score. Hover or tap a cell for the numbers, or a job number for its title.</p>
-    <h2>Testers</h2>
-    <div class="tscroll"><table class="people" id="people"></table></div>
-    <p class="foot">Ratings are out of 5, shown as each tester's average / median over the jobs they rated. "Job ${PAST} on" leaves out jobs 1 to ${PAST - 1}, the tutorial and easy jobs, where help is still unlimited. Time and help are per job played, from each job's latest record (all its tries together); help counts only start where a tester's build began sending them.</p>
-    <h2>Job by job</h2>
-    <div class="key" id="key"></div>
-    <div class="scroller"><table id="grid"></table></div>
-    <p class="foot" id="foot"></p>`;
+    ${section('s-high', 'Best and worst jobs', 'by average rating', true, highlights())}
+    ${section('s-engine', 'Engine vs players', 'planned tier vs rated difficulty', true, engineCheck())}
+    ${section('s-people', 'Testers', `${P.length}`, true, `<div class="tscroll"><table class="people" id="people"></table></div><div class="cards" id="cards"></div>
+      <p class="note">Ratings are out of 5, shown as average / median over the jobs each tester rated. "Job ${PAST} on" leaves out jobs 1 to ${PAST - 1}, the tutorial and easy jobs, where help is still unlimited. Time and help are per job played, from each job's latest record (all its tries together). Help counts only start where a tester's build began sending them.</p>`)}
+    ${section('s-grid', 'Job by job', 'rings per job', wide(), `
+      <details><summary class="muted small" style="cursor:pointer">How to read the rings</summary><div class="key" id="key" style="margin-top:10px"></div>
+      <p class="note" style="margin-top:10px">Each column is a tester, each row a job; shaded cells are jobs they've reached. Tap a cell for the numbers, or a job number for its title. Job numbers are where each job sat when it was played: several early jobs were redesigned since, so a rating may be for an older layout. Play records only start at build 28, so earlier jobs show shaded with no mark if the tester beat them before then.</p></details>
+      <div class="scroller"><table id="grid"></table></div>`)}`;
   document.getElementById('refresh').addEventListener('click', load);
   document.getElementById('out').addEventListener('click', () => { store.del('sh:adminKey'); key = ''; gate(); });
+  // Remember which sections are folded, on this browser.
+  for (const s of document.querySelectorAll('details.sec')) {
+    const k = 'lm:stats:' + s.id, saved = store.get(k);
+    if (saved !== null) s.open = saved === '1';
+    s.addEventListener('toggle', () => store.set(k, s.open ? '1' : '0'));
+  }
+  peopleTable();
+  peopleCards();
+  grid();
+}
+
+// The best and worst: each layout's average over its testers, top few of each score.
+function highlights() {
+  const groups = new Map();
+  for (const r of latestRatings()) {
+    const g = groups.get(r.title + '|' + r.n) || { n: r.n, title: r.title, cur: r.cur, d: [], f: [], x: [] };
+    for (const k of ['d', 'f', 'x']) if (r[k]) g[k].push(r[k]);
+    groups.set(r.title + '|' + r.n, g);
+  }
+  const all = [...groups.values()];
+  const list = (k, label, color, low) => {
+    // The layouts in the game now, unless there are too few of those rated yet.
+    const rated = all.filter(g => g[k].length);
+    const pool = rated.filter(g => g.cur).length >= 5 ? rated.filter(g => g.cur) : rated;
+    const multi = pool.filter(g => g[k].length >= 2);
+    const use = multi.length >= 5 ? multi : pool;      // (two ratings or more, once there are enough of those)
+    const top = use.sort((a, b) => (low ? mean(a[k]) - mean(b[k]) : mean(b[k]) - mean(a[k])) || b[k].length - a[k].length).slice(0, 5);
+    return `<div class="top"><h3><i style="background:${color}"></i>${label}</h3><ol>${top.map(g => `<li>
+      <span class="t">Job ${g.n} “${esc(g.title)}”</span><span class="v" style="color:${color}">${mean(g[k]).toFixed(1)}</span>
+      <span class="s">${g[k].length} rating${g[k].length > 1 ? 's' : ''}${g.cur ? '' : ' · an older layout'}</span></li>`).join('') || '<li class="muted">No ratings yet</li>'}</ol></div>`;
+  };
+  return `<div class="tops">
+    ${list('d', 'Hardest', 'var(--diff)')}
+    ${list('f', 'Most fun', 'var(--fun)')}
+    ${list('x', 'Most frustrating', 'var(--frus)')}
+    ${list('f', 'Least fun', 'var(--soft)', true)}
+  </div><p class="note">Each job layout's average across the testers who rated it: the layouts in the game now once five or more are rated, and jobs with two or more ratings once there are enough of those.</p>`;
+}
+
+// Rank correlation (Spearman, ties averaged): 1 means the same order, 0 unrelated.
+function spearman(xs, ys) {
+  const rank = v => { const o = v.map((x, i) => [x, i]).sort((a, b) => a[0] - b[0]); const r = []; for (let i = 0; i < o.length;) { let j = i; while (j + 1 < o.length && o[j + 1][0] === o[i][0]) j++; for (let k = i; k <= j; k++) r[o[k][1]] = (i + j) / 2; i = j + 1; } return r; };
+  const a = rank(xs), b = rank(ys), ma = mean(a), mb = mean(b);
+  let num = 0, da = 0, db = 0;
+  for (let i = 0; i < a.length; i++) { num += (a[i] - ma) * (b[i] - mb); da += (a[i] - ma) ** 2; db += (b[i] - mb) ** 2; }
+  return da && db ? num / Math.sqrt(da * db) : null;
+}
+
+// What the level engine planned (each job's tier, and its score: how many wrong plans its model player
+// tries first) against what the testers rated, on the layouts that are in the game now.
+function engineCheck() {
+  if (!Object.keys(ENGINE).length) return '<p class="note">The engine numbers (engine.json) didn\'t load.</p>';
+  const per = new Map();
+  for (const r of latestRatings()) if (r.cur && r.d) { const a = per.get(r.n) || []; a.push(r.d); per.set(r.n, a); }
+  const jobs = [...per.entries()].map(([n, d]) => ({ n, d: mean(d), k: d.length, e: ENGINE[n] }));
+  if (!jobs.length) return '<p class="note">No ratings of the current layouts yet.</p>';
+  const ORDER = ['tutorial', 'easy', 'medium', 'hard', 'melter', 'end'];
+  const NAMES = { tutorial: 'Tutorial', easy: 'Easy', medium: 'Medium', hard: 'Hard', melter: 'Brain-melter', end: 'Endgame' };
+  const tiers = ORDER.map(t => ({ t, js: jobs.filter(j => j.e.tier === t) })).filter(x => x.js.length);
+  const bars = tiers.map(({ t, js }) => {
+    const v = mean(js.map(j => j.d));
+    return `<div class="tier"><span class="nm">${NAMES[t]}</span>
+      <div class="track" title="${v.toFixed(1)} of 5">${[2, 3, 4].map(x => `<span class="tick" style="left:${(x - 1) / 4 * 100}%"></span>`).join('')}<span class="fill" style="width:${(v - 1) / 4 * 100}%"></span></div>
+      <span class="v"><b>${v.toFixed(1)}</b> · ${js.length} job${js.length > 1 ? 's' : ''}</span></div>`;
+  }).join('');
+  const rho = jobs.length >= 5 ? spearman(jobs.map(j => j.e.ptries), jobs.map(j => j.d)) : null;
+  const tierRank = jobs.map(j => ORDER.indexOf(j.e.tier));
+  const rhoT = jobs.length >= 5 ? spearman(tierRank, jobs.map(j => j.d)) : null;
+  const say = r => r == null ? 'too few jobs to tell' : r >= 0.7 ? 'closely' : r >= 0.45 ? 'fairly well' : r >= 0.2 ? 'only loosely' : 'hardly at all';
+  const surprises = [];
+  for (const j of jobs.sort((a, b) => a.n - b.n)) {
+    const t = j.e.tier;
+    if (['hard', 'melter', 'end'].includes(t) && j.d <= 2.5) surprises.push(`Job ${j.n} was planned <b>${NAMES[t].toLowerCase()}</b> but rated <b class="dd">${j.d.toFixed(1)}</b> (${j.k} rating${j.k > 1 ? 's' : ''}).`);
+    if (['tutorial', 'easy'].includes(t) && j.d >= 3.5) surprises.push(`Job ${j.n} was planned <b>${NAMES[t].toLowerCase()}</b> but rated <b class="dd">${j.d.toFixed(1)}</b> (${j.k} rating${j.k > 1 ? 's' : ''}).`);
+  }
+  return `<p class="note">Average rated difficulty (1 to 5) of the jobs in each planned tier, counting only ratings of the layouts in the game now.</p>
+    <div class="tiers">${bars}</div>
+    <p class="verdict">The planned tiers match the players' order <b>${say(rhoT)}</b>${rhoT != null ? ` (rank match ${rhoT.toFixed(2)})` : ''}, and the engine's score matches it <b>${say(rho)}</b>${rho != null ? ` (${rho.toFixed(2)})` : ''}, over ${jobs.length} rated jobs. 1 would be the same order, 0 no relation.</p>
+    ${surprises.length ? `<div><b>Surprises</b><ul class="surp">${surprises.map(s => `<li>${s}</li>`).join('')}</ul></div>` : '<p class="note">No job played far from its planned tier.</p>'}`;
+}
+
+function testerStats(p) {
+  const rated = Object.entries(p.cells).filter(([, c]) => c.d || c.f || c.x).map(([n, c]) => ({ n: +n, ...c }));
+  const later = rated.filter(c => c.n >= PAST);
+  const vals = (list, k) => list.map(c => c[k]).filter(Boolean);
+  const runs = Object.values(p.runs);
+  const per = k => mean(runs.filter(r => k in r).map(r => r[k]));
+  return { rated, later, vals, per, tz: tzName(p.tz) };
+}
+
+function peopleTable() {
+  let h = `<thead><tr class="grp"><th></th><th></th><th></th><th></th><th class="sep" colspan="3">Ratings, all jobs (average / median)</th><th class="sep" colspan="3">Ratings, job ${PAST} on (average / median)</th><th class="sep" colspan="5">Per job played</th></tr>
+    <tr><th>Tester</th><th>Furthest job</th><th>Sessions</th><th>Jobs rated</th>
+    <th class="sep">Difficulty</th><th>Fun</th><th>Frustration</th>
+    <th class="sep">Difficulty</th><th>Fun</th><th>Frustration</th>
+    <th class="sep">Time</th><th>Hints</th><th>Calls</th><th>Undos</th><th>Restarts</th></tr></thead><tbody>`;
+  P.forEach((p, i) => {
+    const s = testerStats(p);
+    h += `<tr><td><b>Tester ${i + 1}</b> <span class="muted">${esc(phoneName(p.phone))}${s.tz ? ' · ' + esc(s.tz) : ''}</span></td>
+      <td>${p.furthest}</td><td>${p.sessions.size}</td><td>${s.rated.length}</td>
+      <td class="sep dd">${am(s.vals(s.rated, 'd'))}</td><td class="ff">${am(s.vals(s.rated, 'f'))}</td><td class="xx">${am(s.vals(s.rated, 'x'))}</td>
+      <td class="sep dd">${am(s.vals(s.later, 'd'))}</td><td class="ff">${am(s.vals(s.later, 'f'))}</td><td class="xx">${am(s.vals(s.later, 'x'))}</td>
+      <td class="sep">${secs(s.per('secs'))}</td><td>${f1(s.per('hints'))}</td><td>${f1(s.per('calls'))}</td><td>${f1(s.per('undos'))}</td><td>${f1(s.per('restarts'))}</td></tr>`;
+  });
+  document.getElementById('people').innerHTML = h + '</tbody>';
+}
+
+// On a phone: a card per tester, folded to one line (how far, sessions); tap for the rest.
+function peopleCards() {
+  document.getElementById('cards').innerHTML = P.map((p, i) => {
+    const s = testerStats(p);
+    const row = (label, k) => `<span class="r">${label}</span><span class="${k === 'd' ? 'dd' : k === 'f' ? 'ff' : 'xx'}">${am(s.vals(s.rated, k))}</span><span class="${k === 'd' ? 'dd' : k === 'f' ? 'ff' : 'xx'}">${am(s.vals(s.later, k))}</span><span></span>`;
+    return `<details class="card"><summary><b>Tester ${i + 1}</b><span class="chip">to job ${p.furthest}</span><span class="muted small">${p.sessions.size} session${p.sessions.size === 1 ? '' : 's'} · ${s.rated.length} rated · ${esc(phoneName(p.phone))}${s.tz ? ' · ' + esc(s.tz) : ''}</span></summary>
+      <div class="cgrid"><span></span><span class="h">All jobs</span><span class="h">Job ${PAST} on</span><span></span>
+        ${row('Difficulty', 'd')}${row('Fun', 'f')}${row('Frustration', 'x')}</div>
+      <div class="help"><div>${secs(s.per('secs'))}<small>time</small></div><div>${f1(s.per('hints'))}<small>hints</small></div><div>${f1(s.per('calls'))}<small>calls</small></div><div>${f1(s.per('undos'))}<small>undos</small></div><div>${f1(s.per('restarts'))}<small>restarts</small></div></div>
+    </details>`;
+  }).join('');
+}
+
+function grid() {
   document.getElementById('key').innerHTML = [
     [rings(4, null, null, 40), 'Outer ring: difficulty', '1 easy, 5 very hard'],
     [rings(null, 4, null, 40), 'Middle ring: fun', '1 dull, 5 great'],
@@ -215,15 +436,14 @@ function render() {
     [dot(true), 'Beaten, not rated', ''],
     [dot(false), 'Played, not beaten', ''],
   ].map(([s, a, b]) => `<div class="item">${s}<div><b>${a}</b>${b ? `<small>${b}</small>` : ''}</div></div>`).join('');
-  peopleTable();
   if (!P.length) { document.getElementById('grid').innerHTML = '<tbody><tr><td class="muted" style="padding:20px">No tester records yet.</td></tr></tbody>'; return; }
   const maxJob = Math.max(...P.map(p => p.furthest), ...P.flatMap(p => Object.keys(p.cells).map(Number)));
   let h = '<thead><tr><th><span class="ph">Job</span></th>';
   P.forEach((p, i) => {
     const tz = tzName(p.tz);
-    h += `<th><div class="ph">Tester ${i + 1}</div><div class="meta">${esc(phoneName(p.phone))}${tz ? ' · ' + esc(tz) : ''}<br>build ${esc(buildOf(p.build))} · ${p.n_rated} rated<br>last ${esc(fmtTime(p.last))}</div><span class="far">to job ${p.furthest}</span></th>`;
+    h += `<th><div class="ph">T${i + 1}</div><div class="meta">${esc(phoneName(p.phone))}${tz ? ' · ' + esc(tz) : ''}<br>build ${esc(buildOf(p.build))} · ${p.n_rated} rated<br>last ${esc(fmtTime(p.last))}</div><span class="far">${p.furthest}</span></th>`;
   });
-  h += '<th class="all"><div class="ph">Average</div><div class="meta">every rating<br>of this job</div></th></tr></thead><tbody>';
+  h += '<th class="all"><div class="ph">Avg</div></th></tr></thead><tbody>';
   for (let n = 1; n <= maxJob; n++) {
     h += `<tr class="${n > 1 && (n - 1) % 10 === 0 ? 'zone' : ''}"><th data-job="${n}"><span class="jn">${n}</span></th>`;
     const rated = [];
@@ -235,49 +455,14 @@ function render() {
       else if (c) inner = dot(c.won);
       h += `<td class="${reached ? 'r' : ''}" data-p="${i}" data-n="${n}">${inner}</td>`;
     });
-    const avg = k => { const v = rated.map(c => c[k]).filter(Boolean); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+    const avg = k => mean(rated.map(c => c[k]).filter(Boolean));
     h += `<td class="all" data-avg="${n}" data-c="${rated.length}" data-d="${avg('d') ?? ''}" data-f="${avg('f') ?? ''}" data-x="${avg('x') ?? ''}">${rated.length ? rings(avg('d'), avg('f'), avg('x')) : ''}</td></tr>`;
   }
-  document.getElementById('grid').innerHTML = h + '</tbody>';
-  const total = P.reduce((a, p) => a + p.n_rated, 0);
-  document.getElementById('foot').textContent = `${P.length} testers, ${total} ratings, live from the Rate jobs option and play records, latest ${fmtTime(P.map(p => p.last).sort().pop())}. Job numbers are where each job sat when it was played. Several early jobs were redesigned since, so a rating may be for an older layout; hover to see the title they rated. Play records only start at build 28, so earlier jobs show shaded with no mark if the tester beat them before then.`;
-  const grid = document.getElementById('grid');
-  grid.addEventListener('pointermove', e => { const td = e.target.closest('td, th[data-job]'); td ? show(e, td) : hide(); });
-  grid.addEventListener('pointerleave', hide);
+  const g = document.getElementById('grid');
+  g.innerHTML = h + '</tbody>';
+  g.addEventListener('pointermove', e => { const td = e.target.closest('td, th[data-job]'); td ? show(e, td) : hide(); });
+  g.addEventListener('pointerleave', hide);
   document.querySelector('.scroller').addEventListener('scroll', hide);
-}
-
-// The testers table: one row each. Ratings averaged over all their rated jobs, and again from job PAST on.
-const PAST = 11;
-function peopleTable() {
-  const mean = v => v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
-  const f1 = v => v == null ? '<span class="nil">–</span>' : v.toFixed(1);
-  const secs = v => v == null ? '<span class="nil">–</span>' : (v >= 60 ? `${Math.floor(v / 60)}:${String(Math.round(v % 60)).padStart(2, '0')}` : `${Math.round(v)}s`);
-  let h = `<thead><tr class="grp"><th></th><th></th><th></th><th></th><th class="sep" colspan="3">Ratings, all jobs (average / median)</th><th class="sep" colspan="3">Ratings, job ${PAST} on (average / median)</th><th class="sep" colspan="5">Per job played</th></tr>
-    <tr><th>Tester</th><th>Furthest job</th><th>Sessions</th><th>Jobs rated</th>
-    <th class="sep">Difficulty</th><th>Fun</th><th>Frustration</th>
-    <th class="sep">Difficulty</th><th>Fun</th><th>Frustration</th>
-    <th class="sep">Time</th><th>Hints</th><th>Calls</th><th>Undos</th><th>Restarts</th></tr></thead><tbody>`;
-  P.forEach((p, i) => {
-    const rated = Object.entries(p.cells).filter(([, c]) => c.d || c.f || c.x).map(([n, c]) => ({ n: +n, ...c }));
-    const later = rated.filter(c => c.n >= PAST);
-    // Each rating cell: "average / median" of that score over the jobs.
-    const av = (list, k) => {
-      const v = list.map(c => c[k]).filter(Boolean).sort((a, b) => a - b);
-      if (!v.length) return '<span class="nil">–</span>';
-      const mid = v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2;
-      return `${mean(v).toFixed(1)} <span class="muted">/</span> ${mid.toFixed(1)}`;
-    };
-    const runs = Object.values(p.runs);
-    const per = k => mean(runs.filter(r => k in r).map(r => r[k]));
-    const tz = tzName(p.tz);
-    h += `<tr><td><b>Tester ${i + 1}</b> <span class="muted">${esc(phoneName(p.phone))}${tz ? ' · ' + esc(tz) : ''}</span></td>
-      <td>${p.furthest}</td><td>${p.sessions.size}</td><td>${rated.length}</td>
-      <td class="sep dd">${av(rated, 'd')}</td><td class="ff">${av(rated, 'f')}</td><td class="xx">${av(rated, 'x')}</td>
-      <td class="sep dd">${av(later, 'd')}</td><td class="ff">${av(later, 'f')}</td><td class="xx">${av(later, 'x')}</td>
-      <td class="sep">${secs(per('secs'))}</td><td>${f1(per('hints'))}</td><td>${f1(per('calls'))}</td><td>${f1(per('undos'))}</td><td>${f1(per('restarts'))}</td></tr>`;
-  });
-  document.getElementById('people').innerHTML = h + '</tbody>';
 }
 
 // Tooltip
