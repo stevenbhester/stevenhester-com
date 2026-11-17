@@ -103,7 +103,8 @@ header p { color: var(--ink-soft); margin-top: 6px; }
 .tabgroup + .tabgroup { margin-top: 12px; }
 .tabgroup small { display: block; font: 700 12px var(--f-mono); color: var(--ink-soft); text-transform: uppercase; letter-spacing: .08em; margin: 0 4px 7px; }
 .tabgroup .tabs { margin: 0; }
-.tabs.old { display: grid; grid-template-columns: repeat(3, 1fr); }
+.tabs.old { display: flex; flex-wrap: wrap; }
+.tabs.old .tab { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; font-size: 14px; }
 .tabs.old .tab { font-size: 15px; padding: 10px 6px 11px; }
 #panels { margin-top: 16px; }
 canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: manipulation; user-select: none; -webkit-user-select: none; cursor: pointer; }
@@ -135,18 +136,22 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
     <p>Rough playable versions of each idea. Placeholder art, real rules.</p>
   </header>
 
-  <div class="tabgroup"><small>New</small>
+  <div class="tabgroup"><small>Current favs</small>
     <nav class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true" data-tab="brick">Brickwork</button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="slice">Fair Slice</button>
+      <button class="tab" role="tab" aria-selected="true" data-tab="boba">Bubble Paint</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="coat">Top Coat</button>
     </nav>
   </div>
-  <div class="tabgroup"><small>Earlier</small>
+  <div class="tabgroup"><small>Great minds got there first</small>
     <nav class="tabs old" role="tablist">
-      <button class="tab" role="tab" aria-selected="false" data-tab="boba">Boba Burst</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="brick">Brickwork</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="slice">Fair Slice</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="drop">Drop Ship</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="bloom">Bloom</button>
+    </nav>
+  </div>
+  <div class="tabgroup"><small>Meh</small>
+    <nav class="tabs old" role="tablist">
       <button class="tab" role="tab" aria-selected="false" data-tab="defrag">Defrag</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="even">Even Steven</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="batch">Batch Run</button>
@@ -155,7 +160,7 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
   <div id="panels">
 
   <!-- BRICKWORK -->
-  <section class="card" id="p-brick">
+  <section class="card" id="p-brick" hidden>
     <div class="hud" style="margin-top:0"><span>Picture <strong id="bk-n">1</strong>/4</span><span>Bricks left <strong id="bk-left">0</strong></span></div>
     <p class="how one" style="margin:0 0 12px"><b>Build the picture from the ground up.</b> Tap a lane to send its top crate to the dock. A docked crate lays its bricks wherever its color fits on an open spot (dashed), and leaves when it's empty. The dock holds 3 crates: fill it with crates that can't lay anything and you're jammed.</p>
     <canvas class="game" id="bk-cv"></canvas>
@@ -181,9 +186,9 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
     <div class="row"><button class="btn plain" id="tc-undo">Undo</button><button class="btn plain" id="tc-retry">Retry</button><button class="btn" id="tc-next" hidden>Next picture</button></div>
   </section>
 
-  <!-- BOBA BURST -->
-  <section class="card" id="p-boba" hidden>
-    <div class="hud" style="margin-top:0"><span>Corner <strong id="bb-tray">1</strong>/4</span><span>Taps left <strong id="bb-taps">0</strong></span></div>
+  <!-- BUBBLE PAINT -->
+  <section class="card" id="p-boba">
+    <div class="hud" style="margin-top:0"><span>Corners painted <strong id="bb-tray">0</strong>/4</span><span>Taps left <strong id="bb-taps">0</strong></span></div>
     <p class="how one" id="bb-tip" style="margin:0 0 12px"></p>
     <canvas class="game" id="bb-cv" style="touch-action:none"></canvas>
     <p class="msg" id="bb-msg"></p>
@@ -283,7 +288,7 @@ const COLORS = ['#ff5d5d', '#4d8dff', '#ffc53d', '#a26bf5', '#35c27a', '#ff7ab8'
 /* ── tabs + frame loop ── */
 const started = {}, loops = {};
 let current = null, lastT = 0, MUTE = false;
-const KEYS = ['brick', 'slice', 'coat', 'boba', 'drop', 'bloom', 'defrag', 'even', 'batch'];
+const KEYS = ['boba', 'coat', 'brick', 'slice', 'drop', 'bloom', 'defrag', 'even', 'batch'];
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === t));
   KEYS.forEach(k => document.getElementById('p-' + k).hidden = k !== t.dataset.tab);
@@ -786,17 +791,18 @@ function tcFrame(dt) {
   t.fx.draw(ctx);
 }
 
-/* ════════ BOBA BURST ════════ */
+/* ════════ BUBBLE PAINT ════════ */
 const BB_C = 6, BB_R = 6, BB_S = 60, BB_TOP = 56, BB_W = 360, BB_H = BB_TOP + BB_R * BB_S, BB_N = BB_C * BB_R, BB_TICK = 0.085, BB_REWARD = 5;
-const PEARL = 0, JELLY = 1, POP = 2, ROWB = 3, COLB = 4;
+const PEARL = 0, JELLY = 1, POP = 2, ROWB = 3, COLB = 4, BOUNCE = 5;
+// Levels go in the order you play them, whichever corner you pick.
 const BB_LEVELS = [
-  { empty: 0.14, w: [0.66, 0.25, 0.09], tip: 'Tap a pearl to plump it. A full pearl bursts, squirts four ways and splats paint wherever it goes. Pop every pearl to finish this corner of the mural.' },
-  { empty: 0.12, w: [0.70, 0.23, 0.07], tip: 'Hold your finger down to preview the chain. Slide to compare pearls, lift to pop. A chain of 5 or more leaves a popping boba that squirts eight ways.' },
-  { empty: 0.10, w: [0.64, 0.25, 0.11], jelly: 5, stripe: 2, tip: 'Jelly cubes block squirts and can\'t be tapped: hit one with a squirt to break it. Striped pearls fire a beam down their whole row or column.' },
-  { empty: 0.08, w: [0.72, 0.22, 0.06], jelly: 6, stripe: 3, pop: 2, tip: 'The last corner. Finish with 3 taps to spare for three stars.' },
+  { empty: 0.14, w: [0.66, 0.25, 0.09], tip: 'Tap a bubble to plump it. A full bubble (big and wobbling) bursts, squirts four ways and splats its paint. Pop them all to finish this corner. Bigger chains splat more paint.' },
+  { empty: 0.12, w: [0.72, 0.22, 0.06], tip: 'Hold a bubble to preview its chain, slide to compare, lift to pop. Chains of 4+ hand taps back (+1, +2 at 8, +3 at 12), and 5+ leave a spiky bubble that squirts eight ways. Random tapping runs dry fast.' },
+  { empty: 0.10, w: [0.70, 0.22, 0.08], mirror: 4, jelly: 3, tip: 'Mirrors turn squirts around corners and never break: use them to aim. Jelly blocks squirts until a squirt breaks it.' },
+  { empty: 0.08, w: [0.72, 0.22, 0.06], mirror: 2, jelly: 3, link: 3, stripe: 2, tip: 'Bubbles tied by a string plump together: hit one and both grow, wherever they are. Striped bubbles fire a beam down their whole row or column.' },
 ];
-// The mural: a 60x60 pixel-art boba shop. Each level paints one 30x30 corner; each board square covers 5x5 pixels.
-const BB_PX = 60, BB_DONE = [false, false, false, false];
+// The mural: a 60x60 pixel-art boba shop, repainted at 120x120 with smeary brush strokes. Each corner is 60x60 of that; a board square covers 10x10.
+const BB_PX = 60, BB_F = 120, BB_DONE = [false, false, false, false], BB_PAINT = [null, null, null, null];
 let bbArt = null;
 function bbMakeArt() {
   const cv = document.createElement('canvas'); cv.width = cv.height = BB_PX; const c = cv.getContext('2d');
@@ -822,81 +828,98 @@ function bbMakeArt() {
   R(53, 40, 2, 10, '#7d8799'); R(51, 36, 6, 5, '#ff5d5d'); R(52, 37, 4, 3, '#fff7ea');              // street sign
   R(0, 50, 60, 4, '#d5d8e0'); for (let x = 0; x < 60; x += 10) R(x, 50, 1, 4, '#bfc3ce');           // sidewalk
   R(0, 54, 60, 6, '#5b6072'); for (let x = 3; x < 60; x += 12) R(x, 57, 6, 1, '#ffd23d');           // road
-  return { cv, px: c.getImageData(0, 0, BB_PX, BB_PX).data };
+  const px = c.getImageData(0, 0, BB_PX, BB_PX).data;
+  // Repaint it at double size with wobbly, streaky strokes so edges bleed and flat colors get texture.
+  const fine = new Uint8ClampedArray(BB_F * BB_F * 4), at = (x, y) => (Math.max(0, Math.min(59, Math.floor(y))) * 60 + Math.max(0, Math.min(59, Math.floor(x)))) * 4;
+  const stroke = []; for (let k = 0; k < 40 * BB_F; k++) stroke.push(Math.random());
+  for (let y = 0; y < BB_F; y++) for (let x = 0; x < BB_F; x++) {
+    const h = stroke[y * 40 + ((x + (y % 3) * 2) / 3 | 0)], sx = x / 2 + 0.25, sy = y / 2 + 0.25;
+    const a = at(sx + (Math.random() - 0.5) * 1.7 + (h - 0.5) * 1.1, sy + (Math.random() - 0.5) * 0.9);
+    const b = at(sx + (Math.random() - 0.5) * 1.2, sy + (Math.random() - 0.5) * 1.2);
+    const shade = 1 + (h - 0.5) * 0.13 + (Math.random() - 0.5) * 0.05, o = (y * BB_F + x) * 4;
+    for (let k = 0; k < 3; k++) fine[o + k] = (px[a + k] * 0.68 + px[b + k] * 0.32) * shade;
+    fine[o + 3] = 255;
+  }
+  return { cv, px, fine };
 }
-function bbCellColor(tray, i) {
-  const ox = (tray % 2) * 30 + (i % BB_C) * 5, oy = ((tray / 2) | 0) * 30 + ((i / BB_C) | 0) * 5, n = {}; let best = null;
+function bbCellColor(q, i) {
+  const ox = (q % 2) * 30 + (i % BB_C) * 5, oy = (q >> 1) * 30 + ((i / BB_C) | 0) * 5, n = {}; let best = null;
   for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) { const k = ((oy + y) * BB_PX + ox + x) * 4, d = bbArt.px, c = `rgb(${d[k]},${d[k + 1]},${d[k + 2]})`; n[c] = (n[c] || 0) + 1; if (!best || n[c] > n[best]) best = c; }
   return best;
 }
-function bbArtColors(tray, i) {
-  const ox = (tray % 2) * 30 + (i % BB_C) * 5, oy = ((tray / 2) | 0) * 30 + ((i / BB_C) | 0) * 5, out = [];
+function bbArtColors(q, i) {
+  const ox = (q % 2) * 30 + (i % BB_C) * 5, oy = (q >> 1) * 30 + ((i / BB_C) | 0) * 5, out = [];
   [[1, 1], [3, 2], [2, 4]].forEach(([dx, dy]) => { const k = ((oy + dy) * BB_PX + ox + dx) * 4, d = bbArt.px; out.push(`rgb(${d[k]},${d[k + 1]},${d[k + 2]})`); });
   return out;
 }
-const BB_COL = ['', '#b9a3ff', '#ff8fb8', '#ffb23d'], BB_RAD = [0, 10, 16, 23];
+const BB_RAD = [0, 10, 16, 23];
 const BB_D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], BB_D8 = BB_D4.concat([[1, 1], [1, -1], [-1, 1], [-1, -1]]);
+const bbRefund = n => n >= 12 ? 3 : n >= 8 ? 2 : n >= 4 ? 1 : 0;
+const bbCopy = c => c && { k: c.k, lv: c.lv, m: c.m, link: c.link };
 let bb = null, bbCtx = null;
 
 function bbBurst(st, i, ev) {
-  const cell = st.g[i]; st.g[i] = null; st.bursts++;
+  const cell = st.g[i]; if (!cell) return; st.g[i] = null; st.bursts++;
   const c = i % BB_C, r = (i / BB_C) | 0, beam = cell.k === ROWB || cell.k === COLB;
   const dirs = cell.k === POP ? BB_D8 : cell.k === ROWB ? [[1, 0], [-1, 0]] : cell.k === COLB ? [[0, 1], [0, -1]] : BB_D4;
-  dirs.forEach(([dx, dy]) => st.shots.push({ c, r, dx, dy, beam }));
+  dirs.forEach(([dx, dy]) => st.shots.push({ c, r, dx, dy, beam, life: 0 }));
   if (ev) ev.bursts.push({ i, k: cell.k });
 }
-// One beat: every squirt moves a cell. Squirts stop at the first thing they hit; beams keep going.
+// Plumps a bubble and the bubble tied to it, if any. Returns the cells that just filled up.
+function bbPlump(st, i, ev, full) {
+  const cell = st.g[i]; cell.lv++; if (ev) ev.hits.push(i); if (cell.lv >= 4 && !full.includes(i)) full.push(i);
+  const j = cell.link, p = j >= 0 ? st.g[j] : null;
+  if (p && p.link === i) { p.lv++; if (ev) ev.hits.push(j); if (p.lv >= 4 && !full.includes(j)) full.push(j); }
+}
+// One beat: every squirt moves a cell. Squirts stop at the first bubble they hit, mirrors turn them, beams keep going.
 function bbTick(st, ev) {
-  const next = [], pend = [];
+  const next = [], full = [];
   for (const s of st.shots) {
-    s.c += s.dx; s.r += s.dy;
-    if (s.c < 0 || s.c >= BB_C || s.r < 0 || s.r >= BB_R) continue;
+    s.c += s.dx; s.r += s.dy; s.life++;
+    if (s.c < 0 || s.c >= BB_C || s.r < 0 || s.r >= BB_R || s.life > 40) continue;
     const i = s.r * BB_C + s.c, cell = st.g[i];
     if (ev && ev.pass) ev.pass.push(i);
     if (cell) {
+      if (cell.k === BOUNCE) { const dx = s.dx; if (cell.m === '/') { s.dx = -s.dy; s.dy = -dx; } else { s.dx = s.dy; s.dy = dx; } if (ev) ev.bounce.push(i); next.push(s); continue; }
       if (cell.k === JELLY) { st.g[i] = null; if (ev) ev.breaks.push(i); }
-      else { cell.lv++; if (ev) ev.hits.push(i); if (cell.lv >= 4 && !pend.includes(i)) pend.push(i); }
+      else bbPlump(st, i, ev, full);
       if (!s.beam) continue;
     }
     next.push(s);
   }
   st.shots = next;
-  pend.forEach(i => bbBurst(st, i, ev));
-}
-function bbFall(g, onMove) {
-  for (let c = 0; c < BB_C; c++) {
-    let w = BB_R - 1;
-    for (let r = BB_R - 1; r >= 0; r--) {
-      const i = r * BB_C + c; if (!g[i]) continue;
-      if (r !== w) { g[w * BB_C + c] = g[i]; g[i] = null; if (onMove) onMove(g[w * BB_C + c], w - r); }
-      w--;
-    }
-  }
+  full.forEach(i => bbBurst(st, i, ev));
 }
 // Plays one tap out on a copy of the tray and reports what would happen.
 function bbSim(g0, i) {
-  const st = { g: g0.map(c => c && { k: c.k, lv: c.lv }), shots: [], bursts: 0 }, ev = { bursts: [], hits: [], breaks: [] };
-  st.g[i].lv++; if (st.g[i].lv >= 4) bbBurst(st, i, ev);
+  const st = { g: g0.map(bbCopy), shots: [], bursts: 0 }, ev = { bursts: [], hits: [], breaks: [], bounce: [] }, full = [];
+  bbPlump(st, i, null, full); full.forEach(k => bbBurst(st, k, ev));
   let guard = 0; while (st.shots.length && guard++ < 400) bbTick(st, ev);
   return { g: st.g, n: st.bursts, cells: ev.bursts.map(b => b.i), breaks: ev.breaks };
 }
-function bbAfter(g, origin, n) {
-  if (n >= BB_REWARD && !g[origin]) g[origin] = { k: POP, lv: 3, sc: 0, oy: 0 };
+function bbAfter(g, origin, n) { if (n >= BB_REWARD && !g[origin]) g[origin] = { k: POP, lv: 3 }; }
+const bbPearls = g => g.filter(c => c && c.k !== JELLY && c.k !== BOUNCE).length;
+const bbTappable = c => c && c.k !== JELLY && c.k !== BOUNCE;
+// A decent player: fire the biggest chain on offer, otherwise plump the fullest bubble.
+// Returns the fewest taps you need in hand, given that big chains pay taps back afterwards.
+function bbBot(g0, runs = 16) {
+  let best = 99;
+  for (let k = 0; k < runs; k++) best = Math.min(best, bbBotRun(g0, k ? 4 : 0));
+  return best;
 }
-const bbPearls = g => g.filter(c => c && c.k !== JELLY).length;
-// A decent player: fire the biggest chain on offer, otherwise plump the fullest pearl.
-function bbBot(g0) {
-  let g = g0.map(c => c && { k: c.k, lv: c.lv }), taps = 0;
+function bbBotRun(g0, noise) {
+  let g = g0.map(bbCopy), taps = 0, bal = 0, need = 0;
   while (bbPearls(g) && taps < 200) {
     let best = -1, bv = -1, br = null;
     for (let i = 0; i < BB_N; i++) {
-      if (!g[i] || g[i].k === JELLY) continue;
-      const r = bbSim(g, i), v = r.n * 10 + g[i].lv;
+      if (!bbTappable(g[i])) continue;
+      const r = bbSim(g, i), v = r.n * 10 + g[i].lv + Math.random() * noise;
       if (v > bv) { bv = v; best = i; br = r; }
     }
     g = br.g; bbAfter(g, best, br.n); taps++;
+    bal++; need = Math.max(need, bal); bal -= bbRefund(br.n);
   }
-  return taps;
+  return need;
 }
 function bbGenerate(n) {
   const L = BB_LEVELS[n], g = new Array(BB_N).fill(null);
@@ -905,9 +928,17 @@ function bbGenerate(n) {
     const x = Math.random(); g[i] = { k: PEARL, lv: x < L.w[0] ? 1 : x < L.w[0] + L.w[1] ? 2 : 3 };
   }
   const spots = shuffle(g.map((c, i) => c ? i : -1).filter(i => i >= 0));
+  const inner = spots.filter(i => i % BB_C > 0 && i % BB_C < BB_C - 1 && i >= BB_C && i < BB_N - BB_C);
+  for (let k = 0; k < (L.mirror || 0) && inner.length; k++) { const i = inner.pop(); spots.splice(spots.indexOf(i), 1); g[i] = { k: BOUNCE, lv: 0, m: Math.random() < 0.5 ? '/' : '\\' }; }
   for (let k = 0; k < (L.jelly || 0); k++) g[spots.pop()] = { k: JELLY, lv: 0 };
   for (let k = 0; k < (L.pop || 0); k++) g[spots.pop()].k = POP;
   for (let k = 0; k < (L.stripe || 0); k++) g[spots.pop()].k = Math.random() < 0.5 ? ROWB : COLB;
+  for (let k = 0; k < (L.link || 0); k++) {
+    const a = spots.pop(), ax = a % BB_C, ay = (a / BB_C) | 0;
+    const j = spots.findIndex(b => Math.abs(b % BB_C - ax) + Math.abs(((b / BB_C) | 0) - ay) >= 3);
+    if (j < 0) break;
+    const b = spots.splice(j, 1)[0]; g[a].link = b; g[b].link = a;
+  }
   return g;
 }
 function bbCellAt(e) {
@@ -915,86 +946,118 @@ function bbCellAt(e) {
   if (p.x < 0 || p.x >= BB_W || p.y < BB_TOP || p.y >= BB_H) return -1;
   return (((p.y - BB_TOP) / BB_S) | 0) * BB_C + ((p.x / BB_S) | 0);
 }
+const bbPicking = () => bb && (bb.pick || bb.won);
 function bbInit() {
   const cv = document.getElementById('bb-cv'); bbCtx = fitCanvas(cv, BB_W, BB_H); bbArt = bbMakeArt();
-  cv.addEventListener('pointerdown', e => { audio(); try { cv.setPointerCapture(e.pointerId); } catch (x) {} bb.press = { i: bbCellAt(e), t0: bb.t, slid: false }; bbPreview(); });
+  cv.addEventListener('pointerdown', e => {
+    audio();
+    if (bbPicking()) { bb.pickAt = cvPoint(cv, e, BB_W); return; }
+    try { cv.setPointerCapture(e.pointerId); } catch (x) {} bb.press = { i: bbCellAt(e), t0: bb.t, slid: false }; bbPreview();
+  });
   cv.addEventListener('pointermove', e => { if (!bb.press) return; const i = bbCellAt(e); if (i !== bb.press.i) { bb.press.i = i; bb.press.slid = true; bbPreview(); } });
-  cv.addEventListener('pointerup', () => { if (!bb.press) return; const i = bb.press.i; bb.press = null; bb.prev = null; if (i >= 0) bbTap(i); });
-  cv.addEventListener('pointercancel', () => { bb.press = null; bb.prev = null; });
-  document.getElementById('bb-retry').onclick = () => bbLoad(bb.tray, bb.start);
-  document.getElementById('bb-next').onclick = () => { if (BB_DONE.every(Boolean)) BB_DONE.fill(false); bbLoad((bb.tray + 1) % BB_LEVELS.length); };
+  cv.addEventListener('pointerup', () => {
+    if (bb.pickAt) { const p = bb.pickAt; bb.pickAt = null; if (bb.won && bb.muralA < 0.95) { bb.mural = Math.max(bb.mural, bb.muralDelay + 0.5); return; } if (bbPicking() && p.y >= BB_TOP) bbStartCorner((p.x >= 180 ? 1 : 0) + (p.y >= BB_TOP + 180 ? 2 : 0)); return; }
+    if (!bb.press) return; const i = bb.press.i; bb.press = null; bb.prev = null; if (i >= 0) bbTap(i);
+  });
+  cv.addEventListener('pointercancel', () => { bb.press = null; bb.prev = null; bb.pickAt = null; });
+  document.getElementById('bb-retry').onclick = () => { if (!bb.pick) bbLoad(bb.lv, bb.q, bb.start); };
+  document.getElementById('bb-next').onclick = () => { BB_DONE.fill(false); BB_PAINT.fill(null); bbPicker(); };
   loops.boba = bbFrame;
-  bbLoad(0);
+  bbPicker();
 }
-function bbLoad(tray, keep) {
-  const start = keep || bbGenerate(tray);
-  const budget = Math.max(4, bbBot(start) + 3);
-  bb = { tray, start, g: start.map(c => c && { k: c.k, lv: c.lv, sc: 0, oy: 0 }), shots: [], bursts: 0, taps: budget, budget, acc: 0, busy: false, lock: 0, over: false,
-    origin: -1, mask: new Uint8Array(900), pq: [], pcv: null, col: start.map((c, i) => bbCellColor(tray, i)), mural: 0, popped: 0, shown: 0, flyers: [], rings: [], shake: 0, fx: new Fx(), t: 0, intro: 0, press: null, prev: null };
-  bb.pcv = document.createElement('canvas'); bb.pcv.width = bb.pcv.height = 30;
-  document.getElementById('bb-tray').textContent = tray + 1;
-  document.getElementById('bb-tip').textContent = BB_LEVELS[tray].tip;
+function bbPicker() {
+  bb = { pick: true, t: 0, fx: new Fx(), g: [], shots: [], rings: [], flyers: [], pq: [], shake: 0 };
+  const done = BB_DONE.filter(Boolean).length;
+  document.getElementById('bb-tray').textContent = done;
+  document.getElementById('bb-taps').textContent = '–';
+  document.getElementById('bb-tip').textContent = done ? 'Tap another corner to paint it.' : 'Pop the bubbles to splat a painting, one corner at a time. Tap a corner to start.';
   document.getElementById('bb-msg').textContent = '';
   document.getElementById('bb-next').hidden = true;
+  document.getElementById('bb-retry').hidden = true;
+}
+function bbStartCorner(q) {
+  if (BB_DONE[q]) { BB_DONE[q] = false; BB_PAINT[q] = null; }
+  bbLoad(Math.min(BB_LEVELS.length - 1, BB_DONE.filter(Boolean).length), q);
+}
+function bbLoad(lv, q, keep) {
+  const start = keep || bbGenerate(lv);
+  const budget = Math.max(3, bbBot(start) + (lv === 0 ? 4 : 3));
+  bb = { lv, q, start, g: start.map(c => c && { ...bbCopy(c), sc: 0 }), shots: [], bursts: 0, taps: budget, budget, acc: 0, busy: false, lock: 0, over: false, won: false,
+    origin: -1, mask: new Uint8Array(3600), pq: [], pcv: document.createElement('canvas'), col: start.map((c, i) => bbCellColor(q, i)), mural: 0, muralA: 0,
+    popped: 0, shown: 0, flyers: [], rings: [], shake: 0, fx: new Fx(), t: 0, intro: 0, press: null, prev: null };
+  bb.pcv.width = bb.pcv.height = 60;
+  document.getElementById('bb-tray').textContent = BB_DONE.filter(Boolean).length;
+  document.getElementById('bb-tip').textContent = BB_LEVELS[lv].tip;
+  document.getElementById('bb-msg').textContent = '';
+  document.getElementById('bb-next').hidden = true;
+  document.getElementById('bb-retry').hidden = false;
   bbHud();
 }
 function bbHud() { document.getElementById('bb-taps').textContent = bb.taps; }
 const bbXY = i => ({ x: (i % BB_C) * BB_S + BB_S / 2, y: BB_TOP + ((i / BB_C) | 0) * BB_S + BB_S / 2 });
-const bbCan = i => i >= 0 && bb.g[i] && bb.g[i].k !== JELLY;
 function bbPreview() {
   const p = bb.press; bb.prev = null;
-  if (!p || bb.busy || bb.over || bb.lock > 0 || !bbCan(p.i)) return;
+  if (!p || bb.busy || bb.over || bb.lock > 0 || p.i < 0 || !bbTappable(bb.g[p.i])) return;
   const r = bbSim(bb.g, p.i);
   bb.prev = { i: p.i, n: r.n, cells: new Set(r.cells), breaks: new Set(r.breaks) };
 }
-// Paint lands as a ragged blob with a few stray drops, like a paintball hit. Pixels show up from the middle outwards.
-function bbSplat(px, py, R, drops) {
-  const b = bb, lobes = []; for (let k = 0; k < 8; k++) lobes.push(0.6 + Math.random() * 0.75); lobes.push(lobes[0]);
-  const put = (x, y, d) => { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= 30 || y >= 30) return; const k = y * 30 + x; if (b.mask[k]) return; b.mask[k] = 1; b.pq.push({ k, at: b.t + d * 0.022 }); };
-  for (let y = Math.floor(py - R * 1.4); y <= py + R * 1.4; y++) for (let x = Math.floor(px - R * 1.4); x <= px + R * 1.4; x++) {
+// Paint lands as a ragged blob with stray drops, like a paintball hit, on the corner's 60x60 canvas. Pixels show up from the middle outwards.
+function bbSplat(px, py, R, drops, delay = 0) {
+  const b = bb, lobes = []; for (let k = 0; k < 8; k++) lobes.push(0.55 + Math.random() * 0.85); lobes.push(lobes[0]);
+  const put = (x, y, d) => { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= 60 || y >= 60) return; const k = y * 60 + x; if (b.mask[k]) return; b.mask[k] = 1; b.pq.push({ k, at: b.t + delay + d * 0.011 }); };
+  for (let y = Math.floor(py - R * 1.5); y <= py + R * 1.5; y++) for (let x = Math.floor(px - R * 1.5); x <= px + R * 1.5; x++) {
     const dx = x + 0.5 - px, dy = y + 0.5 - py, d = Math.hypot(dx, dy), a = (Math.atan2(dy, dx) + Math.PI) / TAU * 8, i0 = Math.min(7, Math.floor(a)), f = a - i0;
-    if (d <= R * (lobes[i0] * (1 - f) + lobes[i0 + 1] * f)) put(x, y, d);
+    if (d <= R * (lobes[i0] * (1 - f) + lobes[i0 + 1] * f) && Math.random() > 0.04) put(x, y, d);
   }
-  for (let k = 0; k < drops; k++) { const a = Math.random() * TAU, d = R * (1.15 + Math.random() * 0.9); put(px + Math.cos(a) * d - 0.5, py + Math.sin(a) * d - 0.5, d); if (Math.random() < 0.4) put(px + Math.cos(a) * (d + 1) - 0.5, py + Math.sin(a) * (d + 1) - 0.5, d + 1); }
+  for (let k = 0; k < drops; k++) {
+    const a = Math.random() * TAU, d = R * (1.15 + Math.random() * 1.1), sz = Math.random() < 0.5 ? 1 : 2;
+    for (let yy = 0; yy < sz; yy++) for (let xx = 0; xx < sz; xx++) put(px + Math.cos(a) * d - 0.5 + xx, py + Math.sin(a) * d - 0.5 + yy, d);
+  }
 }
-function bbPaint(i) { const { x, y } = bbXY(i); bbSplat((i % BB_C) * 5 + 2.5 + (Math.random() - 0.5) * 2.4, ((i / BB_C) | 0) * 5 + 2.5 + (Math.random() - 0.5) * 2.4, 1.5 + Math.random() * 1.1, 2); bb.fx.burst(x, y, bbArtColors(bb.tray, i), 3, 110, 3.2); }
+function bbPaint(i) { const { x, y } = bbXY(i); bbSplat((i % BB_C) * 10 + 5 + (Math.random() - 0.5) * 5, ((i / BB_C) | 0) * 10 + 5 + (Math.random() - 0.5) * 5, 1.7 + Math.random() * 1.7, 2); bb.fx.burst(x, y, bbArtColors(bb.q, i), 3, 110, 3.2); }
 function bbPopFx(b) {
   const { x, y } = bbXY(b.i);
-  bbSplat((b.i % BB_C) * 5 + 2.5, ((b.i / BB_C) | 0) * 5 + 2.5, (b.k === PEARL ? 3.3 : 4.4) + Math.random() * 1.2, b.k === PEARL ? 6 : 10);
-  bb.fx.burst(x, y, bbArtColors(bb.tray, b.i).concat(['#fff1d6']), b.k === PEARL ? 12 : 18, 200, 4.4);
+  bbSplat((b.i % BB_C) * 10 + 5 + (Math.random() - 0.5) * 3, ((b.i / BB_C) | 0) * 10 + 5 + (Math.random() - 0.5) * 3, (b.k === PEARL ? 5.2 : 7.6) + Math.random() * 2.2, b.k === PEARL ? 8 : 14);
+  bb.fx.burst(x, y, bbArtColors(bb.q, b.i).concat(['#fff1d6']), b.k === PEARL ? 12 : 18, 200, 4.4);
   bb.rings.push({ x, y, life: 0 });
   bb.shake = Math.min(9, bb.shake + (b.k === PEARL ? 1.8 : 3));
   bb.flyers.push({ x, y, life: 0 }); bb.popped++;
   blip(240 * Math.pow(1.07, Math.min(bb.bursts, 24)), 0.13, 'triangle', 0.13); buzz(10);
 }
 function bbTap(i) {
-  if (!bb || bb.over || bb.busy || bb.lock > 0) return;
-  if (!bb.g[i]) return;
-  if (bb.g[i].k === JELLY) { blip(140, 0.08, 'square', 0.05); bb.g[i].sc = 1.25; return; }
-  const cell = bb.g[i];
-  bb.taps--; bb.bursts = 0; bb.origin = i; cell.lv++; cell.sc = 1.45;
-  blip(330 + cell.lv * 70, 0.07); buzz(8);
-  if (cell.lv >= 4) { const ev = { bursts: [], hits: [], breaks: [] }; bbBurst(bb, i, ev); ev.bursts.forEach(bbPopFx); }
+  if (!bb || bb.pick || bb.over || bb.busy || bb.lock > 0) return;
+  const cell = bb.g[i]; if (!cell) return;
+  if (!bbTappable(cell)) { blip(140, 0.08, 'square', 0.05); cell.sc = 1.25; return; }
+  bb.taps--; bb.bursts = 0; bb.origin = i;
+  const ev = { bursts: [], hits: [], breaks: [], bounce: [] }, full = [];
+  bbPlump(bb, i, ev, full); ev.hits.forEach(k => { bb.g[k].sc = 1.45; });
+  blip(330 + Math.min(3, cell.lv) * 70, 0.07); buzz(8);
+  full.forEach(k => bbBurst(bb, k, ev)); ev.bursts.forEach(bbPopFx);
   bb.acc = 0; bb.busy = bb.shots.length > 0;
   bbHud();
   if (!bb.busy) bbSettle();
 }
 function bbSettle() {
-  const n = bb.bursts;
-  if (n >= BB_REWARD && !bb.g[bb.origin]) {
-    bb.g[bb.origin] = { k: POP, lv: 3, sc: 0, oy: 0 };
-    bb.fx.say(BB_W / 2, BB_TOP + 150, `Chain x${n}!  Popping boba!`, '#b8fff3'); note(8); setTimeout(() => note(10), 90);
-  } else if (n >= 2) bb.fx.say(BB_W / 2, BB_TOP + 150, `Chain x${n}`, '#fff');
+  const n = bb.bursts, back = bbRefund(n);
+  if (back) { bb.taps += back; bb.fx.say(BB_W / 2, BB_TOP + 120, `Chain x${n}!  +${back} tap${back > 1 ? 's' : ''}`, '#ffe08a'); note(8); setTimeout(() => note(10), 90); }
+  else if (n >= 2) bb.fx.say(BB_W / 2, BB_TOP + 120, `Chain x${n}`, '#fff');
+  if (n >= BB_REWARD && !bb.g[bb.origin]) { bb.g[bb.origin] = { k: POP, lv: 3, sc: 0 }; bb.fx.say(BB_W / 2, BB_TOP + 156, 'Spiky bubble!', '#b8fff3'); }
   const msg = document.getElementById('bb-msg');
   if (!bbPearls(bb.g)) {
-    bb.over = true; bb.fx.confetti(BB_W); BB_DONE[bb.tray] = true; bb.mural = 0.001;
-    for (let k = 0; k < 900; k++) if (!bb.mask[k]) { bb.mask[k] = 1; bb.pq.push({ k, at: bb.t + 0.25 + ((k % 30) + ((k / 30) | 0)) * 0.014 + Math.random() * 0.25 }); }
+    bb.over = true; bb.won = true; BB_DONE[bb.q] = true; BB_PAINT[bb.q] = bb.pcv;
+    // every tap left over fires a bonus paintball somewhere
+    for (let k = 0; k < Math.min(6, bb.taps); k++) bbSplat(6 + Math.random() * 48, 6 + Math.random() * 48, 5.5 + Math.random() * 3, 8, 0.35 + k * 0.28);
+    for (let k = 0; k < Math.min(6, bb.taps); k++) setTimeout(() => { blip(520 + k * 60, 0.1); buzz(10); }, 350 + k * 280);
+    bb.mural = 0.001; bb.muralDelay = 1.4 + Math.min(6, bb.taps) * 0.28;
+    let got = 0; for (const v of bb.mask) got += v;
     const stars = bb.taps >= 3 ? 3 : bb.taps >= 1 ? 2 : 1, all = BB_DONE.every(Boolean);
-    msg.textContent = `${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}  ${all ? 'The boba shop is finished!' : `Corner ${BB_DONE.filter(Boolean).length} of 4 painted`}, ${bb.taps} tap${bb.taps === 1 ? '' : 's'} to spare`;
+    msg.textContent = `${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}  ${Math.round(got / 36)}% painted, ${bb.taps} tap${bb.taps === 1 ? '' : 's'} to spare. ${all ? 'The painting is finished! Tap a corner to repaint it.' : 'Tap a corner to paint it next.'}`;
+    document.getElementById('bb-tray').textContent = BB_DONE.filter(Boolean).length;
+    document.getElementById('bb-retry').hidden = true;
     [0, 2, 4, 7].forEach((k, j) => setTimeout(() => note(k + 5, 0.18), j * 100));
-    const nx = document.getElementById('bb-next'); nx.hidden = false; nx.textContent = BB_DONE.every(Boolean) ? 'Paint it again' : 'Next corner';
+    if (all) { const nx = document.getElementById('bb-next'); nx.hidden = false; nx.textContent = 'Start a new painting'; }
   } else if (bb.taps <= 0) {
-    bb.over = true; msg.textContent = `Out of taps with ${bbPearls(bb.g)} pearl${bbPearls(bb.g) === 1 ? '' : 's'} left. Retry?`; blip(170, 0.3, 'sawtooth', 0.07);
+    bb.over = true; msg.textContent = `Out of taps with ${bbPearls(bb.g)} bubble${bbPearls(bb.g) === 1 ? '' : 's'} left. Retry?`; blip(170, 0.3, 'sawtooth', 0.07);
   }
   bbHud();
 }
@@ -1006,43 +1069,81 @@ function bbDrawCell(ctx, cell, x, y, t, i, inScale) {
     ctx.fillStyle = 'rgba(255,255,255,.14)'; rr(ctx, x - s + 4, y - s + 4, s * 2 - 8, s * 0.7, 5); ctx.fill();
     return;
   }
+  if (cell.k === BOUNCE) {
+    const s = 22 * cell.sc * inScale; if (s < 1) return;
+    ctx.fillStyle = 'rgba(25,18,40,.8)'; rr(ctx, x - s, y - s, s * 2, s * 2, 10); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; rr(ctx, x - s, y - s, s * 2, s * 2, 10); ctx.stroke();
+    const e = s - 7, d = cell.m === '/' ? 1 : -1;
+    ctx.strokeStyle = '#d6f6ff'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - e, y + e * d); ctx.lineTo(x + e, y - e * d); ctx.stroke();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - e + 2, y + (e - 2) * d); ctx.lineTo(x + e - 2, y - (e - 2) * d); ctx.stroke();
+    return;
+  }
   let rad = BB_RAD[lv] * cell.sc * inScale, ox = 0, oy = 0;
   if (lv === 2) rad += Math.sin(t * 3.2 + i) * 0.9;
   if (lv === 3) { rad += Math.sin(t * 9 + i) * 1.4; ox = Math.sin(t * 31 + i * 3) * 0.9; oy = Math.cos(t * 27 + i) * 0.9;
-    ctx.strokeStyle = `rgba(255,220,150,${0.35 + 0.25 * Math.sin(t * 9 + i)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, rad + 4.5, 0, TAU); ctx.stroke(); }
+    ctx.strokeStyle = `rgba(255,220,150,${0.45 + 0.3 * Math.sin(t * 9 + i)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, rad + 6, 0, TAU); ctx.stroke(); }
   if (rad <= 0.5) return;
   x += ox; y += oy;
   ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, y + rad * 0.85, rad * 0.8, rad * 0.28, 0, 0, TAU); ctx.fill();
   if (cell.k === POP) {
     ctx.fillStyle = bb.col[i];
-    for (let k = 0; k < 8; k++) { const a = k * TAU / 8 + t * 0.8; ctx.beginPath(); ctx.arc(x + Math.cos(a) * rad, y + Math.sin(a) * rad, rad * 0.3, 0, TAU); ctx.fill(); }
+    for (let k = 0; k < 8; k++) { const a = k * TAU / 8 + t * 0.8; ctx.beginPath(); ctx.arc(x + Math.cos(a) * rad, y + Math.sin(a) * rad, rad * 0.3, 0, TAU); ctx.fill(); ctx.strokeStyle = 'rgba(25,18,40,.7)'; ctx.lineWidth = 2; ctx.stroke(); }
   }
+  // a dark rim and a light inner ring keep the bubble readable over paint of its own color
   ctx.fillStyle = bb.col[i]; ctx.beginPath(); ctx.arc(x, y, rad, 0, TAU); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = 'rgba(25,18,40,.8)'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, Math.max(1, rad - 3), 0, TAU); ctx.stroke();
   if (cell.k === ROWB || cell.k === COLB) {
     ctx.save(); ctx.translate(x, y); if (cell.k === COLB) ctx.rotate(Math.PI / 2);
     ctx.beginPath(); ctx.arc(0, 0, rad, 0, TAU); ctx.clip();
     ctx.fillStyle = '#fff'; ctx.fillRect(-rad, -rad * 0.26, rad * 2, rad * 0.52);
     ctx.restore();
     ctx.save(); ctx.translate(x, y); if (cell.k === COLB) ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = '#fff';
-    [-1, 1].forEach(d => { ctx.beginPath(); ctx.moveTo(d * (rad + 7), 0); ctx.lineTo(d * (rad + 1.5), -4); ctx.lineTo(d * (rad + 1.5), 4); ctx.fill(); });
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(25,18,40,.8)'; ctx.lineWidth = 1.5;
+    [-1, 1].forEach(d => { ctx.beginPath(); ctx.moveTo(d * (rad + 8), 0); ctx.lineTo(d * (rad + 2), -5); ctx.lineTo(d * (rad + 2), 5); ctx.closePath(); ctx.fill(); ctx.stroke(); });
     ctx.restore();
   }
-  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(x - rad * 0.32, y - rad * 0.4, rad * 0.26, rad * 0.15, -0.6, 0, TAU); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.beginPath(); ctx.ellipse(x - rad * 0.32, y - rad * 0.4, rad * 0.26, rad * 0.15, -0.6, 0, TAU); ctx.fill();
+}
+function bbDrawMural(ctx, t) {
+  ctx.imageSmoothingEnabled = false;
+  for (let q = 0; q < 4; q++) {
+    const qx = (q % 2) * 180, qy = BB_TOP + (q >> 1) * 180;
+    if (BB_DONE[q] && BB_PAINT[q]) { ctx.fillStyle = '#f6efe2'; ctx.fillRect(qx, qy, 180, 180); ctx.drawImage(BB_PAINT[q], 0, 0, 60, 60, qx, qy, 180, 180); continue; }
+    ctx.fillStyle = '#3a2d4d'; ctx.fillRect(qx, qy, 180, 180);
+    ctx.strokeStyle = `rgba(255,255,255,${0.22 + 0.14 * Math.sin(t * 3 + q)})`; ctx.lineWidth = 3; ctx.setLineDash([10, 8]); ctx.strokeRect(qx + 10, qy + 10, 160, 160); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = '700 44px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', qx + 90, qy + 84);
+    ctx.font = '700 15px Fredoka, system-ui, sans-serif'; ctx.fillText('tap to paint', qx + 90, qy + 122);
+  }
+  ctx.strokeStyle = '#2f2440'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(180, BB_TOP); ctx.lineTo(180, BB_H); ctx.moveTo(0, BB_TOP + 180); ctx.lineTo(BB_W, BB_TOP + 180); ctx.stroke();
+}
+function bbFlushPaint(b) {
+  if (!b.pq || !b.pq.length) return;
+  const pc = b.pcv.getContext('2d'), ax = (b.q % 2) * 60, ay = (b.q >> 1) * 60, keep = [], d = bbArt.fine;
+  for (const q of b.pq) { if (q.at > b.t) { keep.push(q); continue; } const x = q.k % 60, y = (q.k / 60) | 0, o = ((ay + y) * BB_F + ax + x) * 4; pc.fillStyle = `rgb(${d[o]},${d[o + 1]},${d[o + 2]})`; pc.fillRect(x, y, 1, 1); }
+  b.pq = keep;
 }
 function bbFrame(dt) {
   const b = bb, ctx = bbCtx; if (!b) return;
-  b.t += dt; b.intro = Math.min(1, b.intro + dt * 2.2);
+  b.t += dt;
+  if (b.pick) {
+    b.fx.step(dt);
+    ctx.clearRect(0, 0, BB_W, BB_H); ctx.fillStyle = '#2f2440'; rr(ctx, 0, 0, BB_W, BB_H, 16); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '700 17px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(BB_DONE.some(Boolean) ? 'Your painting so far' : 'Pick a corner to start painting', BB_W / 2, 29);
+    bbDrawMural(ctx, b.t); b.fx.draw(ctx); return;
+  }
+  b.intro = Math.min(1, b.intro + dt * 2.2);
   if (b.lock > 0) b.lock -= dt;
   if (b.busy) {
     b.acc += dt;
     while (b.acc >= BB_TICK && b.busy) {
       b.acc -= BB_TICK;
-      const ev = { bursts: [], hits: [], breaks: [], pass: [] };
+      const ev = { bursts: [], hits: [], breaks: [], pass: [], bounce: [] };
       bbTick(b, ev);
       ev.pass.forEach(bbPaint);
       ev.hits.forEach(i => { if (b.g[i]) b.g[i].sc = 1.35; });
+      ev.bounce.forEach(i => { if (b.g[i]) b.g[i].sc = 1.2; blip(880, 0.04, 'sine', 0.05); });
       ev.breaks.forEach(i => { const { x, y } = bbXY(i); b.fx.burst(x, y, ['#5b476b', '#8d78a0'], 9, 140, 4); blip(190, 0.07, 'square', 0.06); });
       if (ev.hits.length && !ev.bursts.length) blip(420 + b.bursts * 18, 0.05, 'sine', 0.07);
       ev.bursts.forEach(bbPopFx);
@@ -1060,7 +1161,7 @@ function bbFrame(dt) {
   ctx.clearRect(0, 0, BB_W, BB_H);
   if (b.shake > 0.3) ctx.translate((Math.random() - 0.5) * b.shake, (Math.random() - 0.5) * b.shake);
   ctx.fillStyle = '#2f2440'; rr(ctx, 0, 0, BB_W, BB_H, 16); ctx.fill();
-  // the straw: fills as pearls pop
+  // the straw: fills as bubbles pop
   ctx.fillStyle = 'rgba(255,255,255,.1)'; rr(ctx, 14, 14, tubeW, 28, 14); ctx.fill();
   if (frac > 0.01) { ctx.fillStyle = '#e8c9a0'; rr(ctx, 14, 14, Math.max(28, tubeW * frac), 28, 14); ctx.fill();
     ctx.fillStyle = '#6b4636'; for (let x = 28; x < 14 + tubeW * frac - 8; x += 13) { ctx.beginPath(); ctx.arc(x, 28 + Math.sin(x * 0.7 + b.t * 2) * 3, 4.5, 0, TAU); ctx.fill(); } }
@@ -1068,17 +1169,21 @@ function bbFrame(dt) {
   ctx.fillText(left ? `${left} left` : 'Done!', BB_W - 14, 29);
 
   for (let i = 0; i < BB_N; i++) { const { x, y } = bbXY(i); ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.beginPath(); ctx.arc(x, y, 26, 0, TAU); ctx.fill(); }
-  if (b.pq.length) {
-    const pc = b.pcv.getContext('2d'), ax = (b.tray % 2) * 30, ay = ((b.tray / 2) | 0) * 30, keep = [];
-    for (const q of b.pq) { if (q.at > b.t) { keep.push(q); continue; } const x = q.k % 30, y = (q.k / 30) | 0, o = ((ay + y) * BB_PX + ax + x) * 4, d = bbArt.px; pc.fillStyle = `rgb(${d[o]},${d[o + 1]},${d[o + 2]})`; pc.fillRect(x, y, 1, 1); }
-    b.pq = keep;
+  bbFlushPaint(b);
+  ctx.imageSmoothingEnabled = false; ctx.drawImage(b.pcv, 0, 0, 60, 60, 0, BB_TOP, BB_W, BB_W);
+  // strings between tied bubbles
+  for (let i = 0; i < BB_N; i++) {
+    const c = b.g[i], j = c ? c.link : -1; if (!(j > i) || !b.g[j] || b.g[j].link !== i) continue;
+    const A = bbXY(i), B = bbXY(j), mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2 + 22 + Math.sin(b.t * 2 + i) * 3;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(25,18,40,.7)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.quadraticCurveTo(mx, my, B.x, B.y); ctx.stroke();
+    ctx.strokeStyle = '#fff6d6'; ctx.lineWidth = 2.5; ctx.setLineDash([7, 5]); ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.quadraticCurveTo(mx, my, B.x, B.y); ctx.stroke(); ctx.setLineDash([]);
   }
-  ctx.imageSmoothingEnabled = false; ctx.drawImage(b.pcv, 0, 0, 30, 30, 0, BB_TOP, BB_W, BB_W);
   for (let i = 0; i < BB_N; i++) {
     const cell = b.g[i]; if (!cell) continue;
     cell.sc += (1 - cell.sc) * Math.min(1, dt * 11);
     const { x, y } = bbXY(i), inScale = Math.min(1, Math.max(0, b.intro * 2.4 - (i % BB_C + ((i / BB_C) | 0)) * 0.1));
-    if (cell.k !== JELLY) { ctx.fillStyle = 'rgba(30,20,45,.5)'; ctx.beginPath(); ctx.arc(x, y, (BB_RAD[Math.min(3, cell.lv)] + 3.5) * Math.min(1, cell.sc) * inScale, 0, TAU); ctx.fill(); }
+    if (bbTappable(cell)) { ctx.fillStyle = 'rgba(30,20,45,.5)'; ctx.beginPath(); ctx.arc(x, y, (BB_RAD[Math.min(3, cell.lv)] + 4) * Math.min(1, cell.sc) * inScale, 0, TAU); ctx.fill(); }
     bbDrawCell(ctx, cell, x, y, b.t, i, inScale);
   }
   const p = b.busy ? Math.min(1, b.acc / BB_TICK) : 0;
@@ -1088,6 +1193,7 @@ function bbFrame(dt) {
     if (s.beam) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - s.dx * 26, y - s.dy * 26); ctx.lineTo(x, y); ctx.stroke(); continue; }
     ctx.fillStyle = 'rgba(255,241,214,.35)'; ctx.beginPath(); ctx.arc(x - s.dx * 9, y - s.dy * 9, 4.5, 0, TAU); ctx.fill();
     ctx.fillStyle = '#fff1d6'; ctx.beginPath(); ctx.arc(x, y, 6.5, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(25,18,40,.6)'; ctx.lineWidth = 1.5; ctx.stroke();
   }
   for (const r of b.rings) { ctx.globalAlpha = 1 - r.life / 0.4; ctx.strokeStyle = '#ffe2a8'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(r.x, r.y, 18 + r.life * 100, 0, TAU); ctx.stroke(); }
   ctx.globalAlpha = 1;
@@ -1101,22 +1207,13 @@ function bbFrame(dt) {
     const pulse = 0.6 + 0.4 * Math.sin(b.t * 10);
     pv.cells.forEach(i => { const { x, y } = bbXY(i); ctx.strokeStyle = `rgba(255,255,255,${pulse})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 27, 0, TAU); ctx.stroke(); });
     pv.breaks.forEach(i => { const { x, y } = bbXY(i); ctx.strokeStyle = `rgba(255,255,255,${pulse})`; ctx.lineWidth = 3; rr(ctx, x - 25, y - 25, 50, 50, 9); ctx.stroke(); });
-    const o = bbXY(pv.i), ly = o.y - 44 < BB_TOP + 4 ? o.y + 44 : o.y - 44, label = pv.n ? `x${pv.n}` : '+1';
-    ctx.fillStyle = pv.n >= BB_REWARD ? '#5fd4c4' : '#fff'; rr(ctx, o.x - 23, ly - 14, 46, 28, 14); ctx.fill();
-    ctx.fillStyle = '#2f2440'; ctx.font = '700 17px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, o.x, ly + 1);
+    const back = bbRefund(pv.n), o = bbXY(pv.i), ly = o.y - 44 < BB_TOP + 4 ? o.y + 44 : o.y - 44, label = pv.n ? `x${pv.n}${back ? `  +${back}` : ''}` : '+1 size', w = back ? 70 : 54;
+    ctx.fillStyle = back ? '#ffe08a' : '#fff'; rr(ctx, o.x - w / 2, ly - 14, w, 28, 14); ctx.fill();
+    ctx.fillStyle = '#2f2440'; ctx.font = '700 16px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, o.x, ly + 1);
   }
   if (b.mural > 0) {
-    b.mural += dt; const a = Math.max(0, Math.min(1, (b.mural - 1.3) / 0.5));
-    if (a > 0) {
-      ctx.globalAlpha = a; ctx.fillStyle = '#2f2440'; ctx.fillRect(0, BB_TOP, BB_W, BB_W);
-      ctx.drawImage(bbArt.cv, 0, 0, BB_PX, BB_PX, 0, BB_TOP, BB_W, BB_W);
-      for (let q = 0; q < 4; q++) if (!BB_DONE[q]) {
-        const qx = (q % 2) * 180, qy = BB_TOP + ((q / 2) | 0) * 180;
-        ctx.fillStyle = '#3a2d4d'; ctx.fillRect(qx, qy, 180, 180); ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]); ctx.strokeRect(qx + 8, qy + 8, 164, 164); ctx.setLineDash([]);
-        ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.font = '700 44px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', qx + 90, qy + 92);
-      }
-      ctx.globalAlpha = 1;
-    }
+    b.mural += dt; const a = Math.max(0, Math.min(1, (b.mural - b.muralDelay) / 0.5)); b.muralA = a;
+    if (a > 0) { ctx.globalAlpha = a; ctx.fillStyle = '#2f2440'; ctx.fillRect(0, BB_TOP, BB_W, BB_W); bbDrawMural(ctx, b.t); ctx.globalAlpha = 1; }
   }
   b.fx.draw(ctx);
   ctx.restore();
@@ -1719,7 +1816,7 @@ function brFinish(path) {
   });
 })();
 
-start('brick');
+start('boba');
 </script>
 </body>
 </html>

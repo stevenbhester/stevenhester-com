@@ -159,7 +159,7 @@
   let showMine = store.get("sh:demoShowMine") === "1";
   let data = [];
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const NAMES = { brick: "Brickwork", slice: "Fair Slice", coat: "Top Coat", boba: "Boba Burst", drop: "Drop Ship", bloom: "Bloom", defrag: "Defrag", even: "Even Steven", batch: "Batch Run" };
+  const NAMES = { brick: "Brickwork", slice: "Fair Slice", coat: "Top Coat", boba: "Bubble Paint", drop: "Drop Ship", bloom: "Bloom", defrag: "Defrag", even: "Even Steven", batch: "Batch Run" };
 
   function gate(message = "") {
     app.innerHTML = `
