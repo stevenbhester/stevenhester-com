@@ -251,6 +251,7 @@ function build(rows) {
     d.build = String(r.version || d.build);
     if (st.device_model) d.phone = String(st.device_model);
     if (st.time_zone) d.tz = String(st.time_zone);
+    if (typeof st.notify === "string") d.notify = st.notify;      // (push choices: sent since build 33)
     d.furthest = Math.max(d.furthest, Number(st.levels_done) || 0);
     const m = /^Level (\d+)$/.exec(String(r.where || ""));
     if (!m) continue;
@@ -320,6 +321,7 @@ function render() {
     ${section('s-engine', 'Engine vs players', 'planned tier vs rated difficulty', true, engineCheck())}
     ${section('s-people', 'Testers', `${P.length}`, true, `<div class="tscroll"><table class="people" id="people"></table></div><div class="cards" id="cards"></div>
       <p class="note">Ratings are out of 5, shown as average / median over the jobs each tester rated. "Job ${PAST} on" leaves out jobs 1 to ${PAST - 1}, the tutorial and easy jobs, where help is still unlimited. Time and help are per job played, from each job's latest record (all its tries together). Help counts only start where a tester's build began sending them.</p>`)}
+    ${section('s-push', 'Push notifications', 'what testers opted into', true, pushes())}
     ${section('s-grid', 'Job by job', 'rings per job', wide(), `
       <details><summary class="muted small" style="cursor:pointer">How to read the rings</summary><div class="key" id="key" style="margin-top:10px"></div>
       <p class="note" style="margin-top:10px">Each column is a tester, each row a job; shaded cells are jobs they've reached. Tap a cell for the numbers, or a job number for its title. Job numbers are where each job sat when it was played: several early jobs were redesigned since, so a rating may be for an older layout. Play records only start at build 28, so earlier jobs show shaded with no mark if the tester beat them before then.</p></details>
@@ -448,6 +450,36 @@ function highlights() {
     ${list('x', 'Most frustrating', 'var(--frus)')}
     ${list('f', 'Least fun', 'var(--soft)', true)}
   </div><p class="note">Each job layout's average across the testers who rated it: the layouts in the game now once five or more are rated, and jobs with two or more ratings once there are enough of those.</p>`;
+}
+
+// What each tester chose to hear about (the game's Notifications card), from their latest record: not
+// asked yet, no to everything, or which of the three. Phones on a build before 33 don't say.
+function pushes() {
+  const KINDS = [['streak', 'Streak', 'var(--diff)'], ['fresh', 'New daily', 'var(--fun)'], ['news', 'Big news', 'var(--frus)']];
+  const told = P.filter(p => typeof p.notify === 'string');
+  if (!told.length) return `<p class="note">No tester's build reports this yet. It starts with build 33: once testers are on it, this shows what each one chose.</p>`;
+  const asked = told.filter(p => p.notify !== '');
+  const none = asked.filter(p => p.notify === 'none').length;
+  const rows = KINDS.map(([k, label, col]) => {
+    const n = asked.filter(p => p.notify.split(',').includes(k)).length;
+    const pct = asked.length ? n / asked.length : 0;
+    return `<div class="tier"><span class="nm" style="font-weight:600">${label}</span>
+      <div class="track"><span class="fill" style="width:${pct * 100}%;background:${col}"></span></div>
+      <span class="v"><b>${n}</b> of ${asked.length}</span></div>`;
+  }).join('');
+  const label = new Map(P.map((p, i) => [p.id, `Tester ${i + 1}`]));
+  const names = { streak: 'streak', fresh: 'new daily', news: 'big news' };
+  const each = P.map(p => {
+    const v = typeof p.notify !== 'string' ? '<span class="nil">older build, not reported</span>'
+      : p.notify === '' ? '<span class="nil">not asked yet</span>'
+      : p.notify === 'none' ? '<span class="dd">said no to all of it</span>'
+      : esc(p.notify.split(',').map(k => names[k] || k).join(', '));
+    return `<li><b>${label.get(p.id)}</b>: ${v}</li>`;
+  }).join('');
+  return `<p class="note">Of the ${asked.length} tester${asked.length === 1 ? '' : 's'} who've been asked${none ? `, ${none} said no to everything` : ''}. ${told.length - asked.length ? `${told.length - asked.length} ${told.length - asked.length === 1 ? "hasn't" : "haven't"} been asked yet (it comes a few jobs after their first daily).` : ''}</p>
+    ${asked.length ? `<div class="tiers">${rows}</div>` : ''}
+    <ul class="surp">${each}</ul>
+    <p class="note">This is what they ticked on the game's Notifications card: Streak ("Save my streak"), New daily ("New daily's here") and Big news. Whether iOS then allowed notifications isn't reported.</p>`;
 }
 
 // Rank correlation (Spearman, ties averaged): 1 means the same order, 0 unrelated.
