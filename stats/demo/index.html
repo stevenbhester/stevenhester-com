@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Demo ratings</title>
+<link rel="icon" href="../../favicon.ico" sizes="32x32">
+<link rel="icon" href="../../img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cobalt: #1f35c7;
+    --cobalt-deep: #13219a;
+    --paper: #f4f5fa;
+    --surface: #ffffff;
+    --ink: #12152b;
+    --muted: #535a7b;
+    --line: #d7dbe8;
+    --grid: #e6e8f0;
+    --sun: #ffcf3f;
+    --sun-deep: #d9a400;
+    --sun-ink: #2b2200;
+    --bar: #1f35c7;
+    --bad: #c62828;
+    --gutter: clamp(16px, 4vw, 48px);
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0e1124;
+      --surface: #171b36;
+      --ink: #eceef8;
+      --muted: #a3a8c8;
+      --line: #2b3054;
+      --grid: #232848;
+      --bar: #6f7ff5;
+      --bad: #ff8a80;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; border-radius: 6px; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px var(--gutter) 64px; }
+  h1 { margin: 0; font-size: clamp(28px, 4vw, 40px); font-weight: 850; font-stretch: 115%; letter-spacing: -0.02em; line-height: 1; }
+  h2 { margin: 0 0 14px; font-size: 20px; font-weight: 750; font-stretch: 106%; }
+  .muted { color: var(--muted); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px;
+    background: var(--cobalt); color: #fff; font-weight: 650; cursor: pointer;
+    box-shadow: 0 4px 0 var(--cobalt-deep);
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--cobalt-deep); }
+  .btn.quiet { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
+
+  /* Sign-in */
+  .gate { max-width: 420px; margin: 12vh auto 0; }
+  .gate h1 { margin-bottom: 10px; }
+  .gate p { margin: 0 0 20px; }
+  .gate label { display: block; font-weight: 650; margin-bottom: 6px; }
+  .gate input[type="password"] {
+    width: 100%; min-height: 48px; padding: 0 14px; margin-bottom: 14px;
+    border: 2px solid var(--line); border-radius: 10px; background: var(--surface);
+  }
+  .check { display: flex; gap: 10px; align-items: center; min-height: 44px; margin: 0 0 10px; cursor: pointer; }
+  .check input { width: 18px; height: 18px; accent-color: var(--cobalt); }
+  .error { color: var(--bad); font-weight: 600; min-height: 1.5em; margin: 12px 0 0; }
+
+  /* Dashboard */
+  .top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 24px; margin-bottom: 28px; }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+  .controls select { min-height: 44px; padding: 0 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); }
+  .controls .check { margin: 0; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .tile b { display: block; font-size: 32px; font-weight: 850; font-stretch: 112%; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .tile span { font-size: 14px; color: var(--muted); }
+  .tile.sun { background: var(--sun); border-color: var(--sun-deep); color: var(--sun-ink); }
+  .tile.sun span { color: var(--sun-ink); opacity: 0.8; }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 14px; margin-bottom: 20px; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .two .panel { margin-bottom: 0; }
+  @media (min-width: 820px) { .two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .two + .panel, .panel + .two { margin-top: 20px; }
+
+  .chart { position: relative; }
+  .chart { min-height: 220px; }
+  .chart svg { display: block; overflow: visible; }
+  .chart .gridline { stroke: var(--grid); stroke-width: 1; }
+  .chart .axis { fill: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .chart .bar { fill: var(--bar); }
+  .chart .hit { fill: transparent; cursor: default; }
+  .chart .hit:hover + .bar, .chart .hit:focus + .bar { fill: var(--sun-deep); }
+  .tip {
+    position: absolute; pointer-events: none; z-index: 2;
+    background: var(--ink); color: var(--paper); border-radius: 8px;
+    padding: 6px 10px; font-size: 13px; line-height: 1.35; white-space: nowrap;
+    transform: translate(-50%, calc(-100% - 8px));
+  }
+  .tip[hidden] { display: none; }
+  details { margin-top: 10px; font-size: 14px; }
+  summary { cursor: pointer; color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; font-size: 13px; font-weight: 650; color: var(--muted); padding: 0 8px 8px 0; border-bottom: 1px solid var(--line); }
+  td { padding: 8px 8px 8px 0; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-right: 0; padding-left: 12px; }
+  tr:last-child td { border-bottom: 0; }
+  .meter { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .meter i { display: block; height: 8px; width: 72px; border-radius: 4px; background: var(--grid); overflow: hidden; }
+  .meter i::before { content: ""; display: block; height: 100%; width: var(--p); background: var(--bar); border-radius: 4px; }
+  .meter span { min-width: 5ch; text-align: right; }
+  @media (max-width: 560px) { .meter i { display: none; } }
+  .empty { color: var(--muted); margin: 4px 0 8px; }
+  .quizline { margin: 0 0 14px; }
+  .panelhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }
+  .panelhead h2 { margin: 0; }
+  .panelhead h2 .muted { font-weight: 600; }
+  #beta { overflow-x: auto; }
+  #beta td { overflow-wrap: anywhere; }
+  #beta a { color: inherit; }
+  .quizline b { font-variant-numeric: tabular-nums; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+  .card h2 { margin: 0 0 2px; }
+  .scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0 4px; }
+  .scores div { background: var(--paper); border-radius: 10px; padding: 10px 12px; }
+  .scores b { display: block; font-size: 26px; font-weight: 850; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .scores span { font-size: 13px; color: var(--muted); }
+  .comment { border-top: 1px solid var(--grid); padding: 10px 0 2px; font-size: 15px; overflow-wrap: anywhere; }
+  .comment small { display: block; color: var(--muted); font-size: 13px; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+<main class="wrap" id="app"></main>
+<script>
+  const API = "https://music-grid-io-42616e204fd3.herokuapp.com";
+  const app = document.getElementById("app");
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    del(k) { try { localStorage.removeItem(k); } catch {} },
+  };
+  let key = store.get("sh:adminKey") || "";
+  let showMine = store.get("sh:demoShowMine") === "1";
+  let data = [];
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const NAMES = { brick: "Brickwork", slice: "Fair Slice", coat: "Top Coat", boba: "Boba Burst", drop: "Drop Ship", bloom: "Bloom", defrag: "Defrag", even: "Even Steven", batch: "Batch Run" };
+
+  function gate(message = "") {
+    app.innerHTML = `
+      <form class="gate" id="gate">
+        <h1>Demo ratings</h1>
+        <p class="muted">Use the ADMIN_KEY from the MusicGrid Heroku app.</p>
+        <label for="key">Admin key</label>
+        <input type="password" id="key" autocomplete="current-password" required>
+        <label class="check"><input type="checkbox" id="remember" checked> Remember the key on this browser</label>
+        <button class="btn" type="submit">Show ratings</button>
+        <p class="error" role="alert">${esc(message)}</p>
+      </form>`;
+    document.getElementById("key").focus();
+    document.getElementById("gate").addEventListener("submit", e => {
+      e.preventDefault();
+      key = document.getElementById("key").value.trim();
+      if (document.getElementById("remember").checked) store.set("sh:adminKey", key); else store.del("sh:adminKey");
+      load();
+    });
+  }
+
+  async function load() {
+    if (!key) return gate();
+    app.innerHTML = `<p class="muted">Loading ratings…</p>`;
+    let res;
+    try { res = await fetch(`${API}/site/demo-ratings`, { headers: { "x-admin-key": key } }); }
+    catch { return gate("Couldn't reach the MusicGrid server. If it was asleep, try again in a few seconds."); }
+    if (res.status === 401) { store.del("sh:adminKey"); key = ""; return gate("That key didn't work. Check ADMIN_KEY in the MusicGrid Heroku config vars."); }
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return gate(body.error || `The server answered with an error (${res.status}).`);
+    data = body.ratings || [];
+    render();
+  }
+
+  const avg = (rows, k) => { const v = rows.map(r => r[k]).filter(n => n != null); return v.length ? (v.reduce((a, b) => a + Number(b), 0) / v.length).toFixed(1) : "–"; };
+  function render() {
+    const rows = data.filter(r => showMine || !String(r.visitor).startsWith("me-"));
+    const games = [...new Set([...Object.keys(NAMES), ...rows.map(r => r.game)])]
+      .map(g => ({ g, rows: rows.filter(r => r.game === g) }))
+      .sort((a, b) => (b.rows.length ? Number(avg(b.rows, "fun")) || 0 : -1) - (a.rows.length ? Number(avg(a.rows, "fun")) || 0 : -1));
+    const people = new Set(rows.map(r => r.visitor)).size;
+    app.innerHTML = `
+      <div class="top">
+        <div><h1>Demo ratings</h1><p class="muted" style="margin:8px 0 0">${rows.length} rating${rows.length === 1 ? "" : "s"} from ${people} ${people === 1 ? "person" : "people"}. Stars are out of 5. Sorted by fun.</p></div>
+        <div class="controls">
+          <label class="check"><input type="checkbox" id="mine" ${showMine ? "checked" : ""}> Include my own</label>
+          <button class="btn quiet" id="refresh">Refresh</button>
+          <button class="btn quiet" id="signout">Forget key</button>
+        </div>
+      </div>
+      ${games.map(({ g, rows }) => `
+        <section class="card">
+          <h2>${esc(NAMES[g] || g)}</h2>
+          <span class="muted">${rows.length} rating${rows.length === 1 ? "" : "s"}</span>
+          ${rows.length ? `<div class="scores">
+            <div><b>${avg(rows, "fun")}</b><span>Fun</span></div>
+            <div><b>${avg(rows, "frustration")}</b><span>Frustration</span></div>
+            <div><b>${avg(rows, "originality")}</b><span>Originality</span></div>
+          </div>` : ""}
+          ${rows.filter(r => r.comment).map(r => `<div class="comment"><small>${new Date(r.at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · fun ${r.fun ?? "–"}, frustration ${r.frustration ?? "–"}, originality ${r.originality ?? "–"}${String(r.visitor).startsWith("me-") ? " · you" : ""}</small>${esc(r.comment)}</div>`).join("")}
+        </section>`).join("")}`;
+    document.getElementById("mine").onchange = e => { showMine = e.target.checked; store.set("sh:demoShowMine", showMine ? "1" : "0"); render(); };
+    document.getElementById("refresh").onclick = load;
+    document.getElementById("signout").onclick = () => { store.del("sh:adminKey"); key = ""; gate(); };
+  }
+  load();
+</script>
+</body>
+</html>

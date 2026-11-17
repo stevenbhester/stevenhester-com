@@ -113,6 +113,19 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
   box-shadow: 0 4px 0 rgba(0,0,0,.22); -webkit-tap-highlight-color: transparent; transition: opacity .2s, transform .08s; }
 .seed:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.22); }
 .seed[disabled] { opacity: .28; cursor: default; }
+
+/* ── rate a game ── */
+.rate { margin-top: 18px; border-top: 2px dashed #e6dcc8; padding-top: 14px; text-align: center; }
+.rate-form { text-align: left; margin-top: 12px; }
+.rate-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.rate-row span { font-family: var(--f-display); font-weight: 600; }
+.rate-row small { display: block; font: 700 11px var(--f-mono); color: var(--ink-soft); }
+.stars { display: flex; gap: 2px; }
+.stars button { border: 0; background: none; font-size: 30px; line-height: 1; padding: 2px 3px; color: #d8cdb8; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.stars button.on { color: #ffb52e; }
+.rate-form textarea { width: 100%; min-height: 76px; border: 2px solid #e0d5c0; border-radius: 12px; padding: 10px 12px; font: 600 16px/1.4 var(--f-body); color: var(--ink); background: #fff; resize: vertical; }
+.rate-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.rate-status { min-height: 22px; margin-top: 8px; text-align: center; font-size: 14px; color: var(--ink-soft); }
 </style>
 </head>
 <body>
@@ -162,7 +175,7 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
   <!-- TOP COAT -->
   <section class="card" id="p-coat" hidden>
     <div class="hud" style="margin-top:0"><span>Picture <strong id="tc-n">1</strong>/5</span><span>Strokes left <strong id="tc-left">0</strong></span></div>
-    <p class="how one" style="margin:0 0 12px"><b>Paint the picture the dots show.</b> Drag to paint a rectangle. It takes the color of the dot you start on, and covers whatever is under it. Strokes are limited, so paint big shapes first and add details on top.</p>
+    <p class="how one" style="margin:0 0 12px"><b>Paint the picture the dots show.</b> Drag to paint a rectangle. It takes the color of the dot you start on, and covers whatever is under it. <b>A square only takes two coats</b>: one dot in its corner means one coat, an outline means it's full. Strokes are limited too, so choose where the second coat is worth it.</p>
     <canvas class="game" id="tc-cv" style="touch-action:none"></canvas>
     <p class="msg" id="tc-msg"></p>
     <div class="row"><button class="btn plain" id="tc-undo">Undo</button><button class="btn plain" id="tc-retry">Retry</button><button class="btn" id="tc-next" hidden>Next picture</button></div>
@@ -674,14 +687,15 @@ function fsFrame(dt) {
 /* ════════ TOP COAT ════════ */
 const TC_N = 9, TC_S = 40, TC_W = 360, TC_NN = 81, TC_EXTRA = 2;
 const TC_PAL = { t: '#e8c08a', b: '#8fd3ff', w: '#fff7ea', g: '#4fc46a', c: '#ffe9b8', r: '#ff5d5d', n: '#8a5a3c', y: '#ffd23d', p: '#ffc2d1', d: '#c93a4b', a: '#aab4c4', k: '#3b3346', q: '#39b8b0', s: '#7d8799' };
-// Each picture is a stack of rectangles [x, y, w, h, color], painted bottom layer first.
+// Each picture is a stack of rectangles [x, y, w, h, color]. "par" is the fewest strokes found when no square may be painted more than twice.
 const TC_PICS = [
-  { name: 'Window', rects: [[0, 0, 9, 9, 't'], [2, 2, 5, 5, 'b'], [2, 4, 5, 1, 'w'], [4, 2, 1, 5, 'w']] },
-  { name: 'House', rects: [[0, 0, 9, 9, 'b'], [0, 7, 9, 2, 'g'], [2, 4, 5, 3, 'c'], [1, 3, 7, 1, 'r'], [2, 2, 5, 1, 'r'], [4, 5, 1, 2, 'n'], [7, 0, 2, 2, 'y']] },
-  { name: 'Gift', rects: [[0, 0, 9, 9, 'p'], [1, 3, 7, 6, 'r'], [0, 2, 9, 2, 'd'], [4, 1, 1, 8, 'y'], [1, 6, 7, 1, 'y'], [2, 0, 2, 2, 'y'], [5, 0, 2, 2, 'y']] },
-  { name: 'Castle', rects: [[0, 0, 9, 9, 'b'], [0, 8, 9, 1, 'g'], [1, 3, 7, 5, 'a'], [2, 3, 1, 1, 'b'], [4, 3, 1, 1, 'b'], [6, 3, 1, 1, 'b'], [4, 6, 1, 2, 'k'], [4, 0, 1, 3, 'k'], [5, 0, 2, 1, 'r']] },
-  { name: 'Robot', rects: [[0, 0, 9, 9, 'q'], [1, 1, 7, 6, 'a'], [2, 2, 5, 2, 'w'], [4, 2, 1, 2, 'a'], [3, 3, 1, 1, 'k'], [5, 3, 1, 1, 'k'], [2, 5, 5, 1, 'k'], [3, 5, 1, 1, 'w'], [5, 5, 1, 1, 'w'], [3, 7, 3, 1, 's'], [4, 0, 1, 1, 'r']] },
+  { name: 'Flag', par: 4, rects: [[0, 0, 9, 9, 'r'], [0, 4, 9, 1, 'w'], [3, 0, 1, 9, 'w']] },
+  { name: 'Window', par: 8, rects: [[0, 0, 9, 9, 't'], [2, 2, 5, 5, 'b'], [2, 4, 5, 1, 'w'], [4, 2, 1, 5, 'w']] },
+  { name: 'House', par: 9, rects: [[0, 0, 9, 9, 'b'], [0, 7, 9, 2, 'g'], [2, 4, 5, 3, 'c'], [1, 3, 7, 1, 'r'], [2, 2, 5, 1, 'r'], [4, 5, 1, 2, 'n'], [7, 0, 2, 2, 'y']] },
+  { name: 'Gift', par: 9, rects: [[0, 0, 9, 9, 'p'], [1, 3, 7, 6, 'r'], [0, 2, 9, 2, 'd'], [4, 1, 1, 8, 'y'], [1, 6, 7, 1, 'y'], [2, 0, 2, 2, 'y'], [5, 0, 2, 2, 'y']] },
+  { name: 'Castle', par: 11, rects: [[0, 0, 9, 9, 'b'], [0, 8, 9, 1, 'g'], [1, 3, 7, 5, 'a'], [2, 3, 1, 1, 'b'], [4, 3, 1, 1, 'b'], [6, 3, 1, 1, 'b'], [4, 6, 1, 2, 'k'], [4, 0, 1, 3, 'k'], [5, 0, 2, 1, 'r']] },
 ];
+const TC_COATS = 2;
 let tc = null, tcCtx = null;
 function tcTarget(P) { const t = new Array(TC_NN).fill(null); P.rects.forEach(([x, y, w, h, c]) => { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) t[yy * TC_N + xx] = c; }); return t; }
 function tcInit() {
@@ -699,8 +713,8 @@ function tcInit() {
 }
 function tcLoad(n) {
   const P = TC_PICS[n];
-  tc = { n, target: tcTarget(P), cur: new Array(TC_NN).fill(null), disp: new Array(TC_NN).fill(null), pend: new Array(TC_NN).fill(null), glint: new Array(TC_NN).fill(0),
-    par: P.rects.length, left: P.rects.length + TC_EXTRA, hist: [], drag: null, over: false, winAt: 0, order: 0, fx: new Fx(), t: 0 };
+  tc = { n, target: tcTarget(P), cur: new Array(TC_NN).fill(null), coat: new Array(TC_NN).fill(0), bad: null, disp: new Array(TC_NN).fill(null), pend: new Array(TC_NN).fill(null), glint: new Array(TC_NN).fill(0),
+    par: P.par, left: P.par + TC_EXTRA, hist: [], drag: null, over: false, winAt: 0, order: 0, fx: new Fx(), t: 0 };
   document.getElementById('tc-n').textContent = n + 1;
   document.getElementById('tc-msg').textContent = '';
   document.getElementById('tc-next').hidden = true;
@@ -711,19 +725,23 @@ function tcRect(a, b) { const ax = a % TC_N, ay = (a / TC_N) | 0, bx = b % TC_N,
 function tcStroke(a, b) {
   const t = tc, col = t.target[a], r = tcRect(a, b), cells = [];
   for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) cells.push(y * TC_N + x);
+  const msg = document.getElementById('tc-msg');
   if (cells.every(i => t.cur[i] === col)) { blip(150, 0.06, 'square', 0.04); return; }
-  t.hist.push(t.cur.slice()); t.left--; t.order = 0;
+  const sealed = cells.filter(i => t.coat[i] >= TC_COATS);
+  if (sealed.length) { t.bad = { cells: sealed, life: 1 }; blip(150, 0.15, 'square', 0.07); buzz([20, 30, 20]); msg.textContent = 'The marked squares already have two coats and can\'t take more.'; return; }
+  t.hist.push({ cur: t.cur.slice(), coat: t.coat.slice() }); t.left--; t.order = 0;
   const ax = a % TC_N, ay = (a / TC_N) | 0;
-  cells.forEach(i => { t.cur[i] = col; t.pend[i] = { c: col, at: t.t + (Math.abs((i % TC_N) - ax) + Math.abs(((i / TC_N) | 0) - ay)) * 0.035 }; });
+  cells.forEach(i => { t.cur[i] = col; t.coat[i]++; t.pend[i] = { c: col, at: t.t + (Math.abs((i % TC_N) - ax) + Math.abs(((i / TC_N) | 0) - ay)) * 0.035 }; });
   blip(330, 0.08); buzz(10);
-  const msg = document.getElementById('tc-msg'); msg.textContent = '';
+  msg.textContent = '';
   if (t.cur.every((c, i) => c === t.target[i])) { t.over = true; t.winAt = t.t + 0.75; }
+  else if (t.cur.some((c, i) => c !== t.target[i] && t.coat[i] >= TC_COATS)) msg.textContent = 'A square with two coats is the wrong color. Undo to fix it.';
   else if (t.left <= 0) { msg.textContent = 'Out of paint. Undo a stroke or retry.'; blip(170, 0.3, 'sawtooth', 0.07); }
   tcHud();
 }
 function tcUndo() {
   const t = tc; if (!t.hist.length || t.over) return;
-  t.cur = t.hist.pop(); t.disp = t.cur.slice(); t.pend.fill(null); t.left++;
+  const h = t.hist.pop(); t.cur = h.cur; t.coat = h.coat; t.disp = t.cur.slice(); t.pend.fill(null); t.left++;
   document.getElementById('tc-msg').textContent = ''; blip(260, 0.08, 'triangle', 0.08); tcHud();
 }
 function tcWin() {
@@ -751,12 +769,16 @@ function tcFrame(dt) {
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + S / 2, y + S / 2, 8.5, 0, TAU); ctx.fill();
       ctx.fillStyle = TC_PAL[t.target[i]]; ctx.beginPath(); ctx.arc(x + S / 2, y + S / 2, 6, 0, TAU); ctx.fill();
     }
+    if (d && t.coat[i] >= TC_COATS && !t.pend[i]) { ctx.strokeStyle = 'rgba(40,30,55,.55)'; ctx.lineWidth = 2; ctx.strokeRect(x + 4, y + 4, S - 8, S - 8); }
+    else if (d && t.coat[i] === 1 && !t.pend[i]) { ctx.fillStyle = 'rgba(40,30,55,.4)'; ctx.beginPath(); ctx.arc(x + 7, y + 7, 2.2, 0, TAU); ctx.fill(); }
     if (t.glint[i] > 0) { t.glint[i] -= dt * 2.4; ctx.fillStyle = `rgba(255,255,255,${Math.max(0, t.glint[i]) * 0.65})`; rr(ctx, x + 1, y + 1, S - 2, S - 2, 3); ctx.fill(); }
   }
+  if (t.bad) { t.bad.life -= dt; if (t.bad.life <= 0) t.bad = null; else for (const i of t.bad.cells) { ctx.strokeStyle = `rgba(230,40,40,${Math.min(1, t.bad.life * 2)})`; ctx.lineWidth = 4; ctx.strokeRect((i % TC_N) * S + 3, ((i / TC_N) | 0) * S + 3, S - 6, S - 6); } }
   if (t.drag) {
     const r = tcRect(t.drag.a, t.drag.b), col = TC_PAL[t.target[t.drag.a]];
+    let blocked = false; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (t.coat[y * TC_N + x] >= TC_COATS) { blocked = true; ctx.strokeStyle = '#e62828'; ctx.lineWidth = 4; ctx.strokeRect(x * S + 3, y * S + 3, S - 6, S - 6); }
     ctx.globalAlpha = 0.55; ctx.fillStyle = col; rr(ctx, r.x * S + 1, r.y * S + 1, r.w * S - 2, r.h * S - 2, 6); ctx.fill(); ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#3b3346'; ctx.lineWidth = 5; rr(ctx, r.x * S + 2, r.y * S + 2, r.w * S - 4, r.h * S - 4, 6); ctx.stroke();
+    ctx.strokeStyle = blocked ? '#e62828' : '#3b3346'; ctx.lineWidth = 5; rr(ctx, r.x * S + 2, r.y * S + 2, r.w * S - 4, r.h * S - 4, 6); ctx.stroke();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; rr(ctx, r.x * S + 2, r.y * S + 2, r.w * S - 4, r.h * S - 4, 6); ctx.stroke();
     const ax = (t.drag.a % TC_N) * S + S / 2, ay = ((t.drag.a / TC_N) | 0) * S + S / 2;
     ctx.fillStyle = '#3b3346'; ctx.beginPath(); ctx.arc(ax, ay, 11, 0, TAU); ctx.fill(); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(ax, ay, 8, 0, TAU); ctx.fill();
@@ -1581,6 +1603,52 @@ function brFinish(path) {
   }
   brRender();
 }
+
+/* ── rate a game: stars for fun, frustration and originality, plus a comment ── */
+(function () {
+  const API = document.documentElement.dataset.api || 'https://music-grid-io-42616e204fd3.herokuapp.com';
+  const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const set = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  let visitor = get('sh:visitor');
+  if (!visitor || !/^(me-)?[A-Za-z0-9-]{8,64}$/.test(visitor)) {
+    visitor = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+    set('sh:visitor', visitor);
+  }
+  const sentAs = get('sh:me') === '1' ? 'me-' + visitor.replace(/^me-/, '') : visitor.replace(/^me-/, '');
+  const ROWS = [['fun', 'Fun', ''], ['frustration', 'Frustration', 'more stars = more frustrating'], ['originality', 'Originality', '']];
+  KEYS.forEach(game => {
+    const card = document.getElementById('p-' + game), box = document.createElement('div'), vals = {};
+    box.className = 'rate';
+    box.innerHTML = `<button type="button" class="btn plain rate-open">Rate this game</button>
+      <form class="rate-form" hidden>
+        ${ROWS.map(([k, label, hint]) => `<div class="rate-row"><span>${label}${hint ? `<small>${hint}</small>` : ''}</span><div class="stars" data-k="${k}">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}" aria-label="${n} star${n > 1 ? 's' : ''} for ${label.toLowerCase()}">★</button>`).join('')}</div></div>`).join('')}
+        <textarea name="comment" maxlength="1000" placeholder="Anything else? (optional)" aria-label="Comment"></textarea>
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="row"><button class="btn" type="submit">Send rating</button></div>
+        <p class="rate-status" role="status"></p>
+      </form>`;
+    card.appendChild(box);
+    const form = box.querySelector('form'), status = box.querySelector('.rate-status');
+    box.querySelector('.rate-open').onclick = () => { form.hidden = !form.hidden; };
+    box.querySelectorAll('.stars').forEach(row => row.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      const n = +b.dataset.n; vals[row.dataset.k] = vals[row.dataset.k] === n ? null : n;
+      row.querySelectorAll('button').forEach(x => x.classList.toggle('on', +x.dataset.n <= (vals[row.dataset.k] || 0)));
+    }));
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const comment = form.comment.value.trim();
+      if (!vals.fun && !vals.frustration && !vals.originality && !comment) { status.textContent = 'Pick some stars or leave a comment first.'; return; }
+      status.textContent = 'Sending…';
+      try {
+        const res = await fetch(API + '/site/demo-ratings', { method: 'POST', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ visitor: sentAs, game, fun: vals.fun || null, frustration: vals.frustration || null, originality: vals.originality || null, comment, website: form.website.value }) });
+        const data = await res.json().catch(() => ({}));
+        status.textContent = res.ok ? 'Thanks! Saved. Send again any time to change it.' : (data.error || 'That didn\'t save. Try again in a minute.');
+      } catch (err) { status.textContent = 'Couldn\'t reach the server. Try again in a minute.'; }
+    });
+  });
+})();
 
 start('brick');
 </script>
