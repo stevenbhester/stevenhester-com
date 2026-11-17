@@ -139,9 +139,9 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
 
   <!-- BOBA BURST -->
   <section class="card" id="p-boba">
-    <p class="how one" style="margin-top:0"><b>Tap a pearl to plump it.</b> A full pearl bursts and squirts four ways, plumping whatever it hits. Clear the tray before you run out of taps. Big chains earn taps back.</p>
-    <div class="hud"><span>Tray <strong id="bb-tray">1</strong>/5</span><span>Taps left <strong id="bb-taps">0</strong></span></div>
-    <canvas class="game" id="bb-cv"></canvas>
+    <div class="hud" style="margin-top:0"><span>Tray <strong id="bb-tray">1</strong>/6</span><span>Taps left <strong id="bb-taps">0</strong></span></div>
+    <p class="how one" id="bb-tip" style="margin:0 0 12px"></p>
+    <canvas class="game" id="bb-cv" style="touch-action:none"></canvas>
     <p class="msg" id="bb-msg"></p>
     <div class="row"><button class="btn plain" id="bb-retry">Retry tray</button><button class="btn" id="bb-next" hidden>Next tray</button></div>
   </section>
@@ -298,126 +298,213 @@ Fx.prototype.draw = function (ctx) {
 };
 
 /* ════════ BOBA BURST ════════ */
-const BB_C = 5, BB_R = 6, BB_S = 72, BB_W = 360, BB_H = 432, BB_TICK = 0.095;
-const BB_TRAYS = [
-  { empty: 0.20, w: [0.42, 0.30, 0.28] },
-  { empty: 0.22, w: [0.48, 0.30, 0.22] },
-  { empty: 0.25, w: [0.52, 0.30, 0.18] },
-  { empty: 0.27, w: [0.56, 0.29, 0.15] },
-  { empty: 0.30, w: [0.60, 0.28, 0.12] },
+const BB_C = 6, BB_R = 7, BB_S = 60, BB_TOP = 56, BB_W = 360, BB_H = BB_TOP + BB_R * BB_S, BB_N = BB_C * BB_R, BB_TICK = 0.085, BB_REWARD = 5;
+const PEARL = 0, JELLY = 1, POP = 2, ROWB = 3, COLB = 4;
+const BB_LEVELS = [
+  { rows: 4, empty: 0.10, w: [0.68, 0.24, 0.08], tip: 'Tap a pearl to plump it. A full pearl bursts and squirts four ways, plumping whatever it hits. Clear the tray.' },
+  { rows: 5, empty: 0.10, w: [0.72, 0.22, 0.06], tip: 'Hold your finger down to preview the chain. Slide to compare pearls, lift to pop. A chain of 5 or more leaves a popping boba that squirts eight ways.' },
+  { rows: 5, empty: 0.08, w: [0.62, 0.26, 0.12], jelly: 6, tip: 'Jelly cubes block squirts and can\'t be tapped. Hit one with a squirt to break it, or work around it.' },
+  { rows: 6, empty: 0.08, w: [0.75, 0.20, 0.05], stripe: 5, tip: 'Striped pearls fire a beam down their whole row or column, plumping everything in it.' },
+  { rows: 6, empty: 0.06, w: [0.72, 0.22, 0.06], jelly: 6, stripe: 3, pop: 2, tip: 'Everything together. Finish with 3 taps to spare for three stars.' },
+  { rows: 7, empty: 0.05, w: [0.75, 0.20, 0.05], jelly: 8, stripe: 4, pop: 3, tip: 'A full tray. Set up your chains before you fire them.' },
 ];
-const BB_COL = ['', '#b9a3ff', '#ff8fb8', '#ffb23d'], BB_RAD = [0, 14, 21, 28];
+const BB_COL = ['', '#b9a3ff', '#ff8fb8', '#ffb23d'], BB_RAD = [0, 12, 17, 22];
+const BB_D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], BB_D8 = BB_D4.concat([[1, 1], [1, -1], [-1, 1], [-1, -1]]);
 let bb = null, bbCtx = null;
 
 function bbBurst(st, i, ev) {
-  st.grid[i] = 0; st.bursts++;
-  const c = i % BB_C, r = (i / BB_C) | 0;
-  [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => st.shots.push({ c, r, dx, dy }));
-  if (ev) ev.bursts.push(i);
+  const cell = st.g[i]; st.g[i] = null; st.bursts++;
+  const c = i % BB_C, r = (i / BB_C) | 0, beam = cell.k === ROWB || cell.k === COLB;
+  const dirs = cell.k === POP ? BB_D8 : cell.k === ROWB ? [[1, 0], [-1, 0]] : cell.k === COLB ? [[0, 1], [0, -1]] : BB_D4;
+  dirs.forEach(([dx, dy]) => st.shots.push({ c, r, dx, dy, beam }));
+  if (ev) ev.bursts.push({ i, k: cell.k });
 }
-// One beat: every flying drop moves a cell and plumps whatever it lands on.
+// One beat: every squirt moves a cell. Squirts stop at the first thing they hit; beams keep going.
 function bbTick(st, ev) {
   const next = [], pend = [];
   for (const s of st.shots) {
     s.c += s.dx; s.r += s.dy;
     if (s.c < 0 || s.c >= BB_C || s.r < 0 || s.r >= BB_R) continue;
-    const i = s.r * BB_C + s.c;
-    if (st.grid[i] > 0) { st.grid[i]++; if (ev) ev.hits.push(i); if (st.grid[i] >= 4 && !pend.includes(i)) pend.push(i); continue; }
+    const i = s.r * BB_C + s.c, cell = st.g[i];
+    if (cell) {
+      if (cell.k === JELLY) { st.g[i] = null; if (ev) ev.breaks.push(i); }
+      else { cell.lv++; if (ev) ev.hits.push(i); if (cell.lv >= 4 && !pend.includes(i)) pend.push(i); }
+      if (!s.beam) continue;
+    }
     next.push(s);
   }
   st.shots = next;
   pend.forEach(i => bbBurst(st, i, ev));
 }
-function bbChain(grid, i) {
-  const st = { grid, shots: [], bursts: 0 };
-  grid[i]++; if (grid[i] >= 4) bbBurst(st, i);
-  let guard = 0; while (st.shots.length && guard++ < 500) bbTick(st);
-  return st.bursts;
+function bbFall(g, onMove) {
+  for (let c = 0; c < BB_C; c++) {
+    let w = BB_R - 1;
+    for (let r = BB_R - 1; r >= 0; r--) {
+      const i = r * BB_C + c; if (!g[i]) continue;
+      if (r !== w) { g[w * BB_C + c] = g[i]; g[i] = null; if (onMove) onMove(g[w * BB_C + c], w - r); }
+      w--;
+    }
+  }
 }
-// A simple player: pop the full pearl with the biggest chain, else plump the biggest pearl.
-function bbBot(grid0) {
-  const g = grid0.slice(); let taps = 0, spent = 0;
-  while (g.some(v => v > 0) && spent < 300) {
-    let best = -1, bestB = -1;
-    for (let i = 0; i < g.length; i++) { if (g[i] !== 3) continue; const b = bbChain(g.slice(), i); if (b > bestB) { bestB = b; best = i; } }
-    if (best < 0) { let hi = 0; for (let i = 0; i < g.length; i++) if (g[i] > hi) { hi = g[i]; best = i; } }
-    const b = bbChain(g, best); spent++; taps += 1 - Math.floor(b / 4);
+// Plays one tap out on a copy of the tray and reports what would happen.
+function bbSim(g0, i) {
+  const st = { g: g0.map(c => c && { k: c.k, lv: c.lv }), shots: [], bursts: 0 }, ev = { bursts: [], hits: [], breaks: [] };
+  st.g[i].lv++; if (st.g[i].lv >= 4) bbBurst(st, i, ev);
+  let guard = 0; while (st.shots.length && guard++ < 400) bbTick(st, ev);
+  return { g: st.g, n: st.bursts, cells: ev.bursts.map(b => b.i), breaks: ev.breaks };
+}
+function bbAfter(g, origin, n) {
+  if (n >= BB_REWARD && !g[origin]) g[origin] = { k: POP, lv: 3, sc: 0, oy: 0 };
+  bbFall(g);
+}
+const bbPearls = g => g.filter(c => c && c.k !== JELLY).length;
+// A decent player: fire the biggest chain on offer, otherwise plump the fullest pearl.
+function bbBot(g0) {
+  let g = g0.map(c => c && { k: c.k, lv: c.lv }), taps = 0;
+  while (bbPearls(g) && taps < 200) {
+    let best = -1, bv = -1, br = null;
+    for (let i = 0; i < BB_N; i++) {
+      if (!g[i] || g[i].k === JELLY) continue;
+      const r = bbSim(g, i), v = r.n * 10 + g[i].lv;
+      if (v > bv) { bv = v; best = i; br = r; }
+    }
+    g = br.g; bbAfter(g, best, br.n); taps++;
   }
   return taps;
 }
 function bbGenerate(n) {
-  const t = BB_TRAYS[n], grid = [];
-  for (let i = 0; i < BB_C * BB_R; i++) {
-    if (Math.random() < t.empty) { grid.push(0); continue; }
-    const x = Math.random(); grid.push(x < t.w[0] ? 1 : x < t.w[0] + t.w[1] ? 2 : 3);
+  const L = BB_LEVELS[n], g = new Array(BB_N).fill(null);
+  for (let i = (BB_R - L.rows) * BB_C; i < BB_N; i++) {
+    if (Math.random() < L.empty) continue;
+    const x = Math.random(); g[i] = { k: PEARL, lv: x < L.w[0] ? 1 : x < L.w[0] + L.w[1] ? 2 : 3 };
   }
-  if (!grid.includes(3)) grid[rand(grid.length)] = 3;
-  return grid;
+  const spots = shuffle(g.map((c, i) => c ? i : -1).filter(i => i >= 0));
+  for (let k = 0; k < (L.jelly || 0); k++) g[spots.pop()] = { k: JELLY, lv: 0 };
+  for (let k = 0; k < (L.pop || 0); k++) g[spots.pop()].k = POP;
+  for (let k = 0; k < (L.stripe || 0); k++) g[spots.pop()].k = Math.random() < 0.5 ? ROWB : COLB;
+  bbFall(g);
+  return g;
+}
+function bbCellAt(e) {
+  const p = cvPoint(document.getElementById('bb-cv'), e, BB_W);
+  if (p.x < 0 || p.x >= BB_W || p.y < BB_TOP || p.y >= BB_H) return -1;
+  return (((p.y - BB_TOP) / BB_S) | 0) * BB_C + ((p.x / BB_S) | 0);
 }
 function bbInit() {
   const cv = document.getElementById('bb-cv'); bbCtx = fitCanvas(cv, BB_W, BB_H);
-  cv.addEventListener('pointerdown', e => { const p = cvPoint(cv, e, BB_W); bbTap(p.x, p.y); });
+  cv.addEventListener('pointerdown', e => { audio(); try { cv.setPointerCapture(e.pointerId); } catch (x) {} bb.press = { i: bbCellAt(e), t0: bb.t, slid: false }; bbPreview(); });
+  cv.addEventListener('pointermove', e => { if (!bb.press) return; const i = bbCellAt(e); if (i !== bb.press.i) { bb.press.i = i; bb.press.slid = true; bbPreview(); } });
+  cv.addEventListener('pointerup', () => { if (!bb.press) return; const i = bb.press.i; bb.press = null; bb.prev = null; if (i >= 0) bbTap(i); });
+  cv.addEventListener('pointercancel', () => { bb.press = null; bb.prev = null; });
   document.getElementById('bb-retry').onclick = () => bbLoad(bb.tray, bb.start);
-  document.getElementById('bb-next').onclick = () => bbLoad((bb.tray + 1) % BB_TRAYS.length);
+  document.getElementById('bb-next').onclick = () => bbLoad((bb.tray + 1) % BB_LEVELS.length);
   loops.boba = bbFrame;
   bbLoad(0);
 }
-function bbLoad(tray, grid) {
-  const start = grid || bbGenerate(tray);
-  const budget = Math.max(5, bbBot(start) + 3);
-  bb = { tray, start, grid: start.slice(), shots: [], bursts: 0, taps: budget, budget, acc: 0, busy: false, over: false,
-    sc: start.map(() => 0), shake: 0, rings: [], fx: new Fx(), t: 0, intro: 0 };
+function bbLoad(tray, keep) {
+  const start = keep || bbGenerate(tray);
+  const budget = Math.max(4, bbBot(start) + 3);
+  bb = { tray, start, g: start.map(c => c && { k: c.k, lv: c.lv, sc: 0, oy: 0 }), shots: [], bursts: 0, taps: budget, budget, acc: 0, busy: false, lock: 0, over: false,
+    origin: -1, popped: 0, shown: 0, flyers: [], rings: [], shake: 0, fx: new Fx(), t: 0, intro: 0, press: null, prev: null };
   document.getElementById('bb-tray').textContent = tray + 1;
+  document.getElementById('bb-tip').textContent = BB_LEVELS[tray].tip;
   document.getElementById('bb-msg').textContent = '';
   document.getElementById('bb-next').hidden = true;
   bbHud();
 }
 function bbHud() { document.getElementById('bb-taps').textContent = bb.taps; }
-const bbXY = i => ({ x: (i % BB_C) * BB_S + BB_S / 2, y: ((i / BB_C) | 0) * BB_S + BB_S / 2 });
-function bbPopFx(i) {
-  const { x, y } = bbXY(i);
-  bb.fx.burst(x, y, ['#ffb23d', '#ffd98a', '#fff1d6'], 12, 190, 4.5);
+const bbXY = i => ({ x: (i % BB_C) * BB_S + BB_S / 2, y: BB_TOP + ((i / BB_C) | 0) * BB_S + BB_S / 2 });
+const bbCan = i => i >= 0 && bb.g[i] && bb.g[i].k !== JELLY;
+function bbPreview() {
+  const p = bb.press; bb.prev = null;
+  if (!p || bb.busy || bb.over || bb.lock > 0 || !bbCan(p.i)) return;
+  const r = bbSim(bb.g, p.i);
+  bb.prev = { i: p.i, n: r.n, cells: new Set(r.cells), breaks: new Set(r.breaks) };
+}
+function bbPopFx(b) {
+  const { x, y } = bbXY(b.i);
+  bb.fx.burst(x, y, b.k === POP ? ['#5fd4c4', '#d6fff8', '#fff'] : ['#ffb23d', '#ffd98a', '#fff1d6'], b.k === PEARL ? 10 : 16, 190, 4.2);
   bb.rings.push({ x, y, life: 0 });
-  bb.shake = Math.min(9, bb.shake + 2.2);
+  bb.shake = Math.min(9, bb.shake + (b.k === PEARL ? 1.8 : 3));
+  bb.flyers.push({ x, y, life: 0 }); bb.popped++;
   blip(240 * Math.pow(1.07, Math.min(bb.bursts, 24)), 0.13, 'triangle', 0.13); buzz(10);
 }
-function bbTap(x, y) {
-  if (!bb || bb.over || bb.busy) return;
-  const c = Math.min(BB_C - 1, (x / BB_S) | 0), r = Math.min(BB_R - 1, (y / BB_S) | 0), i = r * BB_C + c;
-  audio();
-  if (bb.grid[i] === 0) { blip(150, 0.06, 'square', 0.04); return; }
-  bb.taps--; bb.bursts = 0; bb.grid[i]++; bb.sc[i] = 1.45;
-  blip(330 + bb.grid[i] * 70, 0.07); buzz(8);
-  if (bb.grid[i] >= 4) { bbBurst(bb, i); bbPopFx(i); }
+function bbTap(i) {
+  if (!bb || bb.over || bb.busy || bb.lock > 0) return;
+  if (!bb.g[i]) return;
+  if (bb.g[i].k === JELLY) { blip(140, 0.08, 'square', 0.05); bb.g[i].sc = 1.25; return; }
+  const cell = bb.g[i];
+  bb.taps--; bb.bursts = 0; bb.origin = i; cell.lv++; cell.sc = 1.45;
+  blip(330 + cell.lv * 70, 0.07); buzz(8);
+  if (cell.lv >= 4) { const ev = { bursts: [], hits: [], breaks: [] }; bbBurst(bb, i, ev); ev.bursts.forEach(bbPopFx); }
   bb.acc = 0; bb.busy = bb.shots.length > 0;
   bbHud();
   if (!bb.busy) bbSettle();
 }
 function bbSettle() {
-  const n = bb.bursts, bonus = Math.floor(n / 4);
-  if (bonus) { bb.taps += bonus; bb.fx.say(BB_W / 2, BB_H / 2, `Chain x${n}!  +${bonus} tap${bonus > 1 ? 's' : ''}`, '#ffe08a'); note(8); setTimeout(() => note(10), 90); }
-  else if (n >= 2) bb.fx.say(BB_W / 2, BB_H / 2, `Chain x${n}`, '#fff');
+  const n = bb.bursts;
+  if (n >= BB_REWARD && !bb.g[bb.origin]) {
+    bb.g[bb.origin] = { k: POP, lv: 3, sc: 0, oy: 0 };
+    bb.fx.say(BB_W / 2, BB_TOP + 150, `Chain x${n}!  Popping boba!`, '#b8fff3'); note(8); setTimeout(() => note(10), 90);
+  } else if (n >= 2) bb.fx.say(BB_W / 2, BB_TOP + 150, `Chain x${n}`, '#fff');
+  let moved = false;
+  bbFall(bb.g, (cell, rows) => { cell.oy = -rows * BB_S; moved = true; });
+  if (moved) bb.lock = 0.24;
   const msg = document.getElementById('bb-msg');
-  if (!bb.grid.some(v => v > 0)) {
+  if (!bbPearls(bb.g)) {
     bb.over = true; bb.fx.confetti(BB_W);
-    msg.textContent = bb.tray === BB_TRAYS.length - 1 ? 'Every tray cleared!' : `Tray cleared with ${bb.taps} tap${bb.taps === 1 ? '' : 's'} to spare!`;
+    const stars = bb.taps >= 3 ? 3 : bb.taps >= 1 ? 2 : 1;
+    msg.textContent = `${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}  Tray cleared, ${bb.taps} tap${bb.taps === 1 ? '' : 's'} to spare`;
     [0, 2, 4, 7].forEach((k, j) => setTimeout(() => note(k + 5, 0.18), j * 100));
-    const nx = document.getElementById('bb-next'); nx.hidden = false; nx.textContent = bb.tray === BB_TRAYS.length - 1 ? 'Start over' : 'Next tray';
+    const nx = document.getElementById('bb-next'); nx.hidden = false; nx.textContent = bb.tray === BB_LEVELS.length - 1 ? 'Start over' : 'Next tray';
   } else if (bb.taps <= 0) {
-    bb.over = true; msg.textContent = 'Out of taps. Retry the tray?'; blip(170, 0.3, 'sawtooth', 0.07);
+    bb.over = true; msg.textContent = `Out of taps with ${bbPearls(bb.g)} pearl${bbPearls(bb.g) === 1 ? '' : 's'} left. Retry?`; blip(170, 0.3, 'sawtooth', 0.07);
   }
   bbHud();
+}
+function bbDrawCell(ctx, cell, x, y, t, i, inScale) {
+  const lv = Math.min(3, cell.lv);
+  if (cell.k === JELLY) {
+    const s = 21 * cell.sc * inScale; if (s < 1) return;
+    ctx.fillStyle = '#5b476b'; rr(ctx, x - s, y - s, s * 2, s * 2, 8); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.14)'; rr(ctx, x - s + 4, y - s + 4, s * 2 - 8, s * 0.7, 5); ctx.fill();
+    return;
+  }
+  let rad = BB_RAD[lv] * cell.sc * inScale, ox = 0, oy = 0;
+  if (lv === 3) { rad += Math.sin(t * 9 + i) * 1.4; ox = Math.sin(t * 31 + i * 3) * 0.9; oy = Math.cos(t * 27 + i) * 0.9;
+    ctx.strokeStyle = `rgba(255,220,150,${0.35 + 0.25 * Math.sin(t * 9 + i)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, rad + 4.5, 0, TAU); ctx.stroke(); }
+  if (rad <= 0.5) return;
+  x += ox; y += oy;
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, y + rad * 0.85, rad * 0.8, rad * 0.28, 0, 0, TAU); ctx.fill();
+  if (cell.k === POP) {
+    ctx.fillStyle = '#5fd4c4';
+    for (let k = 0; k < 8; k++) { const a = k * TAU / 8 + t * 0.8; ctx.beginPath(); ctx.arc(x + Math.cos(a) * rad, y + Math.sin(a) * rad, rad * 0.3, 0, TAU); ctx.fill(); }
+  }
+  ctx.fillStyle = cell.k === POP ? '#5fd4c4' : BB_COL[lv]; ctx.beginPath(); ctx.arc(x, y, rad, 0, TAU); ctx.fill();
+  if (cell.k === ROWB || cell.k === COLB) {
+    ctx.save(); ctx.translate(x, y); if (cell.k === COLB) ctx.rotate(Math.PI / 2);
+    ctx.beginPath(); ctx.arc(0, 0, rad, 0, TAU); ctx.clip();
+    ctx.fillStyle = '#fff'; ctx.fillRect(-rad, -rad * 0.26, rad * 2, rad * 0.52);
+    ctx.restore();
+    ctx.save(); ctx.translate(x, y); if (cell.k === COLB) ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = '#fff';
+    [-1, 1].forEach(d => { ctx.beginPath(); ctx.moveTo(d * (rad + 7), 0); ctx.lineTo(d * (rad + 1.5), -4); ctx.lineTo(d * (rad + 1.5), 4); ctx.fill(); });
+    ctx.restore();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(x - rad * 0.32, y - rad * 0.4, rad * 0.26, rad * 0.15, -0.6, 0, TAU); ctx.fill();
 }
 function bbFrame(dt) {
   const b = bb, ctx = bbCtx; if (!b) return;
   b.t += dt; b.intro = Math.min(1, b.intro + dt * 2.2);
+  if (b.lock > 0) b.lock -= dt;
   if (b.busy) {
     b.acc += dt;
     while (b.acc >= BB_TICK && b.busy) {
       b.acc -= BB_TICK;
-      const ev = { bursts: [], hits: [] };
+      const ev = { bursts: [], hits: [], breaks: [] };
       bbTick(b, ev);
-      ev.hits.forEach(i => { b.sc[i] = 1.35; });
+      ev.hits.forEach(i => { if (b.g[i]) b.g[i].sc = 1.35; });
+      ev.breaks.forEach(i => { const { x, y } = bbXY(i); b.fx.burst(x, y, ['#5b476b', '#8d78a0'], 9, 140, 4); blip(190, 0.07, 'square', 0.06); });
       if (ev.hits.length && !ev.bursts.length) blip(420 + b.bursts * 18, 0.05, 'sine', 0.07);
       ev.bursts.forEach(bbPopFx);
       if (!b.shots.length) { b.busy = false; bbSettle(); }
@@ -425,33 +512,54 @@ function bbFrame(dt) {
   }
   b.fx.step(dt); b.shake *= Math.pow(0.002, dt);
   b.rings.forEach(r => r.life += dt); b.rings = b.rings.filter(r => r.life < 0.4);
+  const left = bbPearls(b.g), total = b.popped + left, tubeW = 262;
+  b.flyers.forEach(f => f.life += dt * 2.4);
+  b.flyers = b.flyers.filter(f => { if (f.life < 1) return true; b.shown++; return false; });
+  const frac = total ? b.shown / total : 0;
 
   ctx.save();
   ctx.clearRect(0, 0, BB_W, BB_H);
   if (b.shake > 0.3) ctx.translate((Math.random() - 0.5) * b.shake, (Math.random() - 0.5) * b.shake);
   ctx.fillStyle = '#2f2440'; rr(ctx, 0, 0, BB_W, BB_H, 16); ctx.fill();
-  for (let i = 0; i < b.grid.length; i++) {
-    const { x, y } = bbXY(i), lv = Math.min(3, b.grid[i]);
-    ctx.fillStyle = 'rgba(255,255,255,.045)'; ctx.beginPath(); ctx.arc(x, y, 31, 0, TAU); ctx.fill();
-    b.sc[i] += ((lv ? 1 : 0) - b.sc[i]) * Math.min(1, dt * 11);
-    if (!lv) continue;
-    const inScale = Math.min(1, Math.max(0, b.intro * 2.2 - (i % BB_C + ((i / BB_C) | 0)) * 0.11));
-    let rad = BB_RAD[lv] * b.sc[i] * inScale, ox = 0, oy = 0;
-    if (lv === 3) { rad += Math.sin(b.t * 9 + i) * 1.6; ox = Math.sin(b.t * 31 + i * 3) * 1.1; oy = Math.cos(b.t * 27 + i) * 1.1;
-      ctx.strokeStyle = `rgba(255,210,120,${0.35 + 0.25 * Math.sin(b.t * 9 + i)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, rad + 5, 0, TAU); ctx.stroke(); }
-    if (rad <= 0.5) continue;
-    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x + ox, y + oy + rad * 0.85, rad * 0.8, rad * 0.28, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = BB_COL[lv]; ctx.beginPath(); ctx.arc(x + ox, y + oy, rad, 0, TAU); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(x + ox - rad * 0.32, y + oy - rad * 0.36, rad * 0.26, rad * 0.16, -0.6, 0, TAU); ctx.fill();
+  // the straw: fills as pearls pop
+  ctx.fillStyle = 'rgba(255,255,255,.1)'; rr(ctx, 14, 14, tubeW, 28, 14); ctx.fill();
+  if (frac > 0.01) { ctx.fillStyle = '#e8c9a0'; rr(ctx, 14, 14, Math.max(28, tubeW * frac), 28, 14); ctx.fill();
+    ctx.fillStyle = '#6b4636'; for (let x = 28; x < 14 + tubeW * frac - 8; x += 13) { ctx.beginPath(); ctx.arc(x, 28 + Math.sin(x * 0.7 + b.t * 2) * 3, 4.5, 0, TAU); ctx.fill(); } }
+  ctx.fillStyle = '#fff'; ctx.font = '700 15px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText(left ? `${left} left` : 'Done!', BB_W - 14, 29);
+
+  for (let i = 0; i < BB_N; i++) { const { x, y } = bbXY(i); ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.beginPath(); ctx.arc(x, y, 26, 0, TAU); ctx.fill(); }
+  for (let i = 0; i < BB_N; i++) {
+    const cell = b.g[i]; if (!cell) continue;
+    cell.sc += (1 - cell.sc) * Math.min(1, dt * 11);
+    cell.oy += (0 - cell.oy) * Math.min(1, dt * 16);
+    const { x, y } = bbXY(i), inScale = Math.min(1, Math.max(0, b.intro * 2.4 - (i % BB_C + ((i / BB_C) | 0)) * 0.1));
+    bbDrawCell(ctx, cell, x, y + cell.oy, b.t, i, inScale);
   }
   const p = b.busy ? Math.min(1, b.acc / BB_TICK) : 0;
   for (const s of b.shots) {
-    const x = (s.c + s.dx * p) * BB_S + BB_S / 2, y = (s.r + s.dy * p) * BB_S + BB_S / 2;
-    ctx.fillStyle = 'rgba(255,241,214,.35)'; ctx.beginPath(); ctx.arc(x - s.dx * 9, y - s.dy * 9, 5, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#fff1d6'; ctx.beginPath(); ctx.arc(x, y, 7, 0, TAU); ctx.fill();
+    const x = (s.c + s.dx * p) * BB_S + BB_S / 2, y = BB_TOP + (s.r + s.dy * p) * BB_S + BB_S / 2;
+    if (y < BB_TOP - 6) continue;
+    if (s.beam) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - s.dx * 26, y - s.dy * 26); ctx.lineTo(x, y); ctx.stroke(); continue; }
+    ctx.fillStyle = 'rgba(255,241,214,.35)'; ctx.beginPath(); ctx.arc(x - s.dx * 9, y - s.dy * 9, 4.5, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#fff1d6'; ctx.beginPath(); ctx.arc(x, y, 6.5, 0, TAU); ctx.fill();
   }
-  for (const r of b.rings) { ctx.globalAlpha = 1 - r.life / 0.4; ctx.strokeStyle = '#ffe2a8'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(r.x, r.y, 20 + r.life * 110, 0, TAU); ctx.stroke(); }
+  for (const r of b.rings) { ctx.globalAlpha = 1 - r.life / 0.4; ctx.strokeStyle = '#ffe2a8'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(r.x, r.y, 18 + r.life * 100, 0, TAU); ctx.stroke(); }
   ctx.globalAlpha = 1;
+  for (const f of b.flyers) {
+    const e = f.life * f.life, tx = 14 + Math.max(14, tubeW * frac), x = f.x + (tx - f.x) * e, y = f.y + (28 - f.y) * e - Math.sin(f.life * Math.PI) * 24;
+    ctx.fillStyle = '#6b4636'; ctx.beginPath(); ctx.arc(x, y, 5.5, 0, TAU); ctx.fill();
+  }
+  // chain preview while a finger is held down
+  const pv = b.prev, held = b.press && (b.press.slid || b.t - b.press.t0 > 0.2);
+  if (pv && held) {
+    const pulse = 0.6 + 0.4 * Math.sin(b.t * 10);
+    pv.cells.forEach(i => { const { x, y } = bbXY(i); ctx.strokeStyle = `rgba(255,255,255,${pulse})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 27, 0, TAU); ctx.stroke(); });
+    pv.breaks.forEach(i => { const { x, y } = bbXY(i); ctx.strokeStyle = `rgba(255,255,255,${pulse})`; ctx.lineWidth = 3; rr(ctx, x - 25, y - 25, 50, 50, 9); ctx.stroke(); });
+    const o = bbXY(pv.i), ly = o.y - 44 < BB_TOP + 4 ? o.y + 44 : o.y - 44, label = pv.n ? `x${pv.n}` : '+1';
+    ctx.fillStyle = pv.n >= BB_REWARD ? '#5fd4c4' : '#fff'; rr(ctx, o.x - 23, ly - 14, 46, 28, 14); ctx.fill();
+    ctx.fillStyle = '#2f2440'; ctx.font = '700 17px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, o.x, ly + 1);
+  }
   b.fx.draw(ctx);
   ctx.restore();
 }
