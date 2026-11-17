@@ -183,11 +183,11 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
 
   <!-- BOBA BURST -->
   <section class="card" id="p-boba" hidden>
-    <div class="hud" style="margin-top:0"><span>Tray <strong id="bb-tray">1</strong>/6</span><span>Taps left <strong id="bb-taps">0</strong></span></div>
+    <div class="hud" style="margin-top:0"><span>Corner <strong id="bb-tray">1</strong>/4</span><span>Taps left <strong id="bb-taps">0</strong></span></div>
     <p class="how one" id="bb-tip" style="margin:0 0 12px"></p>
     <canvas class="game" id="bb-cv" style="touch-action:none"></canvas>
     <p class="msg" id="bb-msg"></p>
-    <div class="row"><button class="btn plain" id="bb-retry">Retry tray</button><button class="btn" id="bb-next" hidden>Next tray</button></div>
+    <div class="row"><button class="btn plain" id="bb-retry">Retry</button><button class="btn" id="bb-next" hidden>Next tray</button></div>
   </section>
 
   <!-- DROP SHIP -->
@@ -787,16 +787,48 @@ function tcFrame(dt) {
 }
 
 /* ════════ BOBA BURST ════════ */
-const BB_C = 6, BB_R = 7, BB_S = 60, BB_TOP = 56, BB_W = 360, BB_H = BB_TOP + BB_R * BB_S, BB_N = BB_C * BB_R, BB_TICK = 0.085, BB_REWARD = 5;
+const BB_C = 6, BB_R = 6, BB_S = 60, BB_TOP = 56, BB_W = 360, BB_H = BB_TOP + BB_R * BB_S, BB_N = BB_C * BB_R, BB_TICK = 0.085, BB_REWARD = 5;
 const PEARL = 0, JELLY = 1, POP = 2, ROWB = 3, COLB = 4;
 const BB_LEVELS = [
-  { rows: 4, empty: 0.10, w: [0.68, 0.24, 0.08], tip: 'Tap a pearl to plump it. A full pearl bursts and squirts four ways, plumping whatever it hits. Clear the tray.' },
-  { rows: 5, empty: 0.10, w: [0.72, 0.22, 0.06], tip: 'Hold your finger down to preview the chain. Slide to compare pearls, lift to pop. A chain of 5 or more leaves a popping boba that squirts eight ways.' },
-  { rows: 5, empty: 0.08, w: [0.62, 0.26, 0.12], jelly: 6, tip: 'Jelly cubes block squirts and can\'t be tapped. Hit one with a squirt to break it, or work around it.' },
-  { rows: 6, empty: 0.08, w: [0.75, 0.20, 0.05], stripe: 5, tip: 'Striped pearls fire a beam down their whole row or column, plumping everything in it.' },
-  { rows: 6, empty: 0.06, w: [0.72, 0.22, 0.06], jelly: 6, stripe: 3, pop: 2, tip: 'Everything together. Finish with 3 taps to spare for three stars.' },
-  { rows: 7, empty: 0.05, w: [0.75, 0.20, 0.05], jelly: 8, stripe: 4, pop: 3, tip: 'A full tray. Set up your chains before you fire them.' },
+  { empty: 0.14, w: [0.66, 0.25, 0.09], tip: 'Tap a pearl to plump it. A full pearl bursts, squirts four ways and splats paint wherever it goes. Pop every pearl to finish this corner of the mural.' },
+  { empty: 0.12, w: [0.70, 0.23, 0.07], tip: 'Hold your finger down to preview the chain. Slide to compare pearls, lift to pop. A chain of 5 or more leaves a popping boba that squirts eight ways.' },
+  { empty: 0.10, w: [0.64, 0.25, 0.11], jelly: 5, stripe: 2, tip: 'Jelly cubes block squirts and can\'t be tapped: hit one with a squirt to break it. Striped pearls fire a beam down their whole row or column.' },
+  { empty: 0.08, w: [0.72, 0.22, 0.06], jelly: 6, stripe: 3, pop: 2, tip: 'The last corner. Finish with 3 taps to spare for three stars.' },
 ];
+// The mural: a 60x60 pixel-art boba shop. Each level paints one 30x30 corner; each board square covers 5x5 pixels.
+const BB_PX = 60, BB_DONE = [false, false, false, false];
+let bbArt = null;
+function bbMakeArt() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = BB_PX; const c = cv.getContext('2d');
+  const R = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+  R(0, 0, 60, 60, '#aee3ff'); R(0, 6, 60, 3, '#c4ecff');
+  R(6, 2, 9, 2, '#fff'); R(8, 1, 5, 1, '#fff'); R(30, 3, 8, 2, '#fff'); R(32, 2, 4, 1, '#fff');   // clouds
+  R(50, 1, 6, 6, '#ffd23d'); R(51, 0, 4, 8, '#ffd23d'); R(49, 2, 8, 4, '#ffd23d');                // sun
+  R(4, 10, 52, 40, '#ffe9c9'); R(4, 10, 2, 40, '#f2d5a8'); R(54, 10, 2, 40, '#f2d5a8');           // shop wall
+  R(2, 8, 56, 3, '#8a5a3c'); R(2, 8, 56, 1, '#a8744f');                                             // roof edge
+  R(12, 11, 36, 9, '#ff7ab8'); R(12, 11, 36, 1, '#ffa6d0'); R(12, 19, 36, 1, '#d95a97');            // sign
+  const F = { B: ['11110', '10001', '11110', '10001', '11110'], O: ['01110', '10001', '10001', '10001', '01110'], A: ['01110', '10001', '11111', '10001', '10001'] };
+  'BOBA'.split('').forEach((ch, k) => F[ch].forEach((row, y) => row.split('').forEach((v, x) => { if (v === '1') R(19 + k * 6 + x, 13 + y, 1, 1, '#fff'); })));
+  for (let x = 4; x < 56; x += 4) { const red = ((x - 4) / 4) % 2 === 0; R(x, 21, 4, 5, red ? '#ff5d5d' : '#fff7ea'); R(x + 1, 26, 2, 1, red ? '#ff5d5d' : '#fff7ea'); R(x, 25, 4, 1, red ? '#d94545' : '#e6dccb'); } // awning
+  R(7, 29, 26, 16, '#8a5a3c'); R(8, 30, 24, 14, '#bfefff'); R(8, 30, 24, 2, '#dcf7ff'); R(19, 30, 1, 14, '#8a5a3c'); // window
+  [[10, '#ff7ab8'], [14, '#a26bf5'], [22, '#35c27a'], [27, '#ffb23d']].forEach(([x, straw]) => {         // cups on the sill
+    R(x + 2, 33, 1, 3, straw); R(x, 36, 4, 1, '#fff'); R(x, 37, 4, 4, '#d9a878'); R(x, 41, 4, 3, '#c08d5c');
+    R(x, 42, 1, 1, '#4a3328'); R(x + 2, 42, 1, 1, '#4a3328'); R(x + 1, 43, 1, 1, '#4a3328'); R(x + 3, 43, 1, 1, '#4a3328'); });
+  R(7, 45, 26, 2, '#a8744f');                                                                       // sill
+  R(37, 29, 14, 21, '#8a5a3c'); R(38, 30, 12, 20, '#39b8b0'); R(40, 32, 8, 7, '#bfefff'); R(40, 32, 8, 1, '#dcf7ff'); R(48, 41, 1, 2, '#ffd23d'); R(40, 42, 8, 6, '#2fa39c'); // door
+  R(34, 28, 2, 3, '#ffd23d'); R(52, 28, 2, 3, '#ffd23d');                                           // lamps
+  R(4, 48, 33, 2, '#e8c08a'); R(51, 48, 5, 2, '#e8c08a');                                           // wall base
+  R(32, 41, 5, 5, '#35c27a'); R(33, 39, 3, 2, '#4fd48c'); R(31, 43, 1, 2, '#35c27a'); R(33, 46, 3, 4, '#c56a3d'); // plant
+  R(53, 40, 2, 10, '#7d8799'); R(51, 36, 6, 5, '#ff5d5d'); R(52, 37, 4, 3, '#fff7ea');              // street sign
+  R(0, 50, 60, 4, '#d5d8e0'); for (let x = 0; x < 60; x += 10) R(x, 50, 1, 4, '#bfc3ce');           // sidewalk
+  R(0, 54, 60, 6, '#5b6072'); for (let x = 3; x < 60; x += 12) R(x, 57, 6, 1, '#ffd23d');           // road
+  return { cv, px: c.getImageData(0, 0, BB_PX, BB_PX).data };
+}
+function bbArtColors(tray, i) {
+  const ox = (tray % 2) * 30 + (i % BB_C) * 5, oy = ((tray / 2) | 0) * 30 + ((i / BB_C) | 0) * 5, out = [];
+  [[1, 1], [3, 2], [2, 4]].forEach(([dx, dy]) => { const k = ((oy + dy) * BB_PX + ox + dx) * 4, d = bbArt.px; out.push(`rgb(${d[k]},${d[k + 1]},${d[k + 2]})`); });
+  return out;
+}
 const BB_COL = ['', '#b9a3ff', '#ff8fb8', '#ffb23d'], BB_RAD = [0, 12, 17, 22];
 const BB_D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], BB_D8 = BB_D4.concat([[1, 1], [1, -1], [-1, 1], [-1, -1]]);
 let bb = null, bbCtx = null;
@@ -815,6 +847,7 @@ function bbTick(st, ev) {
     s.c += s.dx; s.r += s.dy;
     if (s.c < 0 || s.c >= BB_C || s.r < 0 || s.r >= BB_R) continue;
     const i = s.r * BB_C + s.c, cell = st.g[i];
+    if (ev && ev.pass) ev.pass.push(i);
     if (cell) {
       if (cell.k === JELLY) { st.g[i] = null; if (ev) ev.breaks.push(i); }
       else { cell.lv++; if (ev) ev.hits.push(i); if (cell.lv >= 4 && !pend.includes(i)) pend.push(i); }
@@ -844,7 +877,6 @@ function bbSim(g0, i) {
 }
 function bbAfter(g, origin, n) {
   if (n >= BB_REWARD && !g[origin]) g[origin] = { k: POP, lv: 3, sc: 0, oy: 0 };
-  bbFall(g);
 }
 const bbPearls = g => g.filter(c => c && c.k !== JELLY).length;
 // A decent player: fire the biggest chain on offer, otherwise plump the fullest pearl.
@@ -863,7 +895,7 @@ function bbBot(g0) {
 }
 function bbGenerate(n) {
   const L = BB_LEVELS[n], g = new Array(BB_N).fill(null);
-  for (let i = (BB_R - L.rows) * BB_C; i < BB_N; i++) {
+  for (let i = 0; i < BB_N; i++) {
     if (Math.random() < L.empty) continue;
     const x = Math.random(); g[i] = { k: PEARL, lv: x < L.w[0] ? 1 : x < L.w[0] + L.w[1] ? 2 : 3 };
   }
@@ -871,7 +903,6 @@ function bbGenerate(n) {
   for (let k = 0; k < (L.jelly || 0); k++) g[spots.pop()] = { k: JELLY, lv: 0 };
   for (let k = 0; k < (L.pop || 0); k++) g[spots.pop()].k = POP;
   for (let k = 0; k < (L.stripe || 0); k++) g[spots.pop()].k = Math.random() < 0.5 ? ROWB : COLB;
-  bbFall(g);
   return g;
 }
 function bbCellAt(e) {
@@ -880,13 +911,13 @@ function bbCellAt(e) {
   return (((p.y - BB_TOP) / BB_S) | 0) * BB_C + ((p.x / BB_S) | 0);
 }
 function bbInit() {
-  const cv = document.getElementById('bb-cv'); bbCtx = fitCanvas(cv, BB_W, BB_H);
+  const cv = document.getElementById('bb-cv'); bbCtx = fitCanvas(cv, BB_W, BB_H); bbArt = bbMakeArt();
   cv.addEventListener('pointerdown', e => { audio(); try { cv.setPointerCapture(e.pointerId); } catch (x) {} bb.press = { i: bbCellAt(e), t0: bb.t, slid: false }; bbPreview(); });
   cv.addEventListener('pointermove', e => { if (!bb.press) return; const i = bbCellAt(e); if (i !== bb.press.i) { bb.press.i = i; bb.press.slid = true; bbPreview(); } });
   cv.addEventListener('pointerup', () => { if (!bb.press) return; const i = bb.press.i; bb.press = null; bb.prev = null; if (i >= 0) bbTap(i); });
   cv.addEventListener('pointercancel', () => { bb.press = null; bb.prev = null; });
   document.getElementById('bb-retry').onclick = () => bbLoad(bb.tray, bb.start);
-  document.getElementById('bb-next').onclick = () => bbLoad((bb.tray + 1) % BB_LEVELS.length);
+  document.getElementById('bb-next').onclick = () => { if (BB_DONE.every(Boolean)) BB_DONE.fill(false); bbLoad((bb.tray + 1) % BB_LEVELS.length); };
   loops.boba = bbFrame;
   bbLoad(0);
 }
@@ -894,7 +925,7 @@ function bbLoad(tray, keep) {
   const start = keep || bbGenerate(tray);
   const budget = Math.max(4, bbBot(start) + 3);
   bb = { tray, start, g: start.map(c => c && { k: c.k, lv: c.lv, sc: 0, oy: 0 }), shots: [], bursts: 0, taps: budget, budget, acc: 0, busy: false, lock: 0, over: false,
-    origin: -1, popped: 0, shown: 0, flyers: [], rings: [], shake: 0, fx: new Fx(), t: 0, intro: 0, press: null, prev: null };
+    origin: -1, rv: new Array(BB_N).fill(0), painted: new Array(BB_N).fill(false), mural: 0, popped: 0, shown: 0, flyers: [], rings: [], shake: 0, fx: new Fx(), t: 0, intro: 0, press: null, prev: null };
   document.getElementById('bb-tray').textContent = tray + 1;
   document.getElementById('bb-tip').textContent = BB_LEVELS[tray].tip;
   document.getElementById('bb-msg').textContent = '';
@@ -910,9 +941,11 @@ function bbPreview() {
   const r = bbSim(bb.g, p.i);
   bb.prev = { i: p.i, n: r.n, cells: new Set(r.cells), breaks: new Set(r.breaks) };
 }
+function bbPaint(i) { if (bb.painted[i]) return; bb.painted[i] = true; const { x, y } = bbXY(i); bb.fx.burst(x, y, bbArtColors(bb.tray, i), 5, 110, 3.5); }
 function bbPopFx(b) {
   const { x, y } = bbXY(b.i);
-  bb.fx.burst(x, y, b.k === POP ? ['#5fd4c4', '#d6fff8', '#fff'] : ['#ffb23d', '#ffd98a', '#fff1d6'], b.k === PEARL ? 10 : 16, 190, 4.2);
+  bbPaint(b.i);
+  bb.fx.burst(x, y, bbArtColors(bb.tray, b.i).concat(['#fff1d6']), b.k === PEARL ? 12 : 18, 200, 4.4);
   bb.rings.push({ x, y, life: 0 });
   bb.shake = Math.min(9, bb.shake + (b.k === PEARL ? 1.8 : 3));
   bb.flyers.push({ x, y, life: 0 }); bb.popped++;
@@ -936,16 +969,14 @@ function bbSettle() {
     bb.g[bb.origin] = { k: POP, lv: 3, sc: 0, oy: 0 };
     bb.fx.say(BB_W / 2, BB_TOP + 150, `Chain x${n}!  Popping boba!`, '#b8fff3'); note(8); setTimeout(() => note(10), 90);
   } else if (n >= 2) bb.fx.say(BB_W / 2, BB_TOP + 150, `Chain x${n}`, '#fff');
-  let moved = false;
-  bbFall(bb.g, (cell, rows) => { cell.oy = -rows * BB_S; moved = true; });
-  if (moved) bb.lock = 0.24;
   const msg = document.getElementById('bb-msg');
   if (!bbPearls(bb.g)) {
-    bb.over = true; bb.fx.confetti(BB_W);
-    const stars = bb.taps >= 3 ? 3 : bb.taps >= 1 ? 2 : 1;
-    msg.textContent = `${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}  Tray cleared, ${bb.taps} tap${bb.taps === 1 ? '' : 's'} to spare`;
+    bb.over = true; bb.fx.confetti(BB_W); BB_DONE[bb.tray] = true; bb.mural = 0.001;
+    const b0 = bb; for (let i = 0; i < BB_N; i++) setTimeout(() => { if (bb === b0) b0.painted[i] = true; }, 150 + ((i % BB_C) + ((i / BB_C) | 0)) * 55);
+    const stars = bb.taps >= 3 ? 3 : bb.taps >= 1 ? 2 : 1, all = BB_DONE.every(Boolean);
+    msg.textContent = `${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}  ${all ? 'The boba shop is finished!' : `Corner ${BB_DONE.filter(Boolean).length} of 4 painted`}, ${bb.taps} tap${bb.taps === 1 ? '' : 's'} to spare`;
     [0, 2, 4, 7].forEach((k, j) => setTimeout(() => note(k + 5, 0.18), j * 100));
-    const nx = document.getElementById('bb-next'); nx.hidden = false; nx.textContent = bb.tray === BB_LEVELS.length - 1 ? 'Start over' : 'Next tray';
+    const nx = document.getElementById('bb-next'); nx.hidden = false; nx.textContent = BB_DONE.every(Boolean) ? 'Paint it again' : 'Next corner';
   } else if (bb.taps <= 0) {
     bb.over = true; msg.textContent = `Out of taps with ${bbPearls(bb.g)} pearl${bbPearls(bb.g) === 1 ? '' : 's'} left. Retry?`; blip(170, 0.3, 'sawtooth', 0.07);
   }
@@ -990,8 +1021,9 @@ function bbFrame(dt) {
     b.acc += dt;
     while (b.acc >= BB_TICK && b.busy) {
       b.acc -= BB_TICK;
-      const ev = { bursts: [], hits: [], breaks: [] };
+      const ev = { bursts: [], hits: [], breaks: [], pass: [] };
       bbTick(b, ev);
+      ev.pass.forEach(bbPaint);
       ev.hits.forEach(i => { if (b.g[i]) b.g[i].sc = 1.35; });
       ev.breaks.forEach(i => { const { x, y } = bbXY(i); b.fx.burst(x, y, ['#5b476b', '#8d78a0'], 9, 140, 4); blip(190, 0.07, 'square', 0.06); });
       if (ev.hits.length && !ev.bursts.length) blip(420 + b.bursts * 18, 0.05, 'sine', 0.07);
@@ -1017,13 +1049,20 @@ function bbFrame(dt) {
   ctx.fillStyle = '#fff'; ctx.font = '700 15px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
   ctx.fillText(left ? `${left} left` : 'Done!', BB_W - 14, 29);
 
-  for (let i = 0; i < BB_N; i++) { const { x, y } = bbXY(i); ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.beginPath(); ctx.arc(x, y, 26, 0, TAU); ctx.fill(); }
+  ctx.imageSmoothingEnabled = false;
+  const ax = (b.tray % 2) * 30, ay = ((b.tray / 2) | 0) * 30;
+  for (let i = 0; i < BB_N; i++) {
+    const { x, y } = bbXY(i);
+    if (b.painted[i]) b.rv[i] = Math.min(1, b.rv[i] + dt * 6);
+    if (b.rv[i] < 1) { ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.beginPath(); ctx.arc(x, y, 26, 0, TAU); ctx.fill(); }
+    if (b.rv[i] > 0) { const e = b.rv[i], sz = BB_S * (e < 1 ? 0.3 + 0.7 * e * (2 - e) : 1); ctx.globalAlpha = e; ctx.drawImage(bbArt.cv, ax + (i % BB_C) * 5, ay + ((i / BB_C) | 0) * 5, 5, 5, x - sz / 2, y - sz / 2, sz, sz); ctx.globalAlpha = 1; }
+  }
   for (let i = 0; i < BB_N; i++) {
     const cell = b.g[i]; if (!cell) continue;
     cell.sc += (1 - cell.sc) * Math.min(1, dt * 11);
-    cell.oy += (0 - cell.oy) * Math.min(1, dt * 16);
     const { x, y } = bbXY(i), inScale = Math.min(1, Math.max(0, b.intro * 2.4 - (i % BB_C + ((i / BB_C) | 0)) * 0.1));
-    bbDrawCell(ctx, cell, x, y + cell.oy, b.t, i, inScale);
+    if (b.painted[i] && cell.k !== JELLY) { ctx.fillStyle = 'rgba(30,20,45,.38)'; ctx.beginPath(); ctx.arc(x, y, BB_RAD[Math.min(3, cell.lv)] + 5, 0, TAU); ctx.fill(); }
+    bbDrawCell(ctx, cell, x, y, b.t, i, inScale);
   }
   const p = b.busy ? Math.min(1, b.acc / BB_TICK) : 0;
   for (const s of b.shots) {
@@ -1048,6 +1087,19 @@ function bbFrame(dt) {
     const o = bbXY(pv.i), ly = o.y - 44 < BB_TOP + 4 ? o.y + 44 : o.y - 44, label = pv.n ? `x${pv.n}` : '+1';
     ctx.fillStyle = pv.n >= BB_REWARD ? '#5fd4c4' : '#fff'; rr(ctx, o.x - 23, ly - 14, 46, 28, 14); ctx.fill();
     ctx.fillStyle = '#2f2440'; ctx.font = '700 17px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, o.x, ly + 1);
+  }
+  if (b.mural > 0) {
+    b.mural += dt; const a = Math.max(0, Math.min(1, (b.mural - 1.3) / 0.5));
+    if (a > 0) {
+      ctx.globalAlpha = a; ctx.fillStyle = '#2f2440'; ctx.fillRect(0, BB_TOP, BB_W, BB_W);
+      ctx.drawImage(bbArt.cv, 0, 0, BB_PX, BB_PX, 0, BB_TOP, BB_W, BB_W);
+      for (let q = 0; q < 4; q++) if (!BB_DONE[q]) {
+        const qx = (q % 2) * 180, qy = BB_TOP + ((q / 2) | 0) * 180;
+        ctx.fillStyle = '#3a2d4d'; ctx.fillRect(qx, qy, 180, 180); ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]); ctx.strokeRect(qx + 8, qy + 8, 164, 164); ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.font = '700 44px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', qx + 90, qy + 92);
+      }
+      ctx.globalAlpha = 1;
+    }
   }
   b.fx.draw(ctx);
   ctx.restore();
