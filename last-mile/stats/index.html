@@ -153,7 +153,14 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch {} },
 };
 let key = store.get("sh:adminKey") || "";
-let P = [], T = {}, ROWS = [], ENGINE = {};
+let P = [], T = {}, ROWS = [], ENGINE = {}, RAW = [];
+// "Since your last visit": the newest record seen on this browser's last visit. A refresh in the same
+// sitting keeps the same starting point (sessionStorage), so the summary doesn't empty itself.
+const sess = {
+  get(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
+};
+let BASE = null, SINCE = "visit";
 const PAST = 11;          // "job 11 on": past the tutorial and easy jobs, where help gets limited
 
 // Anyone can send a rating, so everything a tester's phone sent is escaped before it's shown.
@@ -186,13 +193,16 @@ function gate(message = "") {
   });
 }
 
-async function load() {
+let fetchedAt = null;
+async function load(quiet = false) {
   if (!key) return gate();
-  app.innerHTML = `<p class="muted">Loading testers…</p>`;
+  if (!quiet) app.innerHTML = `<p class="muted">Loading testers…</p>`;
   let res;
   try {
     res = await fetch(`${API}/lm/ratings?limit=20000`, { headers: { "x-admin-key": key } });
   } catch {
+    const rb = quiet && document.getElementById('refresh');
+    if (rb) { rb.disabled = false; rb.textContent = "Couldn't reach it. Retry"; return; }
     return gate("Couldn't reach the MusicGrid server. If it was asleep, try again in a few seconds.");
   }
   if (res.status === 401) { store.del("sh:adminKey"); key = ""; return gate("That key didn't work. Check ADMIN_KEY in the MusicGrid Heroku config vars."); }
@@ -200,7 +210,14 @@ async function load() {
   if (!res.ok) return gate(data.error || `The server answered with an error (${res.status}).`);
   try { ENGINE = (await (await fetch("engine.json", { cache: "no-cache" })).json()).jobs || {}; } catch { ENGINE = {}; }
   build(data.ratings || []);
+  const newest = RAW.length ? String(RAW[RAW.length - 1].receivedAt) : "";
+  BASE = sess.get("lm:stats:base");
+  if (BASE === null) { BASE = store.get("lm:stats:seen") || ""; sess.set("lm:stats:base", BASE); }
+  if (newest) store.set("lm:stats:seen", newest);
+  fetchedAt = new Date();
+  const y = scrollY;
   render();
+  if (quiet) scrollTo(0, y);
 }
 
 // Which layout of its job a rating was for (1 = the first), as tools/ratings.py works it out: the game
@@ -218,6 +235,7 @@ const isCurrent = r => { const e = ENGINE[r.level]; return e && e.fps && layoutO
 // One column per phone: the jobs it reached and its latest rating of each (as tools/ratings.py reads them).
 function build(rows) {
   rows.sort((a, b) => String(a.receivedAt).localeCompare(String(b.receivedAt)));
+  RAW = rows;
   const devs = new Map();
   T = {};
   ROWS = [];
@@ -294,9 +312,10 @@ function render() {
   const latest = P.length ? fmtTime(P.map(p => p.last).sort().pop()) : '';
   app.innerHTML = `
     <div class="bar">
-      <div><h1>Last Mile testers</h1><div class="muted small">${P.length} testers · ${total} jobs rated · latest ${esc(latest)}</div></div>
-      <div class="acts"><button class="btn quiet" type="button" id="refresh">Refresh</button><button class="btn quiet" type="button" id="out">Forget key</button></div>
+      <div><h1>Last Mile testers</h1><div class="muted small">${P.length} testers · ${total} jobs rated · latest record ${esc(latest)}</div><div class="muted small" id="fetched"></div></div>
+      <div class="acts"><button class="btn" type="button" id="refresh">Refresh</button><button class="btn quiet" type="button" id="out">Forget key</button></div>
     </div>
+    ${section('s-new', 'Since your last visit', '', true, '<div id="since"></div>')}
     ${section('s-high', 'Best and worst jobs', 'by average rating', true, highlights())}
     ${section('s-engine', 'Engine vs players', 'planned tier vs rated difficulty', true, engineCheck())}
     ${section('s-people', 'Testers', `${P.length}`, true, `<div class="tscroll"><table class="people" id="people"></table></div><div class="cards" id="cards"></div>
@@ -305,7 +324,14 @@ function render() {
       <details><summary class="muted small" style="cursor:pointer">How to read the rings</summary><div class="key" id="key" style="margin-top:10px"></div>
       <p class="note" style="margin-top:10px">Each column is a tester, each row a job; shaded cells are jobs they've reached. Tap a cell for the numbers, or a job number for its title. Job numbers are where each job sat when it was played: several early jobs were redesigned since, so a rating may be for an older layout. Play records only start at build 28, so earlier jobs show shaded with no mark if the tester beat them before then.</p></details>
       <div class="scroller"><table id="grid"></table></div>`)}`;
-  document.getElementById('refresh').addEventListener('click', load);
+  const rb = document.getElementById('refresh');
+  rb.addEventListener('click', async () => {
+    rb.disabled = true; rb.textContent = 'Refreshing…';
+    await load(true);
+  });
+  const stamp = () => { const f = document.getElementById('fetched'); if (f && fetchedAt) { const m = Math.round((Date.now() - fetchedAt) / 60000); f.textContent = 'Fetched ' + (m < 1 ? 'just now' : m === 1 ? 'a minute ago' : m < 60 ? m + ' minutes ago' : fetchedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })); } };
+  stamp();
+  clearInterval(window.__stamp); window.__stamp = setInterval(stamp, 30000);
   document.getElementById('out').addEventListener('click', () => { store.del('sh:adminKey'); key = ''; gate(); });
   // Remember which sections are folded, on this browser.
   for (const s of document.querySelectorAll('details.sec')) {
@@ -313,9 +339,87 @@ function render() {
     if (saved !== null) s.open = saved === '1';
     s.addEventListener('toggle', () => store.set(k, s.open ? '1' : '0'));
   }
+  since();
   peopleTable();
   peopleCards();
   grid();
+}
+
+// What testers did after a point: the last visit on this browser, or the last day or week.
+function since() {
+  const box = document.getElementById('since');
+  const now = RAW.length ? new Date(RAW[RAW.length - 1].receivedAt) : new Date();
+  const ago = h => new Date(now - h * 3600e3).toISOString();
+  const cut = SINCE === 'day' ? ago(24) : SINCE === 'week' ? ago(24 * 7) : (BASE || '');
+  const pick = `<div class="acts" style="display:flex;gap:6px;flex-wrap:wrap">${[['visit', 'Last visit'], ['day', '24 hours'], ['week', '7 days']].map(([k, l]) =>
+    `<button class="btn ${SINCE === k ? '' : 'quiet'}" type="button" data-since="${k}" style="padding:6px 12px;font-size:13px">${l}</button>`).join('')}</div>`;
+  const wire = () => box.querySelectorAll('[data-since]').forEach(b => b.addEventListener('click', () => { SINCE = b.dataset.since; since(); }));
+  if (SINCE === 'visit' && !BASE) {
+    box.innerHTML = pick + '<p class="note" style="margin-top:10px">First visit on this browser. Next time, this shows what testers did since now.</p>';
+    return wire();
+  }
+  const label = new Map(P.map((p, i) => [p.id, `Tester ${i + 1}`]));
+  const after = RAW.filter(r => String(r.receivedAt) > cut);
+  const when = fmtTime(String(cut).slice(0, 16));
+  if (!after.length) {
+    box.innerHTML = pick + `<p class="note" style="margin-top:10px">Nothing new since ${esc(when)}.</p>`;
+    return wire();
+  }
+  // Each tester's furthest job by the cut, the same way the table works it out.
+  const reach = id => {
+    let f = 0;
+    for (const r of RAW) {
+      if (String(r.receivedAt) > cut) break;
+      if (String(r.device || '').slice(0, 8) !== id) continue;
+      const st = r.stats || {};
+      f = Math.max(f, Number(st.levels_done) || 0);
+      const m = /^Level (\d+)$/.exec(String(r.where || ''));
+      if (m && (st.record !== 'play' || st.outcome === 'won')) f = Math.max(f, Number(m[1]));
+    }
+    return f;
+  };
+  const who = new Map();
+  let others = new Set();
+  for (const r of after) {
+    const id = String(r.device || '').slice(0, 8);
+    if (!label.has(id)) { others.add(id); continue; }
+    const st = r.stats || {};
+    const w = who.get(id) || { jobs: new Set(), won: new Set(), rated: 0, left: [], daily: null, detours: new Set(), notes: [], first: !RAW.some(x => String(x.device || '').slice(0, 8) === id && String(x.receivedAt) <= cut) };
+    const where = String(r.where || '');
+    const m = /^Level (\d+)$/.exec(where);
+    const won = st.record !== 'play' || st.outcome === 'won';
+    if (m) { w.jobs.add(+m[1]); if (won) w.won.add(+m[1]); else if (['left', 'skipped'].includes(st.outcome)) w.left.push(+m[1]); }
+    else if (where.startsWith('Daily')) w.daily = won ? 'solved' : (w.daily || 'tried');
+    else if (where.startsWith('Side road')) w.detours.add(where.replace(/^Side road /, '').replace(/, part \d+$/, ''));
+    if (num(r.difficulty) || num(r.fun) || num(r.frustration)) w.rated++;
+    if (r.note) w.notes.push({ where: m ? `job ${m[1]}` : where.replace(/^Side road /, ''), note: String(r.note) });
+    who.set(id, w);
+  }
+  const ids = [...who.keys()].sort((a, b) => label.get(a).localeCompare(label.get(b), undefined, { numeric: true }));
+  const jobsPlayed = ids.reduce((a, id) => a + who.get(id).jobs.size, 0);
+  const ratings = ids.reduce((a, id) => a + who.get(id).rated, 0);
+  const fresh = ids.filter(id => who.get(id).first).length;
+  const head = [`<b>${ids.length}</b> tester${ids.length === 1 ? '' : 's'} played`, `<b>${jobsPlayed}</b> job${jobsPlayed === 1 ? '' : 's'}`, `<b>${ratings}</b> rating${ratings === 1 ? '' : 's'}`]
+    .concat(fresh ? [`<b>${fresh}</b> new tester${fresh === 1 ? '' : 's'}`] : []).join(' · ');
+  const lines = ids.map(id => {
+    const w = who.get(id), p = P.find(x => x.id === id), was = reach(id);
+    const bits = [];
+    if (w.first) bits.push('<span class="chip">new</span>');
+    if (p.furthest > was) bits.push(was ? `job <b>${was} → ${p.furthest}</b>` : `reached job <b>${p.furthest}</b>`);
+    if (w.jobs.size) bits.push(`${w.jobs.size} job${w.jobs.size === 1 ? '' : 's'} played`);
+    if (w.rated) bits.push(`${w.rated} rated`);
+    if (w.daily) bits.push(`${w.daily} the daily`);
+    if (w.detours.size) bits.push(`detour${w.detours.size > 1 ? 's' : ''}: ${esc([...w.detours].join(', '))}`);
+    const quit = [...new Set(w.left)].filter(n => !w.won.has(n));
+    if (quit.length) bits.push(`<span class="dd">left job${quit.length > 1 ? 's' : ''} ${quit.join(', ')} unbeaten</span>`);
+    return `<li><b>${label.get(id)}</b> <span class="muted small">${esc(phoneName(p.phone))}</span><br>${bits.join(' · ')}</li>`;
+  }).join('');
+  const notes = ids.flatMap(id => who.get(id).notes.map(n => `<li><b>${label.get(id)}</b>, ${esc(n.where)}: “${esc(n.note)}”</li>`)).join('');
+  box.innerHTML = pick + `<p style="margin:10px 0 6px">Since ${esc(when)}: ${head}.</p>
+    <ul class="surp">${lines}</ul>
+    ${notes ? `<div style="margin-top:10px"><b>New notes</b><ul class="surp">${notes}</ul></div>` : ''}
+    ${others.size ? `<p class="note" style="margin-top:8px">Plus ${others.size} phone${others.size === 1 ? '' : 's'} that sent only a record or two (not counted as testers).</p>` : ''}`;
+  wire();
 }
 
 // The best and worst: each layout's average over its testers, top few of each score.
