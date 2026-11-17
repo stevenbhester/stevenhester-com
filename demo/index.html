@@ -103,6 +103,7 @@ header p { color: var(--ink-soft); margin-top: 6px; }
 .tabgroup + .tabgroup { margin-top: 12px; }
 .tabgroup small { display: block; font: 700 12px var(--f-mono); color: var(--ink-soft); text-transform: uppercase; letter-spacing: .08em; margin: 0 4px 7px; }
 .tabgroup .tabs { margin: 0; }
+.tabs.old { display: grid; grid-template-columns: repeat(3, 1fr); }
 .tabs.old .tab { font-size: 15px; padding: 10px 6px 11px; }
 #panels { margin-top: 16px; }
 canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: manipulation; user-select: none; -webkit-user-select: none; cursor: pointer; }
@@ -123,13 +124,16 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
 
   <div class="tabgroup"><small>New</small>
     <nav class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true" data-tab="boba">Boba Burst</button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="drop">Drop Ship</button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="bloom">Bloom</button>
+      <button class="tab" role="tab" aria-selected="true" data-tab="brick">Brickwork</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="slice">Fair Slice</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="coat">Top Coat</button>
     </nav>
   </div>
   <div class="tabgroup"><small>Earlier</small>
     <nav class="tabs old" role="tablist">
+      <button class="tab" role="tab" aria-selected="false" data-tab="boba">Boba Burst</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="drop">Drop Ship</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="bloom">Bloom</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="defrag">Defrag</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="even">Even Steven</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="batch">Batch Run</button>
@@ -137,8 +141,35 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
   </div>
   <div id="panels">
 
+  <!-- BRICKWORK -->
+  <section class="card" id="p-brick">
+    <div class="hud" style="margin-top:0"><span>Picture <strong id="bk-n">1</strong>/4</span><span>Bricks left <strong id="bk-left">0</strong></span></div>
+    <p class="how one" style="margin:0 0 12px"><b>Build the picture from the ground up.</b> Tap a lane to send its top crate to the dock. A docked crate lays its bricks wherever its color fits on an open spot (dashed), and leaves when it's empty. The dock holds 3 crates: fill it with crates that can't lay anything and you're jammed.</p>
+    <canvas class="game" id="bk-cv"></canvas>
+    <p class="msg" id="bk-msg"></p>
+    <div class="row"><button class="btn plain" id="bk-retry">Retry</button><button class="btn" id="bk-next" hidden>Next picture</button></div>
+  </section>
+
+  <!-- FAIR SLICE -->
+  <section class="card" id="p-slice" hidden>
+    <div class="hud" style="margin-top:0"><span>Cake <strong id="fs-n">1</strong>/3</span><span>Squares left <strong id="fs-left">0</strong></span></div>
+    <p class="how one" style="margin:0 0 12px"><b>Cut the whole cake into rectangular slices.</b> Drag across squares to cut one. Each slice must hold exactly one number, and be exactly that many squares. Tap a slice to put it back.</p>
+    <canvas class="game" id="fs-cv" style="touch-action:none"></canvas>
+    <p class="msg" id="fs-msg"></p>
+    <div class="row"><button class="btn plain" id="fs-retry">Clear</button><button class="btn" id="fs-next" hidden>Next cake</button></div>
+  </section>
+
+  <!-- TOP COAT -->
+  <section class="card" id="p-coat" hidden>
+    <div class="hud" style="margin-top:0"><span>Pattern <strong id="tc-n">1</strong>/3</span><span><strong id="tc-hearts" style="color:#ff5d5d">♥♥♥</strong></span></div>
+    <p class="how one" style="margin:0 0 12px"><b>Paint the pattern the dots show.</b> Tap a roller to paint its whole row or column. Each roller goes once, and later strokes cover earlier ones, so paint what ends up underneath first. Roll one too soon and you lose a heart.</p>
+    <canvas class="game" id="tc-cv"></canvas>
+    <p class="msg" id="tc-msg"></p>
+    <div class="row"><button class="btn plain" id="tc-retry">Retry</button><button class="btn" id="tc-next" hidden>Next pattern</button></div>
+  </section>
+
   <!-- BOBA BURST -->
-  <section class="card" id="p-boba">
+  <section class="card" id="p-boba" hidden>
     <div class="hud" style="margin-top:0"><span>Tray <strong id="bb-tray">1</strong>/6</span><span>Taps left <strong id="bb-taps">0</strong></span></div>
     <p class="how one" id="bb-tip" style="margin:0 0 12px"></p>
     <canvas class="game" id="bb-cv" style="touch-action:none"></canvas>
@@ -239,7 +270,7 @@ const COLORS = ['#ff5d5d', '#4d8dff', '#ffc53d', '#a26bf5', '#35c27a', '#ff7ab8'
 /* ── tabs + frame loop ── */
 const started = {}, loops = {};
 let current = null, lastT = 0, MUTE = false;
-const KEYS = ['boba', 'drop', 'bloom', 'defrag', 'even', 'batch'];
+const KEYS = ['brick', 'slice', 'coat', 'boba', 'drop', 'bloom', 'defrag', 'even', 'batch'];
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === t));
   KEYS.forEach(k => document.getElementById('p-' + k).hidden = k !== t.dataset.tab);
@@ -248,7 +279,7 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
 function start(k) {
   current = k;
   if (started[k]) return; started[k] = true;
-  ({ boba: bbInit, drop: dsInit, bloom: blInit, defrag: dfInit, even: esInit, batch: brInit })[k]();
+  ({ brick: bkInit, slice: fsInit, coat: tcInit, boba: bbInit, drop: dsInit, bloom: blInit, defrag: dfInit, even: esInit, batch: brInit })[k]();
 }
 requestAnimationFrame(function raf(t) {
   const dt = Math.min(0.033, (t - lastT) / 1000 || 0); lastT = t;
@@ -296,6 +327,476 @@ Fx.prototype.draw = function (ctx) {
   }
   ctx.globalAlpha = 1;
 };
+
+/* ════════ BRICKWORK ════════ */
+const BK_W = 7, BK_H = 7, BK_N = 49, BK_S = 36, BK_X = 54, BK_Y = 12, BK_CW = 360, BK_CH = 520, BK_SLOTS = 3, BK_LANES = 4;
+const BK_PAL = { b: '#8fd3ff', r: '#ff5d5d', p: '#ffc2d1', w: '#fff7ea', t: '#e8c08a', g: '#4fc46a', s: '#f0cf85', y: '#ffd23d', m: '#d9a878', k: '#4a3328', v: '#a26bf5' };
+const BK_PICS = [
+  { name: 'Heart', scramble: 2, lo: 0.5, hi: 1, rows: ['bbbbbbb', 'brrbrrb', 'rpprrrr', 'rprrrrr', 'brrrrrb', 'bbrrrbb', 'bbbrbbb'] },
+  { name: 'Cactus', scramble: 5, lo: 0.25, hi: 0.6, rows: ['bbbbbyy', 'bbbgbyy', 'bgbgbbb', 'bgggbgb', 'bbbgggb', 'bbbgbbb', 'sssssss'] },
+  { name: 'Mushroom', scramble: 8, lo: 0.1, hi: 0.45, rows: ['bbrrrbb', 'brwrrrb', 'rrrrwrr', 'rwrrrrr', 'bbtttbb', 'bbtttbb', 'gggtggg'] },
+  { name: 'Boba', scramble: 10, lo: 0.05, hi: 0.35, rows: ['bbbbvbb', 'bbbvbbb', 'bwwvwwb', 'bmmmmmb', 'bmmmmmb', 'bmkmkmb', 'bbkmkbb'] },
+];
+let bk = null, bkCtx = null;
+// The lowest open spot that wants color c. A spot is open once the brick under it is laid.
+function bkFind(pic, filled, c) {
+  for (let r = BK_H - 1; r >= 0; r--) for (let x = 0; x < BK_W; x++) {
+    const i = r * BK_W + x;
+    if (!filled[i] && pic[i] === c && (r === BK_H - 1 || filled[i + BK_W])) return i;
+  }
+  return -1;
+}
+// Every crate on the dock lays as many bricks as it can; empty crates leave.
+function bkSettle(pic, filled, dock, ev) {
+  let moved = true;
+  while (moved) {
+    moved = false;
+    for (let s = 0; s < dock.length; s++) {
+      const cr = dock[s]; if (!cr) continue;
+      let cell;
+      while (cr.n > 0 && (cell = bkFind(pic, filled, cr.c)) >= 0) { filled[cell] = true; cr.n--; moved = true; if (ev) ev.push({ s, cell, c: cr.c }); }
+      if (cr.n === 0) dock[s] = null;
+    }
+  }
+}
+function bkMake(pic, scramble) {
+  const filled = new Array(BK_N).fill(false), seq = [];
+  let left = BK_N;
+  while (left > 0) {
+    const open = [...new Set(pic)].filter(c => bkFind(pic, filled, c) >= 0);
+    const c = open[rand(open.length)], want = 2 + rand(4); let n = 0, cell;
+    while (n < want && (cell = bkFind(pic, filled, c)) >= 0) { filled[cell] = true; n++; }
+    seq.push({ c, n }); left -= n;
+  }
+  const lanes = [[], [], [], []], cap = Math.ceil(seq.length / BK_LANES) + 1;
+  seq.forEach(cr => { let l = rand(BK_LANES); while (lanes[l].length >= cap) l = (l + 1) % BK_LANES; lanes[l].push(cr); });
+  for (let k = 0; k < scramble; k++) { const L = lanes[rand(BK_LANES)]; if (L.length > 1) { const j = rand(L.length - 1); [L[j], L[j + 1]] = [L[j + 1], L[j]]; } }
+  return lanes;
+}
+function bkSolvable(pic, lanes) {
+  const memo = new Set();
+  const go = (pos, dock, filled) => {
+    if (filled.every(Boolean)) return true;
+    const slot = dock.indexOf(null); if (slot < 0) return false;
+    const key = pos.join(',') + '|' + dock.map(d => d ? d.c + d.n : '-').join('') + '|' + filled.map(f => f ? 1 : 0).join('');
+    if (memo.has(key) || memo.size > 60000) return false; memo.add(key);
+    for (let l = 0; l < lanes.length; l++) {
+      if (pos[l] >= lanes[l].length) continue;
+      const p2 = pos.slice(), d2 = dock.map(d => d && { c: d.c, n: d.n }), f2 = filled.slice();
+      d2[slot] = { c: lanes[l][pos[l]].c, n: lanes[l][pos[l]].n }; p2[l]++;
+      bkSettle(pic, f2, d2);
+      if (go(p2, d2, f2)) return true;
+    }
+    return false;
+  };
+  return go(lanes.map(() => 0), new Array(BK_SLOTS).fill(null), new Array(BK_N).fill(false));
+}
+// A careless player: take any crate that can lay a brick right now, else any crate.
+function bkNaive(pic, lanes) {
+  const pos = lanes.map(() => 0), dock = new Array(BK_SLOTS).fill(null), filled = new Array(BK_N).fill(false);
+  for (;;) {
+    if (filled.every(Boolean)) return true;
+    const slot = dock.indexOf(null); if (slot < 0) return false;
+    const avail = []; lanes.forEach((L, l) => { if (pos[l] < L.length) avail.push(l); });
+    if (!avail.length) return false;
+    const good = avail.filter(l => bkFind(pic, filled, lanes[l][pos[l]].c) >= 0), pool = good.length ? good : avail, l = pool[rand(pool.length)];
+    dock[slot] = { c: lanes[l][pos[l]].c, n: lanes[l][pos[l]].n }; pos[l]++;
+    bkSettle(pic, filled, dock);
+  }
+}
+function bkGenerate(n) {
+  const P = BK_PICS[n], pic = P.rows.join('').split('');
+  let best = null, bestGap = 9;
+  for (let t = 0; t < 250; t++) {
+    const lanes = bkMake(pic, P.scramble);
+    if (!bkSolvable(pic, lanes)) continue;
+    let wins = 0; for (let k = 0; k < 40; k++) if (bkNaive(pic, lanes)) wins++;
+    const rate = wins / 40, gap = rate < P.lo ? P.lo - rate : rate > P.hi ? rate - P.hi : 0;
+    if (gap < bestGap) { bestGap = gap; best = lanes; }
+    if (gap === 0) break;
+  }
+  return { pic, lanes: best };
+}
+function bkInit() {
+  const cv = document.getElementById('bk-cv'); bkCtx = fitCanvas(cv, BK_CW, BK_CH);
+  cv.addEventListener('pointerdown', e => { audio(); const p = cvPoint(cv, e, BK_CW); if (p.y > 338) bkTap(Math.max(0, Math.min(BK_LANES - 1, ((p.x - 12) / 84) | 0))); });
+  document.getElementById('bk-retry').onclick = () => bkLoad(bk.n, bk.src);
+  document.getElementById('bk-next').onclick = () => bkLoad((bk.n + 1) % BK_PICS.length);
+  loops.brick = bkFrame;
+  bkLoad(0);
+}
+function bkLoad(n, keep) {
+  const src = keep || bkGenerate(n);
+  bk = { n, src, pic: src.pic, lanes: src.lanes.map(L => L.map(c => ({ c: c.c, n: c.n }))), dock: new Array(BK_SLOTS).fill(null), filled: new Array(BK_N).fill(false),
+    shown: new Array(BK_N).fill(false), pop: new Array(BK_N).fill(1), evq: [], flyers: [], shift: [0, 0, 0, 0], dpop: [1, 1, 1], nope: 0, result: null, over: false, fx: new Fx(), t: 0 };
+  document.getElementById('bk-n').textContent = n + 1;
+  document.getElementById('bk-msg').textContent = '';
+  document.getElementById('bk-next').hidden = true;
+  bkHud();
+}
+function bkHud() { document.getElementById('bk-left').textContent = bk.shown.filter(v => !v).length; }
+const bkCell = i => ({ x: BK_X + (i % BK_W) * BK_S + BK_S / 2, y: BK_Y + ((i / BK_W) | 0) * BK_S + BK_S / 2 });
+const bkSlotX = s => 65 + s * 80 + 35;
+function bkTap(l) {
+  if (!bk || bk.over || bk.evq.length || bk.flyers.length) return;
+  if (!bk.lanes[l].length) return;
+  const slot = bk.dock.indexOf(null);
+  if (slot < 0) { bk.nope = 0.3; blip(140, 0.1, 'square', 0.06); return; }
+  const cr = bk.lanes[l].shift(); bk.dock[slot] = { c: cr.c, n: cr.n }; bk.shift[l] = 40; bk.dpop[slot] = 1.35;
+  blip(360, 0.06); buzz(8);
+  const ev = []; bkSettle(bk.pic, bk.filled, bk.dock, ev);
+  ev.forEach((e, k) => bk.evq.push({ at: bk.t + 0.14 + k * 0.07, s: e.s, cell: e.cell, c: e.c, k }));
+  if (bk.filled.every(Boolean)) bk.result = 'win';
+  else if (bk.dock.indexOf(null) < 0) bk.result = 'jam';
+  if (!ev.length) bkFinish();
+}
+function bkFinish() {
+  if (!bk.result || bk.over) return;
+  bk.over = true; const msg = document.getElementById('bk-msg');
+  if (bk.result === 'win') {
+    bk.fx.confetti(BK_CW); msg.textContent = `${BK_PICS[bk.n].name} built!`;
+    for (let i = 0; i < BK_N; i++) setTimeout(() => { if (bk.over) bk.pop[i] = 1.3; }, ((i % BK_W) + ((i / BK_W) | 0)) * 45);
+    [0, 2, 4, 7, 9].forEach((k, j) => setTimeout(() => note(k + 3, 0.18), j * 90));
+    const nx = document.getElementById('bk-next'); nx.hidden = false; nx.textContent = bk.n === BK_PICS.length - 1 ? 'Start over' : 'Next picture';
+  } else { msg.textContent = 'Dock jammed: no crate on it can lay a brick. Retry?'; blip(170, 0.3, 'sawtooth', 0.07); bk.nope = 0.5; }
+}
+function bkCrate(ctx, x, y, w, h, c, n, sc) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; rr(ctx, -w / 2, -h / 2 + 3, w, h, 8); ctx.fill();
+  ctx.fillStyle = BK_PAL[c]; rr(ctx, -w / 2, -h / 2, w, h, 8); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.3)'; rr(ctx, -w / 2 + 4, -h / 2 + 3, w - 8, 6, 3); ctx.fill();
+  ctx.font = '700 17px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText('x' + n, 0, 2); ctx.fillStyle = '#2b2233'; ctx.fillText('x' + n, 0, 2);
+  ctx.restore();
+}
+function bkFrame(dt) {
+  const b = bk, ctx = bkCtx; if (!b) return; b.t += dt;
+  while (b.evq.length && b.evq[0].at <= b.t) { const e = b.evq.shift(); const to = bkCell(e.cell); b.flyers.push({ x0: bkSlotX(e.s), y0: 304, x1: to.x, y1: to.y, c: e.c, cell: e.cell, k: e.k, life: 0 }); }
+  b.flyers.forEach(f => f.life += dt / 0.2);
+  b.flyers = b.flyers.filter(f => {
+    if (f.life < 1) return true;
+    b.shown[f.cell] = true; b.pop[f.cell] = 1.4; b.fx.burst(f.x1, f.y1, [BK_PAL[f.c], '#fff'], 4, 70, 2.5);
+    note(Math.min(12, f.k), 0.07, 0.08); buzz(6); bkHud();
+    return false;
+  });
+  if (b.result && !b.over && !b.evq.length && !b.flyers.length) bkFinish();
+  b.fx.step(dt); if (b.nope > 0) b.nope -= dt;
+
+  ctx.clearRect(0, 0, BK_CW, BK_CH);
+  ctx.fillStyle = '#2b3144'; rr(ctx, 0, 0, BK_CW, BK_CH, 16); ctx.fill();
+  ctx.fillStyle = '#1f2433'; rr(ctx, BK_X - 6, BK_Y - 6, BK_W * BK_S + 12, BK_H * BK_S + 12, 10); ctx.fill();
+  for (let i = 0; i < BK_N; i++) {
+    const { x, y } = bkCell(i), col = BK_PAL[b.pic[i]], h = BK_S / 2 - 1.5;
+    if (b.shown[i]) {
+      b.pop[i] += (1 - b.pop[i]) * Math.min(1, dt * 12);
+      const s = h * b.pop[i];
+      ctx.fillStyle = col; rr(ctx, x - s, y - s, s * 2, s * 2, 5); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.28)'; rr(ctx, x - s + 3, y - s + 3, s * 2 - 6, 5, 2.5); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,.12)'; rr(ctx, x - s + 3, y + s - 7, s * 2 - 6, 4, 2); ctx.fill();
+    } else {
+      const open = !b.filled[i] && (i >= BK_N - BK_W || b.shown[i + BK_W]);
+      ctx.globalAlpha = open ? 0.62 + 0.12 * Math.sin(b.t * 5 + i) : 0.3; ctx.fillStyle = col; rr(ctx, x - h, y - h, h * 2, h * 2, 5); ctx.fill(); ctx.globalAlpha = 1;
+      if (open) { ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); rr(ctx, x - h + 1, y - h + 1, h * 2 - 2, h * 2 - 2, 5); ctx.stroke(); ctx.setLineDash([]); }
+    }
+  }
+  // dock
+  const jx = b.nope > 0 ? Math.sin(b.t * 60) * 4 : 0;
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = '700 11px "Space Mono", monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('DOCK', 14, 304);
+  for (let s = 0; s < BK_SLOTS; s++) {
+    const x = bkSlotX(s) + jx, pend = b.evq.filter(e => e.s === s);
+    ctx.fillStyle = 'rgba(255,255,255,.08)'; rr(ctx, x - 35, 284, 70, 40, 10); ctx.fill();
+    ctx.strokeStyle = b.nope > 0 ? '#ff5d5d' : 'rgba(255,255,255,.22)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); rr(ctx, x - 35, 284, 70, 40, 10); ctx.stroke(); ctx.setLineDash([]);
+    const n = (b.dock[s] ? b.dock[s].n : 0) + pend.length, c = b.dock[s] ? b.dock[s].c : pend.length ? pend[0].c : null;
+    b.dpop[s] += (1 - b.dpop[s]) * Math.min(1, dt * 12);
+    if (n > 0 && c) bkCrate(ctx, x, 304, 62, 32, c, n, b.dpop[s]);
+  }
+  // lanes of crates; the top crate of each lane is the one you can take
+  for (let l = 0; l < BK_LANES; l++) {
+    const x = 12 + l * 84 + 42; b.shift[l] += (0 - b.shift[l]) * Math.min(1, dt * 14);
+    ctx.fillStyle = 'rgba(255,255,255,.05)'; rr(ctx, x - 40, 340, 80, 172, 12); ctx.fill();
+    const L = b.lanes[l];
+    for (let k = Math.min(3, L.length - 1); k >= 0; k--) { ctx.globalAlpha = k === 0 ? 1 : 0.8 - k * 0.14; bkCrate(ctx, x, 362 + k * 40 + b.shift[l], 70, 32, L[k].c, L[k].n, 1); }
+    ctx.globalAlpha = 1;
+    if (L.length > 4) { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.font = '700 11px "Space Mono", monospace'; ctx.textAlign = 'center'; ctx.fillText('+' + (L.length - 4), x, 505); }
+  }
+  for (const f of b.flyers) { const e = f.life * (2 - f.life), x = f.x0 + (f.x1 - f.x0) * e, y = f.y0 + (f.y1 - f.y0) * e; ctx.fillStyle = BK_PAL[f.c]; rr(ctx, x - 9, y - 9, 18, 18, 4); ctx.fill(); }
+  b.fx.draw(ctx);
+}
+
+/* ════════ FAIR SLICE ════════ */
+const FS_LEVELS = [[5, 5], [6, 6], [6, 7]], FS_W = 360;
+const FS_COL = ['#ffb3c1', '#ffd6a5', '#fdf3a8', '#c5f0b8', '#a8e6f0', '#b8c8ff', '#dcc0ff', '#ffc2e2'];
+let fs = null, fsCtx = null;
+// Counts ways to cut the cake so each slice is a rectangle holding exactly one number equal to its size.
+function fsCount(C, R, nums, limit) {
+  const own = new Uint8Array(C * R); let count = 0;
+  (function go() {
+    const i = own.indexOf(0); if (i < 0) { count++; return; }
+    const x = i % C, y = (i / C) | 0;
+    let maxW = 0; while (x + maxW < C && !own[y * C + x + maxW]) maxW++;
+    for (let w = 1; w <= maxW; w++) for (let h = 1; y + h <= R; h++) {
+      let free = true; for (let xx = x; xx < x + w; xx++) if (own[(y + h - 1) * C + xx]) { free = false; break; }
+      if (!free) break;
+      let k = 0, val = 0;
+      for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (nums[yy * C + xx]) { k++; val = nums[yy * C + xx]; }
+      if (k > 1 || w * h > 12) break;
+      if (k === 1 && val === w * h) {
+        for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) own[yy * C + xx] = 1;
+        go();
+        for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) own[yy * C + xx] = 0;
+        if (count >= limit) return;
+      }
+    }
+  })();
+  return count;
+}
+function fsGenerate(C, R) {
+  for (let t = 0; t < 4000; t++) {
+    const own = new Int8Array(C * R).fill(-1), rects = []; let ones = 0;
+    for (let i = 0; i < C * R; i++) {
+      if (own[i] >= 0) continue;
+      const x = i % C, y = (i / C) | 0, opts = [];
+      for (let w = 1; w <= 5 && x + w <= C; w++) {
+        if (own[y * C + x + w - 1] >= 0) break;
+        for (let h = 1; h <= 5 && y + h <= R; h++) {
+          let free = true; for (let xx = x; xx < x + w; xx++) if (own[(y + h - 1) * C + xx] >= 0) { free = false; break; }
+          if (!free) break;
+          const a = w * h; if (a > 9) break;
+          const wt = a === 1 ? 0.12 : a === 2 ? 0.6 : 1; for (let k = 0; k < wt * 10; k++) opts.push([w, h]);
+        }
+      }
+      const [w, h] = opts[rand(opts.length)];
+      for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) own[yy * C + xx] = rects.length;
+      rects.push({ x, y, w, h }); if (w * h === 1) ones++;
+    }
+    if (ones > 1) continue;
+    const nums = new Array(C * R).fill(0);
+    rects.forEach(r => { nums[(r.y + rand(r.h)) * C + r.x + rand(r.w)] = r.w * r.h; });
+    if (fsCount(C, R, nums, 2) === 1) return nums;
+  }
+  return null;
+}
+function fsInit() {
+  const cv = document.getElementById('fs-cv');
+  const at = (e, clamp) => {
+    const p = cvPoint(cv, e, FS_W); let c = Math.floor((p.x - fs.x0) / fs.S), r = Math.floor((p.y - fs.y0) / fs.S);
+    if (clamp) { c = Math.max(0, Math.min(fs.C - 1, c)); r = Math.max(0, Math.min(fs.R - 1, r)); }
+    return c < 0 || c >= fs.C || r < 0 || r >= fs.R ? -1 : r * fs.C + c;
+  };
+  cv.addEventListener('pointerdown', e => { audio(); if (fs.over) return; const a = at(e, false); if (a < 0) return; try { cv.setPointerCapture(e.pointerId); } catch (x) {} fs.drag = { a, b: a }; });
+  cv.addEventListener('pointermove', e => { if (!fs.drag) return; const b = at(e, true); if (b !== fs.drag.b) { fs.drag.b = b; blip(500, 0.02, 'sine', 0.03); } });
+  cv.addEventListener('pointerup', () => { if (!fs.drag) return; const d = fs.drag; fs.drag = null; fsDrop(d.a, d.b); });
+  cv.addEventListener('pointercancel', () => { fs.drag = null; });
+  document.getElementById('fs-retry').onclick = () => fsLoad(fs.n, fs.nums);
+  document.getElementById('fs-next').onclick = () => fsLoad((fs.n + 1) % FS_LEVELS.length);
+  loops.slice = fsFrame;
+  fsLoad(0);
+}
+function fsLoad(n, keep) {
+  const [C, R] = FS_LEVELS[n], S = Math.floor(336 / C), nums = keep || fsGenerate(C, R);
+  fsCtx = fitCanvas(document.getElementById('fs-cv'), FS_W, R * S + 24);
+  fs = { n, C, R, S, x0: (FS_W - C * S) / 2, y0: 12, H: R * S + 24, nums, own: new Array(C * R).fill(-1), slices: [], drag: null, over: false, bad: 0, fx: new Fx(), t: 0, colorAt: rand(FS_COL.length) };
+  document.getElementById('fs-n').textContent = n + 1;
+  document.getElementById('fs-msg').textContent = '';
+  document.getElementById('fs-next').hidden = true;
+  fsHud();
+}
+function fsHud() { document.getElementById('fs-left').textContent = fs.own.filter(v => v < 0).length; }
+function fsRect(a, b) { const ax = a % fs.C, ay = (a / fs.C) | 0, bx = b % fs.C, by = (b / fs.C) | 0; return { x: Math.min(ax, bx), y: Math.min(ay, by), w: Math.abs(ax - bx) + 1, h: Math.abs(ay - by) + 1 }; }
+function fsCheck(r) {
+  let k = 0, val = 0, taken = false;
+  for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) { const i = y * fs.C + x; if (fs.own[i] >= 0) taken = true; if (fs.nums[i]) { k++; val = fs.nums[i]; } }
+  return { ok: !taken && k === 1 && val === r.w * r.h, taken, k, val };
+}
+function fsDrop(a, b) {
+  const msg = document.getElementById('fs-msg');
+  if (a === b && fs.own[a] >= 0) {           // tap a slice to put it back
+    const id = fs.own[a]; fs.own = fs.own.map(v => v === id ? -1 : v); fs.slices[id] = null;
+    blip(260, 0.08, 'triangle', 0.08); msg.textContent = ''; fsHud(); return;
+  }
+  const r = fsRect(a, b), c = fsCheck(r);
+  if (!c.ok) {
+    fs.bad = 0.35; blip(150, 0.12, 'square', 0.06); buzz(20);
+    msg.textContent = c.taken ? 'That overlaps a slice. Tap a slice to remove it.' : c.k === 0 ? 'Every slice needs a number in it.' : c.k > 1 ? 'Only one number per slice.' : `That's ${r.w * r.h} squares, but the number says ${c.val}.`;
+    return;
+  }
+  const id = fs.slices.length; fs.slices.push({ ...r, color: FS_COL[(fs.colorAt++) % FS_COL.length], sc: 0.7 });
+  for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) fs.own[y * fs.C + x] = id;
+  const cx = fs.x0 + (r.x + r.w / 2) * fs.S, cy = fs.y0 + (r.y + r.h / 2) * fs.S;
+  fs.fx.burst(cx, cy, ['#fff', fs.slices[id].color, '#ffd23d'], 8 + r.w * r.h, 150, 3.2);
+  note(Math.min(12, r.w * r.h + 1), 0.14, 0.11); buzz(12); msg.textContent = ''; fsHud();
+  if (!fs.own.includes(-1)) {
+    fs.over = true; fs.fx.confetti(FS_W); msg.textContent = 'Everyone gets their slice!';
+    fs.slices.forEach((s, k) => s && setTimeout(() => { s.sc = 1.18; }, k * 60));
+    [0, 2, 4, 7, 9].forEach((k, j) => setTimeout(() => note(k + 3, 0.18), j * 90));
+    const nx = document.getElementById('fs-next'); nx.hidden = false; nx.textContent = fs.n === FS_LEVELS.length - 1 ? 'Start over' : 'Next cake';
+  }
+}
+function fsFrame(dt) {
+  const f = fs, ctx = fsCtx; if (!f) return; f.t += dt; if (f.bad > 0) f.bad -= dt; f.fx.step(dt);
+  const { S, x0, y0, C, R } = f;
+  ctx.clearRect(0, 0, FS_W, f.H);
+  ctx.fillStyle = '#7a4b3a'; rr(ctx, 0, 0, FS_W, f.H, 16); ctx.fill();
+  ctx.fillStyle = '#fff3dc'; rr(ctx, x0 - 5, y0 - 5, C * S + 10, R * S + 10, 12); ctx.fill();
+  for (let i = 0; i < C * R; i++) {
+    const x = x0 + (i % C) * S, y = y0 + ((i / C) | 0) * S;
+    ctx.fillStyle = (i % C + ((i / C) | 0)) % 2 ? '#fbe9c9' : '#f7e1bb'; rr(ctx, x + 2, y + 2, S - 4, S - 4, 7); ctx.fill();
+  }
+  for (const s of f.slices) {
+    if (!s) continue; s.sc += (1 - s.sc) * Math.min(1, dt * 10);
+    const w = s.w * S - 6, h = s.h * S - 6, cx = x0 + (s.x + s.w / 2) * S, cy = y0 + (s.y + s.h / 2) * S;
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(s.sc, s.sc);
+    ctx.fillStyle = 'rgba(90,50,30,.3)'; rr(ctx, -w / 2, -h / 2 + 4, w, h, 12); ctx.fill();
+    ctx.fillStyle = s.color; rr(ctx, -w / 2, -h / 2, w, h, 12); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 3; rr(ctx, -w / 2 + 5, -h / 2 + 5, w - 10, h - 10, 8); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `700 ${Math.round(S * 0.42)}px Fredoka, system-ui, sans-serif`;
+  for (let i = 0; i < C * R; i++) {
+    if (!f.nums[i]) continue; const x = x0 + (i % C) * S + S / 2, y = y0 + ((i / C) | 0) * S + S / 2;
+    if (f.own[i] < 0) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, S * 0.33, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = '#5a3a2e'; ctx.fillText(f.nums[i], x, y + 1);
+  }
+  if (f.drag) {
+    const r = fsRect(f.drag.a, f.drag.b), c = fsCheck(r), tap = f.drag.a === f.drag.b && f.own[f.drag.a] >= 0;
+    if (!tap) {
+      ctx.fillStyle = c.ok ? 'rgba(53,194,122,.3)' : 'rgba(255,255,255,.35)'; rr(ctx, x0 + r.x * S + 2, y0 + r.y * S + 2, r.w * S - 4, r.h * S - 4, 10); ctx.fill();
+      ctx.strokeStyle = c.ok ? '#1f9d5c' : '#5a3a2e'; ctx.lineWidth = 4; ctx.setLineDash(c.ok ? [] : [8, 6]); rr(ctx, x0 + r.x * S + 2, y0 + r.y * S + 2, r.w * S - 4, r.h * S - 4, 10); ctx.stroke(); ctx.setLineDash([]);
+      const lx = Math.max(34, Math.min(FS_W - 34, x0 + (r.x + r.w / 2) * S)), ly = y0 + r.y * S - 16 < 16 ? y0 + (r.y + r.h) * S + 16 : y0 + r.y * S - 16;
+      ctx.fillStyle = c.ok ? '#1f9d5c' : '#5a3a2e'; rr(ctx, lx - 28, Math.min(f.H - 28, ly) - 13, 56, 26, 13); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '700 16px Fredoka, system-ui, sans-serif'; ctx.fillText(`${r.w * r.h}`, lx, Math.min(f.H - 28, ly) + 1);
+    }
+  }
+  if (f.bad > 0) { ctx.strokeStyle = `rgba(255,70,70,${f.bad / 0.35})`; ctx.lineWidth = 6; rr(ctx, x0 - 5, y0 - 5, C * S + 10, R * S + 10, 12); ctx.stroke(); }
+  f.fx.draw(ctx);
+}
+
+/* ════════ TOP COAT ════════ */
+const TC_LEVELS = [[4, 3], [5, 4], [6, 4]], TC_W = 360, TC_GX = 76, TC_GY = 76;
+const TC_COL = ['#ff5d5d', '#4d8dff', '#ffc53d', '#35c27a'];
+let tc = null, tcCtx = null;
+const tcColor = (t, line) => line < t.n ? t.rowCol[line] : t.colCol[line - t.n];
+// Squares this roller would ruin if it went now: spots that must end up its color but would get covered later.
+function tcBad(t, line, done) {
+  const bad = [];
+  for (let k = 0; k < t.n; k++) {
+    const cross = line < t.n ? t.n + k : k, cell = line < t.n ? line * t.n + k : k * t.n + (line - t.n);
+    if (!done.has(cross) && t.target[cell] !== tcColor(t, cross)) bad.push(cell);
+  }
+  return bad;
+}
+function tcGenerate(n, colors) {
+  for (let tries = 0; tries < 3000; tries++) {
+    const t = { n, rowCol: [], colCol: [] };
+    for (let k = 0; k < n; k++) { t.rowCol.push(rand(colors)); t.colCol.push(rand(colors)); }
+    const order = shuffle([...Array(2 * n).keys()]), pos = []; order.forEach((l, k) => { pos[l] = k; });
+    t.target = []; for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) t.target.push(pos[r] > pos[n + c] ? t.rowCol[r] : t.colCol[c]);
+    const done = new Set(); let first = 0, sum = 0;
+    for (let s = 0; s < 2 * n; s++) {
+      let valid = 0; for (let l = 0; l < 2 * n; l++) if (!done.has(l) && !tcBad(t, l, done).length) valid++;
+      if (s === 0) first = valid; sum += valid / (2 * n - s); done.add(order[s]);
+    }
+    if (first <= 2 && sum / (2 * n) <= 0.45) return t;
+  }
+  return null;
+}
+function tcInit() {
+  const cv = document.getElementById('tc-cv');
+  cv.addEventListener('pointerdown', e => {
+    audio(); const p = cvPoint(cv, e, TC_W), G = tc.S * tc.n;
+    if (p.x < TC_GX && p.y >= TC_GY && p.y < TC_GY + G) tcTap(Math.floor((p.y - TC_GY) / tc.S));
+    else if (p.y < TC_GY && p.x >= TC_GX && p.x < TC_GX + G) tcTap(tc.n + Math.floor((p.x - TC_GX) / tc.S));
+  });
+  document.getElementById('tc-retry').onclick = () => tcLoad(tc.lv, tc.src);
+  document.getElementById('tc-next').onclick = () => tcLoad((tc.lv + 1) % TC_LEVELS.length);
+  loops.coat = tcFrame;
+  tcLoad(0);
+}
+function tcLoad(lv, keep) {
+  const [n, colors] = TC_LEVELS[lv], src = keep || tcGenerate(n, colors), S = Math.floor(264 / n);
+  tcCtx = fitCanvas(document.getElementById('tc-cv'), TC_W, TC_GY + S * n + 20);
+  tc = { lv, src, n, S, H: TC_GY + S * n + 20, rowCol: src.rowCol, colCol: src.colCol, target: src.target, cur: new Array(n * n).fill(-1), old: null, done: new Set(), hearts: 3,
+    stroke: null, bad: null, shakeLine: -1, shakeT: 0, glint: new Array(n * n).fill(0), over: false, fx: new Fx(), t: 0 };
+  document.getElementById('tc-n').textContent = lv + 1;
+  document.getElementById('tc-msg').textContent = '';
+  document.getElementById('tc-next').hidden = true;
+  tcHud();
+}
+function tcHud() { document.getElementById('tc-hearts').textContent = '♥'.repeat(tc.hearts) + '♡'.repeat(3 - tc.hearts); }
+function tcTap(line) {
+  const t = tc; if (t.over || t.stroke || t.done.has(line)) return;
+  const bad = tcBad(t, line, t.done), msg = document.getElementById('tc-msg');
+  if (bad.length) {
+    t.hearts--; t.bad = { cells: bad, life: 1.3 }; t.shakeLine = line; t.shakeT = 0.4; blip(150, 0.2, 'square', 0.07); buzz([20, 30, 20]); tcHud();
+    msg.textContent = t.hearts ? 'Too soon. The marked squares would get painted over.' : 'Out of hearts. Retry?';
+    if (!t.hearts) t.over = true;
+    return;
+  }
+  msg.textContent = '';
+  t.old = t.cur.slice();
+  for (let k = 0; k < t.n; k++) t.cur[line < t.n ? line * t.n + k : k * t.n + (line - t.n)] = tcColor(t, line);
+  t.done.add(line); t.stroke = { line, p: 0, last: -1 };
+}
+function tcFrame(dt) {
+  const t = tc, ctx = tcCtx; if (!t) return; t.t += dt; t.fx.step(dt);
+  const { n, S } = t, G = S * n, cellXY = i => ({ x: TC_GX + (i % n) * S, y: TC_GY + ((i / n) | 0) * S });
+  if (t.shakeT > 0) t.shakeT -= dt;
+  if (t.bad) { t.bad.life -= dt; if (t.bad.life <= 0) t.bad = null; }
+  if (t.stroke) {
+    const s = t.stroke; s.p += dt / 0.42;
+    const reached = Math.min(n - 1, Math.floor(s.p * n));
+    while (s.last < reached) {
+      s.last++; const cell = s.line < n ? s.line * n + s.last : s.last * n + (s.line - n), cross = s.line < n ? n + s.last : s.last;
+      blip(300 + s.last * 45, 0.05, 'sine', 0.07); buzz(5);
+      if (t.done.has(cross)) { t.glint[cell] = 1; const c = cellXY(cell); t.fx.burst(c.x + S / 2, c.y + S / 2, ['#fff', TC_COL[t.cur[cell]]], 6, 90, 2.6); note(4 + s.last, 0.08, 0.07); }
+    }
+    if (s.p >= 1) {
+      t.stroke = null; t.old = null;
+      if (t.done.size === 2 * n) {
+        t.over = true; t.fx.confetti(TC_W); document.getElementById('tc-msg').textContent = `Pattern matched with ${t.hearts} heart${t.hearts === 1 ? '' : 's'} left!`;
+        for (let i = 0; i < n * n; i++) setTimeout(() => { if (tc === t) t.glint[i] = 1; }, ((i % n) + ((i / n) | 0)) * 60);
+        [0, 2, 4, 7, 9].forEach((k, j) => setTimeout(() => note(k + 3, 0.18), j * 90));
+        const nx = document.getElementById('tc-next'); nx.hidden = false; nx.textContent = t.lv === TC_LEVELS.length - 1 ? 'Start over' : 'Next pattern';
+      }
+    }
+  }
+  ctx.clearRect(0, 0, TC_W, t.H);
+  ctx.fillStyle = '#efe4cf'; rr(ctx, 0, 0, TC_W, t.H, 16); ctx.fill();
+  ctx.fillStyle = '#d9ccb2'; rr(ctx, TC_GX - 5, TC_GY - 5, G + 10, G + 10, 10); ctx.fill();
+  for (let i = 0; i < n * n; i++) {
+    const { x, y } = cellXY(i), r = (i / n) | 0, c = i % n;
+    let col = t.cur[i];
+    if (t.stroke && t.old) { const s = t.stroke, k = s.line < n ? (r === s.line ? c : -1) : (c === s.line - n ? r : -1); if (k >= 0 && s.p * n < k + 0.5) col = t.old[i]; }
+    ctx.fillStyle = col < 0 ? '#fbf5e8' : TC_COL[col]; rr(ctx, x + 1.5, y + 1.5, S - 3, S - 3, 6); ctx.fill();
+    const final = t.done.has(r) && t.done.has(n + c) && col === t.cur[i];
+    if (!final) {
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + S / 2, y + S / 2, S * 0.2, 0, TAU); ctx.fill();
+      ctx.fillStyle = TC_COL[t.target[i]]; ctx.beginPath(); ctx.arc(x + S / 2, y + S / 2, S * 0.145, 0, TAU); ctx.fill();
+    }
+    if (t.glint[i] > 0) { t.glint[i] -= dt * 2.2; ctx.fillStyle = `rgba(255,255,255,${Math.max(0, t.glint[i]) * 0.7})`; rr(ctx, x + 1.5, y + 1.5, S - 3, S - 3, 6); ctx.fill(); }
+  }
+  if (t.bad) for (const i of t.bad.cells) {
+    const { x, y } = cellXY(i), a = Math.min(1, t.bad.life * 2);
+    ctx.strokeStyle = `rgba(40,30,50,${a})`; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x + S * 0.3, y + S * 0.3); ctx.lineTo(x + S * 0.7, y + S * 0.7); ctx.moveTo(x + S * 0.7, y + S * 0.3); ctx.lineTo(x + S * 0.3, y + S * 0.7); ctx.stroke();
+  }
+  // rollers: one per row on the left, one per column along the top
+  for (let line = 0; line < 2 * n; line++) {
+    const row = line < n, k = row ? line : line - n, mid = (row ? TC_GY : TC_GX) + k * S + S / 2, col = TC_COL[tcColor(t, line)];
+    const active = t.stroke && t.stroke.line === line, used = t.done.has(line) && !active;
+    let along = 40; if (active) along = 40 + t.stroke.p * (G + 24);
+    const jig = t.shakeLine === line && t.shakeT > 0 ? Math.sin(t.t * 70) * 4 : 0, len = S * 0.7, thick = 22;
+    ctx.save(); if (row) ctx.translate(along + jig, mid); else { ctx.translate(mid, along + jig); ctx.rotate(Math.PI / 2); }
+    ctx.globalAlpha = used ? 0.22 : 1;
+    ctx.strokeStyle = '#6c6477'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-thick / 2 - 3, 0); ctx.lineTo(-thick / 2 - 16, 0); ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; rr(ctx, -thick / 2, -len / 2 + 3, thick, len, 8); ctx.fill();
+    ctx.fillStyle = col; rr(ctx, -thick / 2, -len / 2, thick, len, 8); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; rr(ctx, -thick / 2 + 4, -len / 2 + 4, 5, len - 8, 2.5); ctx.fill();
+    ctx.restore(); ctx.globalAlpha = 1;
+    if (used) { ctx.fillStyle = '#35a56a'; ctx.font = '700 18px Fredoka, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; if (row) ctx.fillText('✓', 40, mid); else ctx.fillText('✓', mid, 40); }
+  }
+  t.fx.draw(ctx);
+}
 
 /* ════════ BOBA BURST ════════ */
 const BB_C = 6, BB_R = 7, BB_S = 60, BB_TOP = 56, BB_W = 360, BB_H = BB_TOP + BB_R * BB_S, BB_N = BB_C * BB_R, BB_TICK = 0.085, BB_REWARD = 5;
@@ -1115,7 +1616,7 @@ function brFinish(path) {
   brRender();
 }
 
-start('boba');
+start('brick');
 </script>
 </body>
 </html>
