@@ -304,6 +304,11 @@ form.slip { padding: 6px 22px 0; }
 .tick input:checked + .box { background: var(--good); box-shadow: inset 0 0 0 3px #1f8a53; }
 .tick input:checked + .box svg { opacity: 1; transform: none; }
 .tick input:focus-visible + .box { outline: 3px solid var(--accent); outline-offset: 2px; }
+.tick.tf { color: inherit; text-decoration: none; }
+.tick.tf .box { background: var(--good); box-shadow: inset 0 0 0 3px #1f8a53; color: #fff; }
+.tick.tf .box svg { opacity: 1; transform: none; }
+.tick.tf:hover b { text-decoration: underline; text-underline-offset: 0.2em; }
+.tick.tf:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 10px; }
 .tick b { display: block; font: 600 20px/1.2 var(--f-display); }
 .tick small { display: block; color: var(--ink-soft); font-size: 15px; margin-top: 3px; }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
@@ -434,11 +439,11 @@ footer details p { margin-top: 10px; }
         <p class="tag">Draw the route. Mind the stack.</p>
         <p class="lede">A one-thumb delivery puzzle for iPhone. Every package has someone waiting for it, <b>only the top of the stack can go out</b>, and <b>the road falls to bits behind you</b>.</p>
         <div class="cta-row">
-          <a class="btn" href="#notify" data-track="lastmile-cta-hero">Get Updates
+          <a class="btn" href="https://testflight.apple.com/join/N3fXAUDN" target="_blank" rel="noopener" data-track="lastmile-cta-hero">Playtest on iPhone
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
           <a class="text-link" href="#play" data-track="lastmile-cta-try">or try a level first</a>
         </div>
-        <p class="fine">Coming to iPhone. Playtesting now.</p>
+        <p class="fine">Coming to iPhone. Playtesting now, free through Apple's TestFlight.</p>
       </div>
       <div style="position:relative">
         <span class="sticker" aria-hidden="true">Handle<br>with&nbsp;care</span>
@@ -480,7 +485,7 @@ footer details p { margin-top: 10px; }
           <div class="game-actions">
             <button class="btn plain" type="button" id="game-retry" hidden>Have another go</button>
             <button class="btn go" type="button" id="game-harder" hidden data-track="lastmile-demo-harder">Try a harder one</button>
-            <a class="btn go" href="#notify" id="game-next" hidden data-track="lastmile-cta-demo">I want the other 43</a>
+            <a class="btn go" href="https://testflight.apple.com/join/N3fXAUDN" target="_blank" rel="noopener" id="game-next" hidden data-track="lastmile-cta-demo">I want the other 43</a>
           </div>
         </div>
       </div>
@@ -588,7 +593,7 @@ footer details p { margin-top: 10px; }
       <div class="notify-copy">
         <span class="sign">Last stop · sign here</span>
         <h2>Want it when it's out?</h2>
-        <p class="section-lede">Leave an email and Steven will tell you the day Last Mile lands. Tick the box and you might get it a good while before that.</p>
+        <p class="section-lede">Leave an email and Steven will tell you the day Last Mile lands. Got an iPhone? You can play it today.</p>
         <ul class="perks">
           <li>One email when it launches. That's the whole newsletter.</li>
           <li>Playtesters get early builds on their iPhone, and a say in what changes.</li>
@@ -615,20 +620,19 @@ footer details p { margin-top: 10px; }
               <label><input type="radio" name="device" value="Other"><span>Something else</span></label>
             </div>
           </div>
-          <label class="tick">
-            <input type="checkbox" name="playtest">
-            <span class="box" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-            <span><b>Put me down for the playtest</b><small>iPhone only for now, through Apple's TestFlight app.</small></span>
-          </label>
+          <a class="tick tf" href="https://testflight.apple.com/join/N3fXAUDN" target="_blank" rel="noopener" data-track="lastmile-testflight-form">
+            <span class="box" aria-hidden="true"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span><b>Skip the wait: playtest it now</b><small>iPhone only for now. Opens Apple's TestFlight, no form needed.</small></span>
+          </a>
           <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off"></label>
           <button class="btn" type="submit" id="notify-btn">Sign for it
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <p class="form-msg" role="status" aria-live="polite"></p>
-          <p class="smallprint">You'll hear from Steven about Last Mile and nothing else: when it's out, and a playtest invite if you ticked the box. <a href="privacy/" data-track="lastmile-form-privacy">Privacy</a></p>
+          <p class="smallprint">You'll hear from Steven about Last Mile and nothing else: when it's out, and nothing more. <a href="privacy/" data-track="lastmile-form-privacy">Privacy</a></p>
         </form>
         <div class="signed" id="notify-done" hidden>
           <span class="ink-stamp">SIGNED FOR</span>
-          <p><b>You're on the route.</b> Keep an eye on your inbox. In the meantime, the level up the page is still there, and so is the wrong way round it.</p>
+          <p><b>You're on the route.</b> Keep an eye on your inbox. On an iPhone? <a href="https://testflight.apple.com/join/N3fXAUDN" target="_blank" rel="noopener" data-track="lastmile-testflight-done">Play it now on TestFlight</a>. In the meantime, the level up the page is still there, and so is the wrong way round it.</p>
         </div>
       </div>
     </div>
@@ -663,7 +667,7 @@ footer details p { margin-top: 10px; }
     </div>
     <details>
       <summary>What happens to my details?</summary>
-      <p>They go into a list on Steven's own server, and nowhere else: no mailing-list company, no ad network, nobody they get sold to. They're used to tell you Last Mile is out, and to invite you to playtest if you asked. Reply to any message and you'll be taken off. This page also counts visits with a random id kept in your browser. No cookies, and no IP addresses are stored. The whole of it, the game included, is in <a href="privacy/" data-track="lastmile-foot-privacy-more">the privacy policy</a>.</p>
+      <p>They go into a list on Steven's own server, and nowhere else: no mailing-list company, no ad network, nobody they get sold to. They're used to tell you Last Mile is out. Reply to any message and you'll be taken off. This page also counts visits with a random id kept in your browser. No cookies, and no IP addresses are stored. The whole of it, the game included, is in <a href="privacy/" data-track="lastmile-foot-privacy-more">the privacy policy</a>.</p>
     </details>
     <p class="joke">No real packages are harmed. The road, on the other hand.</p>
   </div>
@@ -734,7 +738,7 @@ document.addEventListener('click', e => {
 })();
 
 /* ── The sign-up: stored on Steven's own server (the same list Frontiers Celestia's beta uses),
-      read on stevenhester.com/stats. Phone, device and playtest ride in the existing fields. ── */
+      read on stevenhester.com/stats. Phone and device ride in the existing fields; playtesting goes straight to TestFlight. ── */
 (() => {
   const form = document.getElementById('notify-form');
   const msg = form.querySelector('.form-msg');
@@ -758,11 +762,10 @@ document.addEventListener('click', e => {
       f.phone.focus();
       return;
     }
-    const playtest = f.playtest.checked;
     const note = [phone ? 'text ok: ' + phone : '', SOURCE ? 'from: ' + SOURCE : ''].filter(Boolean).join(' | ');
     const body = {
       project: 'last-mile', name: f.name.value, email,
-      platform: f.device.value + (playtest ? ' · playtest' : ' · launch only'),
+      platform: f.device.value,
       note, website: f.website.value,
     };
     btn.disabled = true;
@@ -777,7 +780,7 @@ document.addEventListener('click', e => {
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Try again in a minute.');
       form.hidden = true;
       document.getElementById('notify-done').hidden = false;
-      track('link', playtest ? 'lastmile-signup-playtest' : 'lastmile-signup-launch');
+      track('link', 'lastmile-signup-launch');
     } catch (err) {
       msg.textContent = err instanceof TypeError ? "Couldn't reach the server. It may be waking up, so try again in a few seconds." : err.message;
     } finally {
