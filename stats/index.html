@@ -135,6 +135,26 @@
   #beta td { overflow-wrap: anywhere; }
   #beta a { color: inherit; }
   .quizline b { font-variant-numeric: tabular-nums; }
+
+  /* What people were up to */
+  .feed { list-style: none; margin: 0; padding: 0; }
+  .feed li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--grid); }
+  .feed li:last-child { border-bottom: 0; }
+  .feed .when { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); line-height: 1.35; }
+  .feed .when b { display: block; color: var(--ink); font-weight: 650; }
+  .feed .who { font-weight: 700; }
+  .feed .who small { font-weight: 500; color: var(--muted); font-size: 13px; }
+  .feed .did { margin: 4px 0 0; font-size: 15px; }
+  .feed .did span { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 9px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: 14px; }
+  .feed .did .quiet { border: 0; background: none; padding: 0; color: var(--muted); }
+  .badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 12px; font-weight: 700; vertical-align: 2px; }
+  .badge.new { background: var(--sun); color: var(--sun-ink); }
+  .badge.back { background: var(--grid); color: var(--muted); }
+  .rangeline { margin: 8px 0 0; }
+  .rangeline button { background: none; border: 0; padding: 0; color: var(--cobalt); font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+  @media (prefers-color-scheme: dark) { .rangeline button { color: #aab4ff; } }
+  tr.fresh td:first-child { box-shadow: inset 4px 0 0 var(--sun); padding-left: 10px; }
+  @media (max-width: 560px) { .feed li { grid-template-columns: minmax(0, 1fr); } .feed .when b { display: inline; margin-right: 6px; } }
 </style>
 </head>
 <body>
@@ -149,7 +169,52 @@
     del(k) { try { localStorage.removeItem(k); } catch {} },
   };
   let key = store.get("sh:adminKey") || "";
-  let days = Number(store.get("sh:statsDays")) || 30;
+  // Range: "last" (since my last visit), "24h", or a number of days.
+  let range = store.get("sh:statsRange") || (store.get("sh:statsDays") ? store.get("sh:statsDays") : "last");
+  let days = 30;
+
+  // "Since my last visit": a visit to this page starts after 30 minutes away, so reloading or
+  // flipping ranges doesn't wipe out what's new. prevSeen is when the previous visit ended.
+  const GAP = 30 * 60 * 1000;
+  let prevSeen = Number(store.get("sh:statsPrevSeen")) || 0;
+  (() => {
+    const last = Number(store.get("sh:statsLastSeen")) || 0;
+    if (last && Date.now() - last > GAP) { prevSeen = last; store.set("sh:statsPrevSeen", String(prevSeen)); }
+    store.set("sh:statsLastSeen", String(Date.now()));
+  })();
+  setInterval(() => store.set("sh:statsLastSeen", String(Date.now())), 60000);
+  const TZ = "America/Chicago";
+  const clock = ms => new Date(ms).toLocaleString("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  function ago(ms) {
+    const m = Math.round((Date.now() - ms) / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return `${m} min ago`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `${h} hr ago`;
+    const d = Math.round(h / 24);
+    return `${d} day${d === 1 ? "" : "s"} ago`;
+  }
+  function rangeQuery() {
+    if (range === "last" && prevSeen) return `since=${encodeURIComponent(new Date(prevSeen).toISOString())}`;
+    if (range === "last") return "days=7";
+    if (range === "24h") return "hours=24";
+    return `days=${Number(range) || 30}`;
+  }
+  function rangeLabel() {
+    if (range === "last") return prevSeen ? "since your last visit" : "last 7 days";
+    if (range === "24h") return "last 24 hours";
+    return `last ${Number(range) || 30} days`;
+  }
+
+  // Each visitor id gets a stable, silly nickname so the feed is easy to scan.
+  const ADJ = ["Teal", "Brisk", "Quiet", "Sunny", "Lucky", "Fuzzy", "Bold", "Mellow", "Zippy", "Cosmic", "Plucky", "Dapper", "Sleepy", "Nimble", "Jolly", "Stormy"];
+  const ANIMAL = ["Otter", "Heron", "Badger", "Gecko", "Moose", "Lynx", "Panda", "Walrus", "Finch", "Bison", "Koala", "Narwhal", "Ferret", "Puffin", "Yak", "Armadillo"];
+  function nickname(id) {
+    let h = 2166136261;
+    for (const ch of id) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+    h >>>= 0;
+    return `${ADJ[h % 16]} ${ANIMAL[(h >>> 4) % 16]}`;
+  }
 
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const fmt = n => Number(n || 0).toLocaleString("en-US");
@@ -191,7 +256,7 @@
     app.innerHTML = `<p class="muted">Loading stats…</p>`;
     let res;
     try {
-      res = await fetch(`${API}/site/stats?days=${days}`, { headers: { "x-admin-key": key } });
+      res = await fetch(`${API}/site/stats?${rangeQuery()}`, { headers: { "x-admin-key": key } });
     } catch {
       return gate("Couldn't reach the MusicGrid server. If it was asleep, try again in a few seconds.");
     }
@@ -201,18 +266,30 @@
     render(data);
   }
 
-  function fillDays(rows) {
-    const byDay = new Map(rows.map(r => [r.day, r]));
-    const out = [];
-    const end = new Date();
-    for (let k = days - 1; k >= 0; k--) {
-      const d = new Date(end); d.setDate(end.getDate() - k);
-      const id = d.toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
-      out.push(byDay.get(id) || { day: id, people: 0, visits: 0 });
+  // One bar per hour (ranges of two days or less) or per day, in Austin time, empty ones included.
+  let bucket = "day";
+  function fillDays(rows, sinceIso) {
+    const byKey = new Map(rows.map(r => [r.day, r]));
+    const keys = [];
+    const seen = new Set();
+    const local = ms => new Date(ms).toLocaleString("sv-SE", { timeZone: TZ, hour12: false });
+    const step = bucket === "hour" ? 3600000 : 3600000 * 6;
+    const now = Date.now();
+    for (let ms = Date.parse(sinceIso); ms <= now + step; ms += step) {
+      const t = local(Math.min(ms, now));
+      const id = bucket === "hour" ? t.slice(0, 13).replace(" ", "T") : t.slice(0, 10);
+      if (!seen.has(id)) { seen.add(id); keys.push(id); }
     }
-    return out;
+    return keys.map(id => byKey.get(id) || { day: id, people: 0, visits: 0 });
   }
-  const shortDate = id => new Date(id + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const shortDate = id => {
+    if (id.length > 10) {
+      const d = new Date(id.slice(0, 10) + "T12:00:00");
+      const h = Number(id.slice(11, 13));
+      return `${d.toLocaleDateString("en-US", { weekday: "short" })} ${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
+    }
+    return new Date(id + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
 
   let chartY = () => 0;
   function chart(rows, W) {
@@ -243,7 +320,7 @@
                <path class="bar" d="${path}"/>`;
       if (labelAt.has(k)) bars += `<text class="axis" x="${x + bw / 2}" y="${H - 6}" text-anchor="${k === 0 ? "start" : k === rows.length - 1 ? "end" : "middle"}">${shortDate(row.day)}</text>`;
     });
-    return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="People per day over the last ${days} days">${grid}${bars}</svg><div class="tip" hidden></div>`;
+    return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="People per ${bucket} over the ${rangeLabel()}">${grid}${bars}</svg><div class="tip" hidden></div>`;
   }
 
   function table(head, rows, empty) {
@@ -254,7 +331,30 @@
 
   function render(d) {
     const v = d.visitors, q = d.quiz, beta = d.beta || [];
-    const rows = fillDays(d.daily);
+    bucket = d.bucket || "day";
+    days = d.days;
+    // Older servers only know whole days: fall back to that range.
+    const sinceIso = d.since || new Date(Date.now() - d.days * 86400000).toISOString();
+    const sinceMs = Date.parse(sinceIso);
+    const rows = fillDays(d.daily, sinceIso);
+    const activity = d.activity || [];
+    const did = x => {
+      const times = x.n > 1 ? ` ×${fmt(x.n)}` : "";
+      if (x.e === "link") return esc(LINK_NAMES[x.t] || x.t) + times;
+      if (x.e === "letter") return `Letter clicks${times}`;
+      if (x.e === "quiz_finish" && x.v !== null) return `Finished the quiz, scored ${x.v}${times}`;
+      return esc(EVENT_NAMES[x.e] || x.e) + (x.t && x.e !== "letter" ? `: ${esc(x.t)}` : "") + times;
+    };
+    const feedItem = a => `
+      <li>
+        <div class="when"><b>${ago(Date.parse(a.last_at))}</b>${esc(clock(Date.parse(a.last_at)))}</div>
+        <div>
+          <div class="who" title="${esc(a.visitor)}">${esc(nickname(a.visitor))}${a.returning ? `<span class="badge back">back again</span>` : `<span class="badge new">new</span>`}
+            <small>· ${a.source === "direct" ? "came in direct" : `from ${esc(a.source)}`}${a.visits > 1 ? ` · ${fmt(a.visits)} visits` : ""}</small></div>
+          <p class="did">${a.did.length ? a.did.map(x => `<span>${did(x)}</span>`).join("") : `<span class="quiet">Just looked around</span>`}</p>
+        </div>
+      </li>`;
+    const FEED_FIRST = 12;
     const since = v.first_seen ? new Date(v.first_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
     const clickRows = d.clicks.map(c => [
       esc(EVENT_NAMES[c.event] || c.event) + (c.event === "link" ? `: ${esc(LINK_NAMES[c.target] || c.target)}` : c.event === "letter" ? ` (${esc(c.target)})` : c.target ? `: ${esc(c.target)}` : ""),
@@ -268,10 +368,16 @@
         <div>
           <h1>Site stats</h1>
           <p class="muted" style="margin:8px 0 0">${since ? `Counting since ${since}.` : "Nobody has visited yet."} Your own browser ${store.get("sh:me") === "1" ? "is left out" : "is included"}.</p>
+          <p class="rangeline">${range === "last"
+            ? (prevSeen ? `Showing what's happened since <b>${esc(clock(prevSeen))}</b> (${ago(prevSeen)}). <button type="button" id="caught">Mark all as seen</button>`
+                        : `This is your first visit on this browser, so here's the last 7 days. Next time this shows what's new.`)
+            : `Showing the ${rangeLabel()}.`}</p>
         </div>
         <div class="controls">
           <select id="days" aria-label="Date range">
-            ${[7, 30, 90, 365].map(n => `<option value="${n}" ${n === days ? "selected" : ""}>Last ${n} days</option>`).join("")}
+            <option value="last" ${range === "last" ? "selected" : ""}>Since my last visit</option>
+            <option value="24h" ${range === "24h" ? "selected" : ""}>Last 24 hours</option>
+            ${[7, 30, 90, 365].map(n => `<option value="${n}" ${String(n) === String(range) ? "selected" : ""}>Last ${n} days</option>`).join("")}
           </select>
           <label class="check"><input type="checkbox" id="me" ${store.get("sh:me") === "1" ? "checked" : ""}> Leave this browser out</label>
           <button class="btn quiet" type="button" id="out">Forget key</button>
@@ -281,7 +387,8 @@
       <div class="tiles">
         <div class="tile"><b>${fmt(v.last_day)}</b><span>people, last 24 hours</span></div>
         <div class="tile"><b>${fmt(v.last_week)}</b><span>people, last 7 days</span></div>
-        <div class="tile"><b>${fmt(v.in_range)}</b><span>people, last ${days} days</span></div>
+        <div class="tile"><b>${fmt(v.in_range)}</b><span>people, ${rangeLabel()}</span></div>
+        <div class="tile"><b>${fmt(v.new_in_range || 0)}</b><span>first-timers, ${rangeLabel()}</span></div>
         <div class="tile"><b>${fmt(v.returning_in_range)}</b><span>came back on another day</span></div>
         <div class="tile"><b>${fmt(v.all_time)}</b><span>people, all time</span></div>
         <div class="tile sun"><b>${fmt(d.counters.letters)}</b><span>letter clicks, public</span></div>
@@ -289,8 +396,17 @@
         <div class="tile sun"><b>${fmt(d.counters.broken || 0)}</b><span>letters broken, public</span></div>
       </div>
 
+      <section class="panel" id="feed">
+        <div class="panelhead">
+          <h2>What people were up to <span class="muted">${fmt(activity.length)}${activity.length >= 100 ? "+" : ""}</span></h2>
+        </div>
+        ${activity.length ? `<ul class="feed">${activity.slice(0, FEED_FIRST).map(feedItem).join("")}</ul>
+          ${activity.length > FEED_FIRST ? `<details><summary>Show ${fmt(activity.length - FEED_FIRST)} more</summary><ul class="feed">${activity.slice(FEED_FIRST).map(feedItem).join("")}</ul></details>` : ""}`
+          : `<p class="empty">Nobody's been by ${rangeLabel()}.</p>`}
+      </section>
+
       <section class="panel">
-        <h2>People per day</h2>
+        <h2>People per ${bucket}</h2>
         <div class="chart" id="chart"></div>
         <details><summary>Show as a table</summary>
           ${table([{ label: "Day" }, { label: "People", num: true }, { label: "Visits", num: true }],
@@ -311,7 +427,7 @@
 
       <section class="panel" id="beta">
         <div class="panelhead">
-          <h2>Beta sign-ups <span class="muted">${fmt(beta.length)}</span></h2>
+          <h2>Beta sign-ups <span class="muted">${fmt(beta.length)}${(() => { const n = beta.filter(b => Date.parse(b.at_iso) > sinceMs).length; return n ? ` · ${fmt(n)} new ${rangeLabel()}` : ""; })()}</span></h2>
           ${beta.length ? `<button class="btn quiet" type="button" id="copyEmails">Copy emails</button>` : ""}
         </div>
         ${table([{ label: "When" }, { label: "Project" }, { label: "Name" }, { label: "Email" }, { label: "Plays on" }, { label: "Note" }],
@@ -325,7 +441,10 @@
         ${table([{ label: "Question" }, { label: "Answers", num: true }, { label: "Got it right", num: true }], questionRows, "No answers yet in this range.")}
       </section>`;
 
-    document.getElementById("days").addEventListener("change", e => { days = Number(e.target.value); store.set("sh:statsDays", days); load(); });
+    document.querySelectorAll("#beta tbody tr").forEach((tr, k) => { if (beta[k] && Date.parse(beta[k].at_iso) > sinceMs) tr.classList.add("fresh"); });
+    document.getElementById("days").addEventListener("change", e => { range = e.target.value; store.set("sh:statsRange", range); load(); });
+    const caught = document.getElementById("caught");
+    if (caught) caught.addEventListener("click", () => { prevSeen = Date.now() - 60000; store.set("sh:statsPrevSeen", String(prevSeen)); load(); });
     document.getElementById("me").addEventListener("change", e => { store.set("sh:me", e.target.checked ? "1" : "0"); render(d); });
     document.getElementById("out").addEventListener("click", () => { store.del("sh:adminKey"); key = ""; gate(); });
     const copy = document.getElementById("copyEmails");
