@@ -1,8 +1,8 @@
 // Family Chaos Mode, client side. The server planned every event; this draws them in sync
 // (phones and the TV use the same server clock) and enforces the parts phones can check instantly.
-import { sfx } from './sfx.js';
-import { haptic } from './net.js';
-import { UI } from './icons.js';
+import { sfx } from './sfx.js?v=b5d94dd-1795098092';
+import { haptic } from './net.js?v=b5d94dd-1795098092';
+import { UI } from './icons.js?v=b5d94dd-1795098092';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const store = {
@@ -33,7 +33,7 @@ export const INFO = {
     blurb: 'Clear card sets to see letters',
     title: 'Ready, Set, CJ!', color: '#3ee0b0',
     short: 'Your letters are under cards. Tap 3 that make a set to clear them!',
-    tut: 'Tap 3 cards. They make a set when, for each of count, shape, color and fill, the three cards are all the same or all different. A set clears those 3 cards plus every card touching their sides. Letters you uncover work as normal.',
+    tut: 'Tap 3 cards. They make a set when, for each of count, shape, color and fill, the three cards are all the same or all different. A set clears those 3 cards plus every card touching their sides. The counter shows how many sets are left; at zero, every card clears.',
   },
   leak: {
     blurb: 'Your words may go to everyone',
@@ -49,6 +49,8 @@ export const INFO = {
   },
 };
 
+// The caution tab slides in this long before an event's banner, counting down.
+const APPROACH_MS = 5000;
 const BANANA_FULL = 30; // fallback; the server sizes it to the board
 
 // ---------- seeded random so the TV and phones draw the same car ----------
@@ -71,6 +73,7 @@ export class Chaos {
     this.state = new Map();      // id -> 'warn' | 'active' | 'done'
     this.fx = {};
     this.bananaCount = round.banana ? round.banana.count : 0;
+    this.bananaDone = !!(round.banana && round.banana.done);
     if (round.banana && round.banana.removed) round.banana.removed.forEach(i => board.setHole(i, true));
   }
 
@@ -90,12 +93,48 @@ export class Chaos {
       if (st === 'done') continue; // finished events never restart, even if the clock nudges back
       if (ms >= e.at + e.dur) { this.end(e, st); continue; }
       if (ms >= e.at) { if (st !== 'active') this.begin(e, st); this.during(e, ms - e.at); continue; }
-      if (ms >= e.warnAt && !st) this.warn(e);
+      if (ms >= e.warnAt && (!st || st === 'approach')) { this.warn(e); continue; }
+      if (ms >= e.warnAt - APPROACH_MS && !st) this.approach(e);
+      if (this.state.get(e.id) === 'approach') this.approachTick(e, ms);
     }
   }
 
   // ---------- phases ----------
+  // A striped caution tab slides in from the edge with a countdown and a siren blip each second.
+  approach(e) {
+    this.state.set(e.id, 'approach');
+    this.closeApproach();
+    const t = document.createElement('div');
+    t.className = `chaos-approach ${this.mode}`;
+    t.innerHTML = `<div class="ca-stripes"></div><div class="ca-body"><span class="ca-ic">${UI.bolt}</span><div><div class="ca-kicker">Caution</div><div class="ca-title">Family Chaos incoming</div></div><b class="ca-count"></b></div>`;
+    document.body.appendChild(t);
+    this.approachEl = t;
+  }
+
+  approachTick(e, ms) {
+    const t = this.approachEl;
+    if (!t) return;
+    const left = Math.max(1, Math.ceil((e.warnAt - ms) / 1000));
+    if (t._left !== left) {
+      t._left = left;
+      const c = t.querySelector('.ca-count');
+      c.textContent = left;
+      c.classList.remove('tick'); void c.offsetWidth; c.classList.add('tick');
+      sfx.siren(5 - left);
+      if (this.mode === 'phone') haptic('tick');
+    }
+  }
+
+  closeApproach() {
+    const t = this.approachEl;
+    if (!t) return;
+    this.approachEl = null;
+    t.classList.add('out');
+    setTimeout(() => t.remove(), 400);
+  }
+
   warn(e) {
+    this.closeApproach();
     this.state.set(e.id, 'warn');
     const info = INFO[e.type];
     this.banner(info, e.type);
@@ -105,7 +144,7 @@ export class Chaos {
   }
 
   begin(e, st) {
-    if (!st) this.banner(INFO[e.type], e.type);
+    if (!st || st === 'approach') { this.closeApproach(); this.banner(INFO[e.type], e.type); }
     this.state.set(e.id, 'active');
     this.closeBanner(true);
     this.pill(e);
@@ -113,7 +152,7 @@ export class Chaos {
     if (e.type === 'sam' && !this.fx.sam) this.fx.sam = new RaceCar(b, e.data.seed);
     if (e.type === 'robbert') b.el.classList.add('robbert');
     if (e.type === 'leak') b.el.classList.add('leaky');
-    if (e.type === 'banana') { this.bananaFull = (e.data && e.data.full) || BANANA_FULL; b.el.classList.add('banana-mode'); if (this.mode === 'phone') this.showBanana(); sfx.bananaHello(); }
+    if (e.type === 'banana') { this.bananaFull = (e.data && e.data.full) || BANANA_FULL; this.bananaFirst = null; b.el.classList.add('banana-mode'); if (this.mode === 'phone' && !this.bananaDone) this.showBanana(); sfx.bananaHello(); }
     if (e.type === 'set' && this.mode === 'phone') this.fx.set = new SetCards(b, ms => { this.onSetCleared && this.onSetCleared(ms); }, e.dur);
     if (e.type === 'sleepover') sfx.snore();
     if (e.type === 'sam') sfx.vroom();
@@ -150,65 +189,123 @@ export class Chaos {
         setTimeout(() => { b.setHole(i, false); t.classList.remove('regrow'); void t.offsetWidth; t.classList.add('regrow'); }, i * 35);
       });
       const st = this.hud && this.hud.querySelector('.banana-stage');
-      if (st) { st.classList.add('done'); setTimeout(() => st.remove(), 4000); }
+      if (st && !this.bananaDone) { st.classList.add('done'); st.querySelector('.banana-sub').textContent = "Time's up for Nana's banana"; setTimeout(() => st.remove(), 3000); }
     }
     if (e.type === 'set' && this.fx.set) { this.fx.set.destroy(); this.fx.set = null; }
     if (this.pillEl && this.pillEl.dataset.id === e.id) { this.pillEl.remove(); this.pillEl = null; }
   }
 
-  // Server confirmed a word during the banana: pull its tiles.
-  // Each tile peels off the board and arcs into the banana, which gobbles it up.
-  bananaWord(path) {
-    const stage = this.hud && this.hud.querySelector('.banana-stage .banana-big');
-    const target = stage ? stage.getBoundingClientRect() : null;
+  // Server confirmed a word during the banana: each tile peels off the board, arcs into the next spot in
+  // the sketched banana, lands as a little tile, then smushes into banana. `done` means this word filled it.
+  bananaWord(path, done) {
+    if (this.bananaDone) return;
+    // Reserve spots now, so a second word arriving before the first one's tiles land doesn't share them.
+    if (this.bananaQueued == null) this.bananaQueued = this.bananaCount;
+    const start = this.bananaQueued;
+    this.bananaQueued += path.length;
+    let landed = 0;
     path.forEach((i, k) => {
       const tile = this.board.tileEls[i];
       const r = tile.getBoundingClientRect();
-      if (target && r.width) {
+      const letter = this.board.letters()[i];
+      const slot = this.slotScreen(start + k);
+      let didLand = false;
+      const land = () => {
+        if (didLand) return;
+        didLand = true;
+        this.landTile(start + k, letter);
+        if (++landed === path.length && done) setTimeout(() => this.completeBanana(), 450);
+      };
+      if (slot && r.width) {
         const fly = document.createElement('div');
         fly.className = 'flying-tile';
-        fly.textContent = this.board.letters()[i] === 'qu' ? 'Qu' : this.board.letters()[i].toUpperCase();
+        fly.textContent = letter === 'qu' ? 'Qu' : letter.toUpperCase();
         Object.assign(fly.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`, fontSize: `${r.width * 0.5}px` });
         document.body.appendChild(fly);
-        const tx = target.left + target.width * (0.35 + Math.random() * 0.3) - r.left - r.width / 2;
-        const ty = target.top + target.height * 0.5 - r.top - r.height / 2;
+        const tx = slot.x - r.left - r.width / 2, ty = slot.y - r.top - r.height / 2;
+        const s = slot.size / r.width;
         const anim = fly.animate([
-          { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1 },
-          { transform: `translate(${tx * 0.45}px, ${ty * 0.45 - 70}px) rotate(${(k % 2 ? -1 : 1) * 160}deg) scale(0.8)`, opacity: 1, offset: 0.5 },
-          { transform: `translate(${tx}px, ${ty}px) rotate(${(k % 2 ? -1 : 1) * 340}deg) scale(0.15)`, opacity: 0.4 },
-        ], { duration: 620, delay: k * 70, easing: 'cubic-bezier(.4,.1,.5,1)', fill: 'backwards' });
-        anim.onfinish = () => { fly.remove(); this.gobble(); };
-        setTimeout(() => this.board.setHole(i, true), k * 70);
+          { transform: 'translate(0,0) rotate(0) scale(1)' },
+          { transform: `translate(${tx * 0.5}px, ${ty * 0.5 - 60}px) rotate(${(k % 2 ? -1 : 1) * 120}deg) scale(0.75)`, offset: 0.55 },
+          { transform: `translate(${tx}px, ${ty}px) rotate(${slot.angle}deg) scale(${s})` },
+        ], { duration: 650, delay: k * 90, easing: 'cubic-bezier(.45,.05,.4,1)', fill: 'backwards' });
+        anim.onfinish = () => { fly.remove(); land(); };
+        // If the animation stalls (app in the background), land it anyway.
+        setTimeout(() => { if (!didLand) { fly.remove(); land(); } }, 650 + k * 90 + 600);
+        setTimeout(() => this.board.setHole(i, true), k * 90);
       } else {
-        this.board.setHole(i, true);
-        this.gobble();
+        if (!done) this.board.setHole(i, true);
+        land();
       }
     });
   }
 
-  gobble() {
+  // Where tile number `n` goes inside the sketch, in screen pixels (null if there's no banana on screen).
+  slotScreen(n) {
+    const svg = this.hud && this.hud.querySelector('.banana-sketch');
+    if (!svg) return null;
+    const s = bananaSlot(n, this.bananaFull);
+    const box = svg.getBoundingClientRect();
+    const k = box.width / 120;
+    return { x: box.left + s.x * k, y: box.top + s.y * k, size: s.size * k, angle: s.angle };
+  }
+
+  landTile(n, letter) {
+    const g = this.hud && this.hud.querySelector('.banana-sketch .blobs');
     this.bananaCount += 1;
+    if (g) {
+      const s = bananaSlot(n, this.bananaFull);
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      el.setAttribute('transform', `translate(${s.x.toFixed(1)} ${s.y.toFixed(1)}) rotate(${s.angle.toFixed(0)})`);
+      el.innerHTML = `<g class="btile"><rect x="${-s.size / 2}" y="${-s.size / 2}" width="${s.size}" height="${s.size}" rx="${s.size * 0.18}"/><text y="${s.size * 0.22}" font-size="${s.size * 0.62}">${letter === 'qu' ? 'Qu' : letter.toUpperCase()}</text></g>`;
+      g.appendChild(el);
+      // A beat as a tile, then it squishes into the banana.
+      setTimeout(() => el.firstChild.classList.add('smush'), 380);
+    }
     this.updateBanana();
     sfx.nom(this.bananaCount);
     const st = this.hud && this.hud.querySelector('.banana-stage');
     if (st) { st.classList.remove('nom'); void st.offsetWidth; st.classList.add('nom'); }
   }
 
-  bananaSplit(ids) {
-    if (this.mode === 'phone' && ids.includes(this.me)) {
-      this.hud && this.hud.querySelector('.banana-stage')?.classList.add('split');
-      const tag = document.createElement('div');
-      tag.className = 'split-badge pop-in';
-      tag.textContent = 'Banana Split +10%';
-      this.hud && this.hud.appendChild(tag);
-      sfx.solo();
-      haptic('success');
+  // Filled: the sketch goes solid, Nana's face appears, it wiggles and flies off, and the tiles come home.
+  completeBanana() {
+    if (this.bananaDone) return;
+    this.bananaDone = true;
+    const st = this.hud && this.hud.querySelector('.banana-stage');
+    sfx.fanfare();
+    haptic('success');
+    if (st) {
+      st.classList.add('complete');
+      st.querySelector('.banana-sub').textContent = this.bananaFirst === false ? 'Filled! Someone beat you to the badge.' : 'Filled!';
+      setTimeout(() => st.classList.add('fly-away'), 1400);
+      setTimeout(() => st.remove(), 2400);
+    }
+    this.board.tileEls.forEach((t, i) => {
+      if (!t.classList.contains('hole')) return;
+      setTimeout(() => { this.board.setHole(i, false); t.classList.remove('regrow'); void t.offsetWidth; t.classList.add('regrow'); }, 300 + i * 35);
+    });
+  }
+
+  // Server: someone filled their banana. The first one gets the badge.
+  bananaWin(m) {
+    if (this.mode !== 'phone') return;
+    if (m.id === this.me) {
+      this.bananaFirst = m.first;
+      if (m.first) {
+        const tag = document.createElement('div');
+        tag.className = 'split-badge pop-in';
+        tag.textContent = 'Banana Split badge!';
+        this.hud && this.hud.appendChild(tag);
+        setTimeout(() => tag.remove(), 6000);
+      }
     }
   }
 
   destroy() {
     for (const e of this.events) if (this.state.get(e.id) === 'active') this.end(e, 'active');
     this.closeBanner();
+    this.closeApproach();
     document.querySelectorAll('.chaos-tut').forEach(x => x.remove());
   }
 
@@ -256,23 +353,73 @@ export class Chaos {
   showBanana() {
     if (!this.hud) return;
     this.hud.querySelector('.banana-stage')?.remove();
+    this.bananaDone = false;
+    this.bananaQueued = this.bananaCount;
     const w = document.createElement('div');
     w.className = 'banana-stage';
-    w.innerHTML = `<div class="banana-big">${bananaSVG()}</div>
-      <div class="banana-info"><b class="banana-n">0</b><small>/ ${this.bananaFull} letters</small><div class="banana-sub">Biggest banana gets +10%</div></div>`;
+    w.innerHTML = `<div class="banana-big">${bananaSketchSVG()}</div>
+      <div class="banana-info"><b class="banana-n">0</b><small>/ ${this.bananaFull} letters</small><div class="banana-sub">First to fill it wins the Banana Split</div></div>`;
     this.hud.appendChild(w);
+    // Coming back mid-banana: what's already in there, already smushed.
+    for (let n = 0; n < this.bananaCount; n++) {
+      const g = w.querySelector('.blobs');
+      const s = bananaSlot(n, this.bananaFull);
+      g.insertAdjacentHTML('beforeend', `<g transform="translate(${s.x.toFixed(1)} ${s.y.toFixed(1)}) rotate(${s.angle.toFixed(0)})"><g class="btile smush"><rect x="${-s.size / 2}" y="${-s.size / 2}" width="${s.size}" height="${s.size}" rx="${s.size * 0.18}"/></g></g>`);
+    }
     this.updateBanana();
   }
 
   updateBanana() {
     const w = this.hud && this.hud.querySelector('.banana-stage');
     if (!w) return;
-    setBananaFill(w, this.bananaCount, this.bananaFull);
-    w.querySelector('.banana-n').textContent = this.bananaCount;
-    const full = this.bananaCount >= (this.bananaFull || BANANA_FULL);
-    if (full && !w.classList.contains('full')) { w.classList.add('full'); sfx.solo(); haptic('success'); w.querySelector('.banana-sub').textContent = 'Full banana! Keep going for the lead'; }
+    w.querySelector('.banana-n').textContent = Math.min(this.bananaCount, this.bananaFull);
     this.onBananaChange && this.onBananaChange(this.bananaCount);
   }
+}
+
+// ---------- Nana's banana, as a sketch that fills with tiles ----------
+// The outline's center line runs from the tip (left) to the stem; tile n sits n steps along it.
+const BANANA_SPINE = [[14, 39], [26, 47], [40, 52], [55, 54], [70, 51], [84, 44], [95, 33], [102, 21]];
+const spineLen = (() => { let l = 0; for (let i = 1; i < BANANA_SPINE.length; i++) l += Math.hypot(BANANA_SPINE[i][0] - BANANA_SPINE[i - 1][0], BANANA_SPINE[i][1] - BANANA_SPINE[i - 1][1]); return l; })();
+export function bananaSlot(n, full) {
+  const steps = Math.max(full, 1);
+  // Tiles past the target pile on top of the last few spots.
+  const u = Math.min(n, steps - 1) / Math.max(steps - 1, 1);
+  let want = u * spineLen;
+  for (let i = 1; i < BANANA_SPINE.length; i++) {
+    const a = BANANA_SPINE[i - 1], b = BANANA_SPINE[i];
+    const seg = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (want <= seg || i === BANANA_SPINE.length - 1) {
+      const t = Math.min(1, want / seg);
+      const middle = 1 - Math.abs(u - 0.5) * 1.3; // fatter in the middle, thinner at the ends
+      const size = Math.min(15, (spineLen / steps) * 1.5) * (0.75 + 0.35 * middle);
+      return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, size, angle: (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI };
+    }
+    want -= seg;
+  }
+  return { x: 60, y: 50, size: 10, angle: 0 };
+}
+let sketchN = 0;
+export function bananaSketchSVG() {
+  const id = `bsk${sketchN++}`;
+  // A few loose, slightly offset strokes so it reads as a pencil sketch.
+  const strokes = [[0, 0, 1.6, 0.9], [0.8, -0.6, 1.1, 0.55], [-0.7, 0.7, 0.9, 0.45]].map(([dx, dy, w, o]) =>
+    `<path d="${BANANA_SHAPE}" transform="translate(${dx} ${dy})" fill="none" stroke="#fff1d2" stroke-width="${w}" stroke-opacity="${o}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${9 + dx * 3} ${1.5 + o}"/>`).join('');
+  return `<svg class="banana-sketch" viewBox="0 0 120 70"><defs><clipPath id="${id}"><path d="${BANANA_SHAPE}"/></clipPath></defs>
+    <path class="sketch-fill" d="${BANANA_SHAPE}" fill="rgba(255,241,210,0.05)"/>
+    <g class="blobs" clip-path="url(#${id})"></g>
+    <path class="solid-line" d="${BANANA_SHAPE}" fill="none" stroke="#2b1650" stroke-width="3" stroke-linejoin="round"/>
+    <g class="sketch-lines">${strokes}
+      <path d="M104 10 L107 2 L112 3 L109 12" fill="none" stroke="#fff1d2" stroke-width="1.3" stroke-opacity=".8" stroke-linecap="round"/>
+      <path d="M10 40 C 7 41, 5 40, 6 37" fill="none" stroke="#fff1d2" stroke-width="1.3" stroke-opacity=".8" stroke-linecap="round"/></g>
+    <g class="banana-face">
+      <circle cx="56" cy="53" r="3.4" fill="#2b1650"/><circle cx="57.2" cy="51.8" r="1.1" fill="#fff"/>
+      <circle cx="72" cy="50" r="3.4" fill="#2b1650"/><circle cx="73.2" cy="48.8" r="1.1" fill="#fff"/>
+      <ellipse cx="50" cy="58" rx="4" ry="2.4" fill="#ff8fab" opacity=".7"/><ellipse cx="79" cy="54" rx="4" ry="2.4" fill="#ff8fab" opacity=".7"/>
+      <path d="M60 58 Q 65 63, 70 56" stroke="#2b1650" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <g transform="translate(100 13) rotate(-20)"><path d="M0 0 L-9 -6 L-9 6 Z M0 0 L9 -6 L9 6 Z" fill="#ff5c8a" stroke="#2b1650" stroke-width="1.6" stroke-linejoin="round"/><circle r="2.6" fill="#ff5c8a" stroke="#2b1650" stroke-width="1.6"/></g>
+    </g>
+  </svg>`;
 }
 
 // ---------- Nana's banana ----------
@@ -347,17 +494,25 @@ class RaceCar {
     for (const [rx, ry] of rear) { tg.beginPath(); tg.arc(rx, ry, L * 0.06, 0, 6.29); tg.fill(); }
     // Smoke puffs.
     for (const [rx, ry] of rear) if (Math.random() < 0.8) this.parts.push({ x: rx, y: ry, r: L * 0.08, vr: L * 0.012 + Math.random() * L * 0.01, a: 0.55, vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.5) * 0.6 });
-    if (this.parts.length > 260) this.parts.splice(0, this.parts.length - 260);
+    if (this.parts.length > 200) this.parts.splice(0, this.parts.length - 200);
     this.drawSmoke(true, x, y, h, L);
   }
   drawSmoke(withCar, x, y, h, L) {
     const g = this.smoke.getContext('2d');
     g.clearRect(0, 0, this.w, this.w);
+    // Puffs are batched by how see-through they are: one fill per band instead of one per puff.
+    const bands = [[], [], [], [], [], []];
     for (const p of this.parts) {
       p.r += p.vr; p.a *= 0.975; p.x += p.vx; p.y += p.vy;
-      g.fillStyle = `rgba(225, 220, 235, ${p.a})`;
-      g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.29); g.fill();
+      bands[Math.min(5, Math.floor(p.a * 10))].push(p);
     }
+    bands.forEach((list, k) => {
+      if (!list.length) return;
+      g.fillStyle = `rgba(225, 220, 235, ${(k + 0.5) / 10})`;
+      g.beginPath();
+      for (const p of list) { g.moveTo(p.x + p.r, p.y); g.arc(p.x, p.y, p.r, 0, 6.29); }
+      g.fill();
+    });
     this.parts = this.parts.filter(p => p.a > 0.02);
     if (withCar) drawCar(g, x, y, h, L);
   }
@@ -436,6 +591,11 @@ function cardSVG([count, shape, color, fill]) {
   return `<svg class="set-card-art" viewBox="0 0 60 80"><defs><pattern id="${pid}" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="2" fill="${c}"/></pattern></defs><rect x="1.5" y="1.5" width="57" height="77" rx="8" fill="#fffaf0" stroke="#d9b97f" stroke-width="3"/>${ys.map(one).join('')}</svg>`;
 }
 const isSet = (a, b, c) => [0, 1, 2, 3].every(k => (a[k] === b[k] && b[k] === c[k]) || (a[k] !== b[k] && b[k] !== c[k] && a[k] !== c[k]));
+function countSets(cards) {
+  let n = 0;
+  for (let i = 0; i < cards.length; i++) for (let j = i + 1; j < cards.length; j++) for (let k = j + 1; k < cards.length; k++) if (isSet(cards[i], cards[j], cards[k])) n++;
+  return n;
+}
 function anySet(cards) {
   for (let i = 0; i < cards.length; i++) for (let j = i + 1; j < cards.length; j++) for (let k = j + 1; k < cards.length; k++) if (isSet(cards[i], cards[j], cards[k])) return true;
   return false;
@@ -470,6 +630,10 @@ class SetCards {
       this.els.set(i, b);
     }
     board.blocked = i => this.cards.has(i);
+    this.counter = document.createElement('div');
+    this.counter.className = 'set-count';
+    board.fx.appendChild(this.counter);
+    this.updateCount();
     this.place();
     board.onResize = () => this.place();
   }
@@ -520,32 +684,19 @@ class SetCards {
       setTimeout(() => el.remove(), 500 + j * 40);
     });
     if (!this.cards.size) { this.done(); return; }
-    if (this.cards.size >= 3 && !anySet([...this.cards.values()])) setTimeout(() => this.reshuffle(), 450);
-    else if (this.cards.size < 3) setTimeout(() => this.remove([...this.cards.keys()]), 450);
+    this.updateCount();
   }
-  // No set left among the covered cards: deal them fresh faces (with at least one set) instead.
-  reshuffle() {
-    if (this.finished || !this.cards.size) return;
-    const spots = [...this.cards.keys()];
-    let faces;
-    do {
-      const all = [];
-      for (let a = 1; a <= 3; a++) for (let b = 0; b < 3; b++) for (let c = 0; c < 3; c++) for (let d = 0; d < 3; d++) all.push([a, b, c, d]);
-      all.sort(() => Math.random() - 0.5);
-      faces = all.slice(0, spots.length);
-    } while (!anySet(faces));
-    spots.forEach((k, j) => {
-      this.cards.set(k, faces[j]);
-      const el = this.els.get(k);
-      el.classList.remove('on');
-      el.innerHTML = cardSVG(faces[j]);
-      el.animate([{ transform: 'rotateY(90deg)' }, { transform: 'none' }], { duration: 300, delay: j * 30, fill: 'backwards' });
-    });
-    this.sel = [];
-    const t = document.createElement('div');
-    t.className = 'toast'; t.textContent = 'No sets left: shuffling the cards!';
-    document.body.appendChild(t); setTimeout(() => t.remove(), 1800);
-    sfx.whoosh();
+  // How many sets are still hiding among the covered cards. At zero, the rest of the cards clear.
+  updateCount() {
+    if (!this.cards.size) { this.counter.remove(); return; }
+    const left = countSets([...this.cards.values()]);
+    this.counter.innerHTML = left ? `<b>${left}</b> set${left === 1 ? '' : 's'} left` : 'No sets left!';
+    this.counter.classList.remove('bump'); void this.counter.offsetWidth; this.counter.classList.add('bump');
+    if (!left && !this.clearing) {
+      this.clearing = true;
+      sfx.whoosh();
+      setTimeout(() => { this.clearing = false; this.remove([...this.cards.keys()]); }, 650);
+    }
   }
   done() {
     if (this.finished) return;
@@ -557,6 +708,7 @@ class SetCards {
     this.board.blocked = null;
     this.board.onResize = null;
     this.layer.remove();
+    this.counter.remove();
   }
 }
 

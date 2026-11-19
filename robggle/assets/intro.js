@@ -589,23 +589,34 @@ export function playIntro({ onDraining, freezeAt } = {}) {
       }
       return [pts, widths];
     }
-    // A ribbon as round-capped segments: one ink pass, then juice-colored, so touching strokes run together.
-    function ribbon(pts, widths, inkColor) {
+    // Goo as round-capped segments, batched: segments that share a (rounded) width and color go into one
+    // path, so a frame is a few dozen strokes instead of thousands. Ink first, so touching strokes run together.
+    const qc = c => css([Math.round(c[0] * 20) / 20, Math.round(c[1] * 20) / 20, Math.round(c[2] * 20) / 20, c[3]]);
+    function batchRibbons(ribbons, inkColor) {
+      const groups = new Map();
+      for (const [pts, widths] of ribbons) {
+        for (let i = 0; i + 1 < pts.length; i++) {
+          const w = Math.round(2 * (inkColor ? widths[i] + GOO_INK : widths[i]) * 2) / 2;
+          const color = inkColor ? css(inkColor) : qc(juice(pts[i]));
+          const key = color + '|' + w;
+          let g = groups.get(key);
+          if (!g) groups.set(key, (g = { color, w, segs: [] }));
+          g.segs.push(pts[i], pts[i + 1]);
+        }
+      }
       ctx.lineCap = 'round';
-      for (let i = 0; i + 1 < pts.length; i++) {
+      for (const g of groups.values()) {
         ctx.beginPath();
-        ctx.moveTo(pts[i][0], pts[i][1]);
-        ctx.lineTo(pts[i + 1][0], pts[i + 1][1]);
-        ctx.lineWidth = 2 * (inkColor ? widths[i] + GOO_INK : widths[i]);
-        ctx.strokeStyle = css(inkColor || juice(pts[i]));
+        for (let k = 0; k < g.segs.length; k += 2) { ctx.moveTo(g.segs[k][0], g.segs[k][1]); ctx.lineTo(g.segs[k + 1][0], g.segs[k + 1][1]); }
+        ctx.lineWidth = g.w;
+        ctx.strokeStyle = g.color;
         ctx.stroke();
       }
-      if (pts.length === 1) circle(pts[0], inkColor ? widths[0] + GOO_INK : widths[0], inkColor || juice(pts[0]));
     }
     function pour(ribbons) {
-      for (const [p, w] of ribbons) ribbon(p, w, INK);
+      batchRibbons(ribbons, INK);
+      batchRibbons(ribbons, null);
       ribbons.forEach(([p, w], salt) => {
-        ribbon(p, w, null);
         const n = p.length;
         if (n < 12) return;
         const from = Math.floor(hash(salt + 5) * n * 0.5);

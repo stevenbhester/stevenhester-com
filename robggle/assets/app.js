@@ -1,10 +1,10 @@
 // Robggle client. One file drives three pages: /robggle/ (home), /robggle/game/ (screen), /robggle/join/ (controller).
-import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER } from './net.js';
-import { makeBoard, tileText } from './board.js';
-import { sfx, unlock } from './sfx.js';
-import { runReveal, chipHTML } from './reveal.js';
-import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js';
-import { icon } from './icons.js';
+import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER } from './net.js?v=b5d94dd-1795098092';
+import { makeBoard, tileText } from './board.js?v=b5d94dd-1795098092';
+import { sfx, unlock } from './sfx.js?v=b5d94dd-1795098092';
+import { runReveal, chipHTML } from './reveal.js?v=b5d94dd-1795098092';
+import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=b5d94dd-1795098092';
+import { icon } from './icons.js?v=b5d94dd-1795098092';
 
 const MODE = document.body.dataset.mode; // home | screen | join
 const $root = document.getElementById('root');
@@ -115,9 +115,16 @@ function onMsg(m) {
     case 'leaked': leakedWord(m); break;
     case 'bridge': screenBridge(m); break;
     case 'challengeAck': if (S.play && S.play.fb) S.play.fb.textContent = `Challenge filed: ${m.w.toUpperCase()} goes to a vote after the round`; break;
-    case 'bananaSplit':
-      S.bananaSplit = m.ids; S.bananaCounts = m.counts || S.bananaCounts;
-      S.chaos && S.chaos.bananaSplit(m.ids);
+    case 'bananaWin': {
+      if (m.first) S.bananaSplit = [m.id];
+      S.chaos && S.chaos.bananaWin(m);
+      const p = member(m.id);
+      if (m.first && S.you && m.id !== S.you.id && MODE !== 'screen') toast(`${p ? p.name : 'Someone'} filled Nana's banana first!`);
+      if (MODE === 'screen') { if (m.first) { sfx.solo(); } updatePlaySide(); }
+      break;
+    }
+    case 'bananaEnd':
+      S.bananaCounts = m.counts || S.bananaCounts;
       if (MODE === 'screen') updatePlaySide();
       break;
     case 'pen': penUpdate(m); break;
@@ -673,7 +680,7 @@ function wordResult(m) {
       S.play.lastNew = m.w;
     }
     if (m.leaked) { S.play.fb.textContent = `${m.w.toUpperCase()} leaked to everyone!`; floatText('LEAKED', 'leak'); sfx.dupe(); }
-    if (m.path && S.chaos) S.chaos.bananaWord(m.path);
+    if (m.path && S.chaos) S.chaos.bananaWord(m.path, m.bananaDone);
     renderWords(); updateScore();
     return;
   }
@@ -916,9 +923,10 @@ function renderBananaPanel() {
   const full = (on.data && on.data.full) || 30;
   const ranked = players().slice().sort((x, y) => (counts[y.id] || 0) - (counts[x.id] || 0));
   const lead = counts[ranked[0] && ranked[0].id] || 0;
-  el.innerHTML = `<div class="card stack banana-panel"><div class="panel-head">${icon('banana')}<h3>Nana's banana race</h3></div><div class="hint-line">First to ${full} letters fills it. Biggest banana gets +10%.</div>${ranked.map(p => {
+  el.innerHTML = `<div class="card stack banana-panel"><div class="panel-head">${icon('banana')}<h3>Nana's banana race</h3></div><div class="hint-line">First to put ${full} letters in their banana wins the Banana Split badge.</div>${ranked.map(p => {
     const n = counts[p.id] || 0;
-    return `<div class="banana-row ${n && n === lead ? 'leader' : ''}">${chipHTML(p, 'tiny')}<span class="grow">${esc(p.name)}${n && n === lead ? ` ${icon('crown', 'sm')}` : ''}</span><span class="banana-mini" data-n="${n}">${bananaSVG()}</span><b>${n}</b></div>`;
+    const won = (S.bananaSplit || []).includes(p.id);
+    return `<div class="banana-row ${won ? 'leader' : ''}">${chipHTML(p, 'tiny')}<span class="grow">${esc(p.name)}${won ? ` ${icon('crown', 'sm')}` : ''}</span><span class="banana-mini" data-n="${Math.min(n, full)}">${bananaSVG()}</span><b>${Math.min(n, full)}/${full}</b></div>`;
   }).join('')}</div>`;
   el.querySelectorAll('.banana-mini').forEach(b => setBananaFill(b, +b.dataset.n, full));
 }
@@ -1049,7 +1057,7 @@ window.addEventListener('robggle:open', e => {
   if (!want) return;
   try { sessionStorage.setItem('rb:intro', '1'); } catch {}
   const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
-  import('./intro.js').then(m => m.playIntro({ freezeAt })).catch(() => {});
+  import('./intro.js?v=b5d94dd-1795098092').then(m => m.playIntro({ freezeAt })).catch(() => {});
 })();
 
 if (MODE === 'home') renderLanding();

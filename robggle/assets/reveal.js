@@ -1,10 +1,10 @@
 // End-of-round show: every found word gets its moment, points fly into a racing scoreboard,
 // words nobody else found get stamped x2. The host can change the speed live for everyone.
 // Then bonuses, heat maps, loot-box badges, and good/bad sport speech bubbles.
-import { makeBoard } from './board.js';
-import { sfx } from './sfx.js';
-import { haptic } from './net.js';
-import { ICONS, UI } from './icons.js';
+import { makeBoard } from './board.js?v=b5d94dd-1795098092';
+import { sfx } from './sfx.js?v=b5d94dd-1795098092';
+import { haptic } from './net.js?v=b5d94dd-1795098092';
+import { ICONS, UI } from './icons.js?v=b5d94dd-1795098092';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');
@@ -60,36 +60,57 @@ export function runReveal(R, opt) {
   }
   renderCtl();
 
-  // ---------- scoreboard ----------
-  let rowH = tv ? Math.max(40, Math.min(72, (innerHeight * 0.62) / Math.max(players.length, 1))) : 48;
-  scores.style.height = `${players.length * rowH}px`;
-  scores.style.setProperty('--rh', `${rowH}px`);
+  // ---------- scoreboard: a tower of letter tiles, seen edge-on, for each player ----------
+  // Everyone keeps their spot; towers grow as tiles drop in, scaled so the tallest fits.
   const running = Object.fromEntries(players.map(p => [p.id, 0]));
   const maxScore = Math.max(1, ...players.map(p => p.round));
+  const TOWER_H = tv ? Math.max(160, Math.min(380, innerHeight * 0.5)) : Math.max(90, Math.min(140, innerHeight - 640));
+  // Tiles are at least 3px thick; on big scores each tile stands for several points so the tallest tower fits.
+  const unit = Math.max(1, Math.ceil(maxScore / (TOWER_H / 3)));
+  const sliceH = Math.min(9, TOWER_H / Math.ceil(maxScore / unit));
+  scores.className = 'towers';
+  scores.style.setProperty('--th', `${TOWER_H}px`);
   const rows = {};
+  const jitter = (id, i) => { const h = Math.sin(i * 12.9898 + id.charCodeAt(0) * 78.233) * 43758.5453; return h - Math.floor(h); };
   for (const p of players) {
-    const r = document.createElement('div');
-    r.className = 'srow';
+    const col = document.createElement('div');
+    col.className = 'tcol';
     const a = p.alliance && alliances[p.alliance];
-    r.innerHTML = `${CROWN}${chipHTML(p)}<div class="bar-wrap" ${a ? `style="outline:2px solid ${a.color};outline-offset:-2px"` : ''}><div class="bar" style="--c:${p.color}"></div><span class="label">${esc(p.name)}${p.id === me ? ' (you)' : ''}${R.handicap && p.hcp ? ` <span class="hcp-tag">HCP ${p.hcp}</span>` : ''}</span></div><span class="sc">0</span>`;
-    r.onclick = () => openPlayer(p.id);
-    scores.appendChild(r);
-    rows[p.id] = r;
+    col.innerHTML = `<div class="tower" ${a ? `style="--ac:${a.color}"` : ''}>${CROWN}<div class="tiles"></div></div><div class="tsc">0</div>${chipHTML(p, 'tiny')}<div class="tname">${esc(p.name)}${R.handicap && p.hcp ? `<span class="hcp-tag">HCP ${p.hcp}</span>` : ''}</div>`;
+    col.onclick = () => openPlayer(p.id);
+    col.title = p.name;
+    scores.appendChild(col);
+    rows[p.id] = col;
+    col._tiles = col.querySelector('.tiles');
+    col._sc = col.querySelector('.tsc');
+    col._n = 0;
   }
-  function rerank() {
-    const order = players.slice().sort((a, b) => running[b.id] - running[a.id] || a.name.localeCompare(b.name));
-    order.forEach((p, i) => { rows[p.id].style.transform = `translateY(${i * rowH}px)`; });
-    return order;
+  // Drops `n` tiles onto a tower (or lays them straight in when `instant`).
+  function addTiles(id, n, { instant = false, cls = '' } = {}) {
+    const col = rows[id];
+    if (!col || n <= 0) return;
+    const frag = document.createDocumentFragment();
+    for (let k = 0; k < n; k++) {
+      const i = col._n++;
+      const t = document.createElement('i');
+      const jx = (jitter(id, i) - 0.5) * 6, rot = (jitter(id, i + 99) - 0.5) * 4;
+      t.style.cssText = `bottom:${(i * sliceH).toFixed(1)}px;height:${Math.max(1.2, sliceH - 0.6).toFixed(1)}px;--jx:${jx.toFixed(1)}px;--rot:${rot.toFixed(1)}deg${instant ? '' : `;animation-delay:${k * 45}ms`}`;
+      if (cls) t.className = cls;
+      if (!instant) t.classList.add('drop');
+      frag.appendChild(t);
+    }
+    col._tiles.appendChild(frag);
   }
-  rerank();
-  function setScore(id, v) {
+  function setScore(id, v, opts = {}) {
+    const col = rows[id];
+    if (!col) return;
     running[id] = v;
-    const r = rows[id];
-    r.querySelector('.bar').style.transform = `scaleX(${Math.min(1, v / maxScore)})`;
-    r.querySelector('.sc').textContent = v;
-    r.classList.remove('hit'); void r.offsetWidth; r.classList.add('hit');
-    rerank();
+    addTiles(id, Math.max(v > 0 ? 1 : 0, Math.round(v / unit)) - col._n, opts);
+    col._sc.textContent = v;
+    col.style.setProperty('--h', `${(col._n * sliceH).toFixed(1)}px`);
+    col.classList.remove('hit'); void col.offsetWidth; col.classList.add('hit');
   }
+  const ranked = () => players.slice().sort((a, b) => running[b.id] - running[a.id] || a.name.localeCompare(b.name));
 
   // ---------- timing that follows the host's speed ----------
   let resolveSkip;
@@ -106,13 +127,24 @@ export function runReveal(R, opt) {
   });
 
   // ---------- word card ----------
-  function showCard(wd, i) {
+  function showBeat(beat, i) {
     if (i === 0) stage.innerHTML = '';
-    stage.querySelectorAll('.wordcard, .stamp').forEach(x => x.remove());
+    stage.querySelectorAll('.wordcard, .wordpair, .stamp').forEach(x => x.remove());
+    if (beat.length === 1) return [showCard(beat[0], i, stage, 1)];
+    const pair = document.createElement('div');
+    pair.className = 'wordpair';
+    stage.appendChild(pair);
+    const cards = beat.map(wd => showCard(wd, i, pair, 2));
+    // Light both words' tiles on the little board.
+    mini.light([...new Set(beat.flatMap(wd => wd.path || []))], { color: 'var(--mint)', step: 40 / pace() });
+    return cards;
+  }
+
+  function showCard(wd, i, host, share) {
     const card = document.createElement('div');
     card.className = 'wordcard' + (wd.solo ? ' solo' : '');
-    const stageW = stage.clientWidth || 300;
-    const ls = Math.min(tv ? 90 : 46, (stageW - 20) / wd.w.length - 5);
+    const stageW = (stage.clientWidth || 300) / share;
+    const ls = Math.min(tv ? 90 / share : 46 / (share === 2 ? 1.35 : 1), (stageW - 20) / wd.w.length - 5);
     card.style.setProperty('--ls', `${ls}px`);
     const letters = wd.w.toUpperCase().split('').map((c, k) => `<span style="--i:${k}">${c}</span>`).join('');
     const pts = wd.solo ? `+${wd.base} <span style="color:var(--sun)">×${R.soloMult}</span>` : `+${wd.pts}`;
@@ -125,9 +157,9 @@ export function runReveal(R, opt) {
     if (vias.includes('copy')) tags.push('<span class="wtag copy">ally copy</span>');
     const finders = wd.finders.map((id, k) => byId[id] ? chipHTML(byId[id], wd.via && wd.via[id] === 'leak' ? 'leaked' : '').replace('class="chip ', `style="--i:${k}" class="chip `) : '').join('');
     card.innerHTML = `<div class="letters">${letters}</div><div class="pts">${pts}</div>${tags.length ? `<div class="wtags">${tags.join('')}</div>` : ''}<div class="finders">${finders}</div>`;
-    stage.appendChild(card);
+    host.appendChild(card);
     const color = wd.solo ? 'var(--sun)' : wd.finders.length === 1 && byId[wd.finders[0]] ? byId[wd.finders[0]].color : 'var(--mint)';
-    if (wd.path) mini.light(wd.path, { color, step: Math.min(70, 300 / wd.path.length) / pace() });
+    if (wd.path && share === 1) mini.light(wd.path, { color, step: Math.min(70, 300 / wd.path.length) / pace() });
     sfx.blip(i);
     if (bonusIds.length) setTimeout(() => sfx.bridge(), 200);
     return card;
@@ -147,7 +179,7 @@ export function runReveal(R, opt) {
     const row = rows[id];
     if (!row || !fromEl) return;
     const from = fromEl.getBoundingClientRect();
-    const to = row.querySelector('.sc').getBoundingClientRect();
+    const to = row._sc.getBoundingClientRect();
     const f = document.createElement('div');
     f.className = 'flyer ' + cls;
     f.textContent = `+${amount}`;
@@ -159,7 +191,7 @@ export function runReveal(R, opt) {
       f.style.transform = `translate(${to.left - from.left - from.width / 2 + 16}px, ${to.top - from.top}px) scale(0.7)`;
       f.style.opacity = '0.2';
     }));
-    setTimeout(() => { f.remove(); if (!done) setScore(id, running[id] + amount); }, 560 / Math.min(pace(), 2));
+    setTimeout(() => { f.remove(); if (!done) setScore(id, running[id] + amount, { cls }); }, 560 / Math.min(pace(), 2));
   }
 
   function soloStamp(wd, dur) {
@@ -197,26 +229,35 @@ export function runReveal(R, opt) {
       await Promise.race([wait(1600), skipped]);
       return;
     }
-    // Longer words and solos get more time; the whole show stays around 10-30s at 1x.
-    const N = words.length;
-    const weight = (wd, i) => 0.7 + 0.18 * (wd.w.length - 3) + (wd.solo ? 0.7 : 0) + (i >= N - 3 ? 0.9 : 0);
+    // Short words several people found go two at a time; long shared words and words only one person
+    // found each get their own moment. Longer words and solos get more time; about 20-60s at 1x.
+    const pairable = wd => wd.finders.length >= 2 && !wd.solo && wd.w.length <= 4;
+    const beats = [];
+    for (let i = 0; i < words.length; i++) {
+      if (pairable(words[i]) && i + 1 < words.length && pairable(words[i + 1])) { beats.push([words[i], words[i + 1]]); i++; }
+      else beats.push([words[i]]);
+    }
+    const N = beats.length;
+    const weightOf = (b, i) => b.reduce((s, wd) => s + 0.7 + 0.18 * (wd.w.length - 3) + (wd.solo ? 0.7 : 0), 0) / (b.length === 2 ? 1.5 : 1) + (i >= N - 3 ? 0.9 : 0);
     const total = Math.min(30000, Math.max(7000, N * 650));
-    const wsum = words.reduce((s, wd, i) => s + weight(wd, i), 0);
+    const wsum = beats.reduce((s, b, i) => s + weightOf(b, i), 0);
     for (let i = 0; i < N; i++) {
       if (done) return;
-      const wd = words[i];
-      const dur = Math.max(320, (total * weight(wd, i)) / wsum);
-      const card = showCard(wd, i);
+      const beat = beats[i];
+      const dur = Math.max(320, (total * weightOf(beat, i)) / wsum);
+      const cards = showBeat(beat, i);
       const lead = Math.min(260, dur * 0.35);
       await Promise.race([wait(lead), skipped]);
       if (done) return;
-      for (const id of wd.finders) fly(card.querySelector('.pts'), id, wd.pts + ((wd.bonus || {})[id] || 0), wd.solo ? 'solo' : '');
-      if (wd.solo) soloStamp(wd, dur);
+      beat.forEach((wd, j) => {
+        for (const id of wd.finders) fly(cards[j].querySelector('.pts'), id, wd.pts + ((wd.bonus || {})[id] || 0), wd.solo ? 'solo' : '');
+        if (wd.solo) soloStamp(wd, dur);
+      });
       await Promise.race([wait(dur - lead), skipped]);
       if (done) return;
-      card.classList.add('out');
-      pushTicker(wd);
-      if (teamBar) { teamFound++; teamBar.querySelector('i').style.transform = `scaleX(${teamFound / Math.max(1, R.coop.possible)})`; teamBar.querySelector('b').textContent = teamFound; }
+      cards.forEach(c => c.classList.add('out'));
+      beat.forEach(wd => pushTicker(wd));
+      if (teamBar) { teamFound += beat.length; teamBar.querySelector('i').style.transform = `scaleX(${teamFound / Math.max(1, R.coop.possible)})`; teamBar.querySelector('b').textContent = teamFound; }
     }
     await Promise.race([wait(500), skipped]);
     // Bonuses that land after the words.
@@ -233,7 +274,7 @@ export function runReveal(R, opt) {
       stage.innerHTML = `<div class="bonus-card pop-in"><div class="bonus-title">Handicap strokes</div><div class="muted">Golf rules: everyone gets their usual gap back</div><div class="stroke-list">${strokes.map(p => `<div class="row">${chipHTML(p, 'tiny')}<span class="grow">${esc(p.name)}</span><span class="muted small">HCP ${p.hcp}</span><b>+${p.strokes}</b></div>`).join('')}</div></div>`;
       sfx.coin();
       await Promise.race([wait(600), skipped]);
-      strokes.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.strokes));
+      strokes.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.strokes, 'stroke'));
       await Promise.race([wait(1600), skipped]);
     }
   }
@@ -310,13 +351,9 @@ export function runReveal(R, opt) {
     ticker.innerHTML = '';
     root.classList.add('final-state');
     if (teamBar) { teamBar.remove(); teamBar = null; }
-    // Tighter rows once the show is over.
-    rowH = tv ? Math.max(36, Math.min(56, (innerHeight * 0.5) / Math.max(players.length, 1))) : 36;
-    scores.style.height = `${players.length * rowH}px`;
-    scores.style.setProperty('--rh', `${rowH}px`);
-    scores.classList.add('compact');
-    for (const p of players) setScore(p.id, p.round);
-    const order = rerank();
+    // Whatever didn't land yet (a skip), lay straight in.
+    for (const p of players) if (running[p.id] !== p.round) setScore(p.id, p.round, { instant: true });
+    const order = ranked();
     const top = order[0];
     const tied = order.filter(p => p.round === top.round);
     if (!coop && top && top.round > 0) tied.forEach(p => rows[p.id].classList.add('winner'));
@@ -441,7 +478,7 @@ export function runReveal(R, opt) {
       if (!row) return;
       row.querySelector('.bubble')?.remove();
       const b = document.createElement('div');
-      b.className = `bubble side ${kind}`;
+      b.className = `bubble above ${kind}`;
       b.textContent = m.text;
       row.appendChild(b);
       setTimeout(() => b.classList.add('out'), 8000);

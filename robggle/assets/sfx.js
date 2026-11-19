@@ -75,6 +75,7 @@ export const sfx = {
     seq.forEach(([s, at]) => tone(392 * 2 ** (s / 12), { at, dur: 0.3, type: 'square', vol: 0.12 }));
     tone(392 * 4, { at: 0.66, dur: 0.8, type: 'triangle', vol: 0.15 });
   },
+  siren(i) { const f = 660 + i * 90; tone(f, { dur: 0.16, type: 'square', vol: 0.09, slide: 1.35 }); tone(f * 1.35, { at: 0.17, dur: 0.14, type: 'square', vol: 0.07, slide: 0.75 }); },
   alarm() { [0, 0.16, 0.32].forEach(at => tone(988, { at, dur: 0.1, type: 'square', vol: 0.1 })); tone(1319, { at: 0.48, dur: 0.25, type: 'square', vol: 0.12 }); },
   snore() { tone(110, { dur: 0.9, type: 'sawtooth', vol: 0.08, slide: 1.3, attack: 0.3 }); tone(90, { at: 1.1, dur: 0.8, type: 'sawtooth', vol: 0.06, slide: 0.7, attack: 0.2 }); },
   vroom() { tone(70, { dur: 1.4, type: 'sawtooth', vol: 0.16, slide: 3.2, attack: 0.05 }); noise({ at: 0.9, dur: 0.6, vol: 0.18, freq: 500 }); },

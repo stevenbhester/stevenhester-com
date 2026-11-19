@@ -1,7 +1,7 @@
 // The letter grid. Interactive boards let you trace a word by dragging across tiles.
 // Chaos events can change a tile's letter (Z's), pull tiles out (bananas) or block them (Set cards).
-import { sfx } from './sfx.js';
-import { haptic } from './net.js';
+import { sfx } from './sfx.js?v=b5d94dd-1795098092';
+import { haptic } from './net.js?v=b5d94dd-1795098092';
 
 export const tileText = t => (t === 'qu' ? 'Qu' : t.toUpperCase());
 const tileHTML = t => (t === 'qu' ? '<span class="qu">Qu</span>' : t.toUpperCase());
@@ -53,9 +53,11 @@ export function makeBoard(tiles, size, opts = {}) {
     const r = tileEls[i].getBoundingClientRect();
     return [r.left - b.left + r.width / 2, r.top - b.top + r.height / 2];
   }
+  // While a finger is down the tile centers were measured once at pointerdown; reuse them.
   function drawLine() {
-    line.setAttribute('points', path.map(i => centerOf(i).join(',')).join(' '));
+    line.setAttribute('points', path.map(i => (centers && dragging ? centers[i] : centerOf(i)).join(',')).join(' '));
   }
+  let dragging = false;
   function word() { return path.map(i => cur[i]).join(''); }
   function adjacent(a, b) {
     const ra = Math.floor(a / size), ca = a % size, rb = Math.floor(b / size), cb = b % size;
@@ -169,6 +171,7 @@ export function makeBoard(tiles, size, opts = {}) {
       centers = tileEls.map((_, i) => centerOf(i));
       centers.cell = b.width / size;
       down = true;
+      dragging = true;
       el.setPointerCapture(e.pointerId);
       clearTimeout(api._t);
       el.classList.remove('ok', 'no', 'dupe', 'wait');
@@ -192,6 +195,7 @@ export function makeBoard(tiles, size, opts = {}) {
     const up = () => {
       if (!down) return;
       down = false;
+      dragging = false;
       const w = word();
       if (path.length && opts.onWord) opts.onWord(w, path.slice());
       else api.clear();
