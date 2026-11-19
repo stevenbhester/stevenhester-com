@@ -153,7 +153,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch {} },
 };
 let key = store.get("sh:adminKey") || "";
-let P = [], T = {}, ROWS = [], ENGINE = {}, RAW = [];
+let P = [], T = {}, ROWS = [], ENGINE = {}, RAW = [], SKILL = new Map(), BOTS = 0, BOT_JOBS = 0;
 // "Since your last visit": the newest record seen on this browser's last visit. A refresh in the same
 // sitting keeps the same starting point (sessionStorage), so the summary doesn't empty itself.
 const sess = {
@@ -209,6 +209,13 @@ async function load(quiet = false) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return gate(data.error || `The server answered with an error (${res.status}).`);
   try { ENGINE = (await (await fetch("engine.json", { cache: "no-cache" })).json()).jobs || {}; } catch { ENGINE = {}; }
+  // Each tester's estimated skill and where they stand: the server works these out (lastmile/skill.js), so
+  // the game's "Show my data" and this page say the same thing. An older server has no such route: no column.
+  SKILL = new Map();
+  try {
+    const r2 = await fetch(`${API}/lm/testers`, { headers: { "x-admin-key": key } });
+    if (r2.ok) { const d2 = await r2.json(); BOTS = d2.bots || 0; BOT_JOBS = d2.botJobs || 0; for (const t of d2.testers || []) SKILL.set(String(t.device), t); }
+  } catch { /* the columns just stay empty */ }
   build(data.ratings || []);
   const newest = RAW.length ? String(RAW[RAW.length - 1].receivedAt) : "";
   BASE = sess.get("lm:stats:base");
@@ -260,7 +267,11 @@ function build(rows) {
     // The job's latest record stands for it (the game's counts add up over its tries until a win).
     // A win's seconds_active already holds every try; an unfinished try adds this one's seconds.
     const run = { secs: (Number(st.seconds_active) || 0) + (won ? 0 : Number(st.seconds_this_try) || 0) };
-    for (const [k, f] of [["hints", "hints"], ["calls", "radio"], ["undos", "undos"], ["restarts", "restarts"]]) if (f in st) run[k] = Number(st[f]) || 0;
+    // (The game leaves a count out when it's zero, so a record that carries the job's play numbers and has no
+    // "hints" means none were taken. Averaging only the records that had the key counted only the jobs where
+    // help was used, which read as "2 hints a job" for someone who'd taken six in forty.)
+    const counted = st.record === "play" || "seconds_active" in st;
+    for (const [k, f] of [["hints", "hints"], ["calls", "radio"], ["undos", "undos"], ["restarts", "restarts"]]) if (counted || f in st) run[k] = Number(st[f]) || 0;
     if (!(d.runs[n] && d.runs[n].won && !won)) d.runs[n] = { ...run, won };
     const c = d.cells[n] || (d.cells[n] = { won: false, played: true });
     if (won) { c.won = true; d.furthest = Math.max(d.furthest, n); }
@@ -320,7 +331,9 @@ function render() {
     ${section('s-high', 'Best and worst jobs', 'by average rating', true, highlights())}
     ${section('s-engine', 'Engine vs players', 'planned tier vs rated difficulty', true, engineCheck())}
     ${section('s-people', 'Testers', `${P.length}`, true, `<div class="tscroll"><table class="people" id="people"></table></div><div class="cards" id="cards"></div>
-      <p class="note">Ratings are out of 5, shown as average / median over the jobs each tester rated. "Job ${PAST} on" leaves out jobs 1 to ${PAST - 1}, the tutorial and easy jobs, where help is still unlimited. Time and help are per job played, from each job's latest record (all its tries together). Help counts only start where a tester's build began sending them.</p>`)}
+      <p class="note">Ratings are out of 5, shown as average / median over the jobs each tester rated. "Job ${PAST} on" leaves out jobs 1 to ${PAST - 1}, the tutorial and easy jobs, where help is still unlimited. Time and help are per job played, from each job's latest record (all its tries together). Help counts only start where a tester's build began sending them.</p>
+      <p class="note"><b>Par</b> is each job's usual time, hints and tries, from ${BOTS || 25} simulated players of random skill, the best of them pretty good but not amazing. <b>Tries</b> is retries and undos as one number: a retry is 1, and an undo is the share of a retry it stands for (a route with five stops takes five undos to get back to the start, so each is a fifth). <b>Vs par</b> is the overall figure (a job's time plus what its hints and tries were worth, against par's: + is better), then the typical job's time, and hints and tries a job (minus is fewer than par). Par itself stays on the server.</p>
+      <p class="note"><b>Skill</b> is an estimate out of 100. It starts at 35, moves up to 15 either way for how a tester did against the others on the same jobs, up to 15 either way for how far under or over par their jobs came (the only comparison there is on jobs nobody else has reached), and gains up to 35 for how much of the game's difficulty they've beaten, so nobody ranks high on easy jobs alone. Harder jobs count for more throughout. <b>Grit</b> is how likely a tester is to push on without asking for help: of the jobs that got hard (for them, or by par), the share they saw through without a hint's worth of help (three calls count as one hint), measured against what par takes there. With few such jobs to go on it leans toward the average. Hover a number for what's behind it. "Top X%" is the standing among the testers and the simulated players as they did on jobs 1 to ${BOT_JOBS || 30}; those aren't listed. The game shows a tester their own under Options, Testers, Show my data, and never says how many testers there are or what par is.</p>`)}
     ${section('s-push', 'Push notifications', 'what testers opted into', true, pushes())}
     ${section('s-grid', 'Job by job', 'rings per job', wide(), `
       <details><summary class="muted small" style="cursor:pointer">How to read the rings</summary><div class="key" id="key" style="margin-top:10px"></div>
@@ -524,6 +537,26 @@ function engineCheck() {
     ${surprises.length ? `<div><b>Surprises</b><ul class="surp">${surprises.map(s => `<li>${s}</li>`).join('')}</ul></div>` : '<p class="note">No job played far from its planned tier.</p>'}`;
 }
 
+// A tester's skill ("56" and where that puts them), grit and standing against par, as table cells.
+const topPct = v => v == null ? '' : `top ${v}%`;
+const signed = (v, unit = '') => v == null ? NIL : `${v > 0 ? '+' : ''}${v}${unit}`;
+// Against par, said so it can't be read backwards: "26% better", "0.4 more hints".
+const parSay = k => [
+  k.vsPar == null ? '' : `overall ${Math.abs(k.vsPar)}% ${k.vsPar >= 0 ? 'better' : 'worse'} than par`,
+  k.parTime == null ? '' : `the typical job ${Math.abs(k.parTime)}% ${k.parTime >= 0 ? 'faster' : 'slower'}`,
+  k.parHints == null ? '' : `${Math.abs(k.parHints).toFixed(1)} ${k.parHints <= 0 ? 'fewer' : 'more'} hints a job`,
+  k.parTries == null ? '' : `${Math.abs(k.parTries).toFixed(1)} ${k.parTries <= 0 ? 'fewer' : 'more'} tries a job`,
+].filter(Boolean).join(', ');
+function skillCells(p) {
+  const k = SKILL.get(p.id);
+  if (!k) return `<td>${NIL}</td><td>${NIL}</td><td>${NIL}</td>`;
+  const sg = v => `${v >= 0 ? '+' : ''}${v}`;
+  const how = `35 to start, ${sg(k.fromOthers)} against the others on the same ${k.compared} jobs, ${sg(k.fromPar)} against par, +${k.fromReach} for how much of the game they've beaten`;
+  const hard = `${k.hardJobs} job${k.hardJobs === 1 ? '' : 's'} that got hard${k.hardJobs < 4 ? ': little to go on, so this leans on the average' : ''}`;
+  return `<td title="${esc(how)}"><b>${k.skill}</b> <span class="muted">${topPct(k.skillTop)}</span></td><td title="${esc(hard)}"><b>${k.grit}%</b> <span class="muted">${topPct(k.gritTop)}</span></td>` +
+    `<td title="${esc(parSay(k))}"><b class="${k.vsPar >= 0 ? 'ff' : 'dd'}">${signed(k.vsPar, '%')}</b> <span class="muted">${signed(k.parTime, '%')} · ${signed(k.parHints)} · ${signed(k.parTries)}</span></td>`;
+}
+
 function testerStats(p) {
   const rated = Object.entries(p.cells).filter(([, c]) => c.d || c.f || c.x).map(([n, c]) => ({ n: +n, ...c }));
   const later = rated.filter(c => c.n >= PAST);
@@ -534,15 +567,15 @@ function testerStats(p) {
 }
 
 function peopleTable() {
-  let h = `<thead><tr class="grp"><th></th><th></th><th></th><th></th><th class="sep" colspan="3">Ratings, all jobs (average / median)</th><th class="sep" colspan="3">Ratings, job ${PAST} on (average / median)</th><th class="sep" colspan="5">Per job played</th></tr>
-    <tr><th>Tester</th><th>Furthest job</th><th>Sessions</th><th>Jobs rated</th>
+  let h = `<thead><tr class="grp"><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th class="sep" colspan="3">Ratings, all jobs (average / median)</th><th class="sep" colspan="3">Ratings, job ${PAST} on (average / median)</th><th class="sep" colspan="5">Per job played</th></tr>
+    <tr><th>Tester</th><th>Furthest job</th><th>Skill</th><th>Grit</th><th title="Overall, then time · hints · tries. + is better than par for the first two numbers; for hints and tries, minus is fewer.">Vs par</th><th>Sessions</th><th>Jobs rated</th>
     <th class="sep">Difficulty</th><th>Fun</th><th>Frustration</th>
     <th class="sep">Difficulty</th><th>Fun</th><th>Frustration</th>
     <th class="sep">Time</th><th>Hints</th><th>Calls</th><th>Undos</th><th>Restarts</th></tr></thead><tbody>`;
   P.forEach((p, i) => {
     const s = testerStats(p);
     h += `<tr><td><b>Tester ${i + 1}</b> <span class="muted">${esc(phoneName(p.phone))}${s.tz ? ' · ' + esc(s.tz) : ''}</span></td>
-      <td>${p.furthest}</td><td>${p.sessions.size}</td><td>${s.rated.length}</td>
+      <td>${p.furthest}</td>${skillCells(p)}<td>${p.sessions.size}</td><td>${s.rated.length}</td>
       <td class="sep dd">${am(s.vals(s.rated, 'd'))}</td><td class="ff">${am(s.vals(s.rated, 'f'))}</td><td class="xx">${am(s.vals(s.rated, 'x'))}</td>
       <td class="sep dd">${am(s.vals(s.later, 'd'))}</td><td class="ff">${am(s.vals(s.later, 'f'))}</td><td class="xx">${am(s.vals(s.later, 'x'))}</td>
       <td class="sep">${secs(s.per('secs'))}</td><td>${f1(s.per('hints'))}</td><td>${f1(s.per('calls'))}</td><td>${f1(s.per('undos'))}</td><td>${f1(s.per('restarts'))}</td></tr>`;
@@ -555,9 +588,11 @@ function peopleCards() {
   document.getElementById('cards').innerHTML = P.map((p, i) => {
     const s = testerStats(p);
     const row = (label, k) => `<span class="r">${label}</span><span class="${k === 'd' ? 'dd' : k === 'f' ? 'ff' : 'xx'}">${am(s.vals(s.rated, k))}</span><span class="${k === 'd' ? 'dd' : k === 'f' ? 'ff' : 'xx'}">${am(s.vals(s.later, k))}</span><span></span>`;
-    return `<details class="card"><summary><b>Tester ${i + 1}</b><span class="chip">to job ${p.furthest}</span><span class="muted small">${p.sessions.size} session${p.sessions.size === 1 ? '' : 's'} · ${s.rated.length} rated · ${esc(phoneName(p.phone))}${s.tz ? ' · ' + esc(s.tz) : ''}</span></summary>
+    const k = SKILL.get(p.id);
+    return `<details class="card"><summary><b>Tester ${i + 1}</b><span class="chip">to job ${p.furthest}</span>${k ? `<span class="chip">skill ${k.skill}</span>` : ''}<span class="muted small">${p.sessions.size} session${p.sessions.size === 1 ? '' : 's'} · ${s.rated.length} rated · ${esc(phoneName(p.phone))}${s.tz ? ' · ' + esc(s.tz) : ''}</span></summary>
       <div class="cgrid"><span></span><span class="h">All jobs</span><span class="h">Job ${PAST} on</span><span></span>
         ${row('Difficulty', 'd')}${row('Fun', 'f')}${row('Frustration', 'x')}</div>
+      ${k ? `<p class="note" style="margin:8px 0 0">Skill <b>${k.skill}</b> of 100 (${topPct(k.skillTop)}) · grit <b>${k.grit}%</b> (${topPct(k.gritTop)})<br>Against par: ${esc(parSay(k))}</p>` : ''}
       <div class="help"><div>${secs(s.per('secs'))}<small>time</small></div><div>${f1(s.per('hints'))}<small>hints</small></div><div>${f1(s.per('calls'))}<small>calls</small></div><div>${f1(s.per('undos'))}<small>undos</small></div><div>${f1(s.per('restarts'))}<small>restarts</small></div></div>
     </details>`;
   }).join('');
