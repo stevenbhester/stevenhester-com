@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1036">
+<title>Robggle privacy</title>
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  body { -webkit-user-select: text; user-select: text; }
+  .policy { max-width: 680px; margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) 16px 48px; display: flex; flex-direction: column; gap: 16px; line-height: 1.5; }
+  .policy h1 { margin: 10px 0 0; font-size: 34px; }
+  .policy h2 { margin: 0; font-size: 21px; color: var(--sun); }
+  .policy p, .policy ul { margin: 0; }
+  .policy ul { padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+  .policy a { color: var(--mint); }
+  .short { border: 2px solid var(--mint); }
+  .dated { color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<main class="policy">
+  <div class="logo small" aria-label="Robggle"><span style="--i:0;--r:-6deg">R</span><span style="--i:1;--r:4deg">O</span><span style="--i:2;--r:-3deg">B</span><span class="hot" style="--i:3;--r:5deg">G</span><span class="hot" style="--i:4;--r:-4deg">G</span><span style="--i:5;--r:3deg">L</span><span style="--i:6;--r:-5deg">E</span></div>
+  <h1>Privacy</h1>
+  <p class="dated">Last updated November 19, 2026</p>
+
+  <section class="panel short">
+    <h2>The short version</h2>
+    <ul>
+      <li>No accounts, no ads, no analytics, no tracking.</li>
+      <li>The only thing you type in is a name for other players to see.</li>
+      <li>Games live in the game server's memory while you play and are gone about 20 minutes after everyone leaves.</li>
+      <li>Nothing is sold or shared.</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>What the game handles</h2>
+    <ul>
+      <li><b>Your name.</b> Whatever you type, shown to the other people in your game and in the list of open games. Names with offensive words are replaced with "Player".</li>
+      <li><b>Your game.</b> The words you trace, scores, votes, alliances and badges, so everyone's screen can show the game. This is kept in memory on the game server, not in a database, and is deleted once a game has sat empty for about 20 minutes.</li>
+      <li><b>On your device.</b> Your name, the last game you joined (so you can rejoin it), and display choices like which sections you collapsed are saved on your own phone or browser. Deleting the app or clearing the browser's site data removes them.</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Services the game relies on</h2>
+    <ul>
+      <li><b>Heroku</b> runs the game server. Like any web server it briefly logs requests, which include your IP address.</li>
+      <li><b>GitHub Pages</b> hosts this website and the game's pages, and sees standard web request details such as your IP address.</li>
+      <li><b>Google Fonts</b> supplies the game's typeface, so your device asks Google for it when the game loads.</li>
+    </ul>
+    <p>Robggle doesn't send these services anything about you beyond what any web page request includes.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Kids and families</h2>
+    <p>Robggle is a family game. It doesn't ask for ages, emails, contacts, location, photos or anything else personal, so there is nothing about children (or anyone) to collect.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Questions</h2>
+    <p>Email <a href="mailto:robggle@stevenhester.com">robggle@stevenhester.com</a> and you'll hear back from Steven, who makes the game.</p>
+  </section>
+</main>
+</body>
+</html>

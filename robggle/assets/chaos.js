@@ -49,7 +49,7 @@ export const INFO = {
   },
 };
 
-const BANANA_FULL = 30;
+const BANANA_FULL = 30; // fallback; the server sizes it to the board
 
 // ---------- seeded random so the TV and phones draw the same car ----------
 function rng(seed) {
@@ -113,7 +113,7 @@ export class Chaos {
     if (e.type === 'sam' && !this.fx.sam) this.fx.sam = new RaceCar(b, e.data.seed);
     if (e.type === 'robbert') b.el.classList.add('robbert');
     if (e.type === 'leak') b.el.classList.add('leaky');
-    if (e.type === 'banana') { b.el.classList.add('banana-mode'); if (this.mode === 'phone') this.showBanana(); }
+    if (e.type === 'banana') { this.bananaFull = (e.data && e.data.full) || BANANA_FULL; b.el.classList.add('banana-mode'); if (this.mode === 'phone') this.showBanana(); sfx.bananaHello(); }
     if (e.type === 'set' && this.mode === 'phone') this.fx.set = new SetCards(b, ms => { this.onSetCleared && this.onSetCleared(ms); }, e.dur);
     if (e.type === 'sleepover') sfx.snore();
     if (e.type === 'sam') sfx.vroom();
@@ -142,22 +142,61 @@ export class Chaos {
     if (e.type === 'sam' && this.fx.sam) { this.fx.sam.stop(); this.fx.sam = null; }
     if (e.type === 'robbert') b.el.classList.remove('robbert');
     if (e.type === 'leak') b.el.classList.remove('leaky');
-    if (e.type === 'banana') { b.el.classList.remove('banana-mode'); for (let i = 0; i < b.tileEls.length; i++) b.setHole(i, false); }
+    if (e.type === 'banana') {
+      b.el.classList.remove('banana-mode');
+      // The tiles grow back, one after another.
+      b.tileEls.forEach((t, i) => {
+        if (!t.classList.contains('hole')) return;
+        setTimeout(() => { b.setHole(i, false); t.classList.remove('regrow'); void t.offsetWidth; t.classList.add('regrow'); }, i * 35);
+      });
+      const st = this.hud && this.hud.querySelector('.banana-stage');
+      if (st) { st.classList.add('done'); setTimeout(() => st.remove(), 4000); }
+    }
     if (e.type === 'set' && this.fx.set) { this.fx.set.destroy(); this.fx.set = null; }
     if (this.pillEl && this.pillEl.dataset.id === e.id) { this.pillEl.remove(); this.pillEl = null; }
   }
 
   // Server confirmed a word during the banana: pull its tiles.
+  // Each tile peels off the board and arcs into the banana, which gobbles it up.
   bananaWord(path) {
-    path.forEach(i => this.board.setHole(i, true));
-    this.bananaCount += path.length;
+    const stage = this.hud && this.hud.querySelector('.banana-stage .banana-big');
+    const target = stage ? stage.getBoundingClientRect() : null;
+    path.forEach((i, k) => {
+      const tile = this.board.tileEls[i];
+      const r = tile.getBoundingClientRect();
+      if (target && r.width) {
+        const fly = document.createElement('div');
+        fly.className = 'flying-tile';
+        fly.textContent = this.board.letters()[i] === 'qu' ? 'Qu' : this.board.letters()[i].toUpperCase();
+        Object.assign(fly.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`, fontSize: `${r.width * 0.5}px` });
+        document.body.appendChild(fly);
+        const tx = target.left + target.width * (0.35 + Math.random() * 0.3) - r.left - r.width / 2;
+        const ty = target.top + target.height * 0.5 - r.top - r.height / 2;
+        const anim = fly.animate([
+          { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1 },
+          { transform: `translate(${tx * 0.45}px, ${ty * 0.45 - 70}px) rotate(${(k % 2 ? -1 : 1) * 160}deg) scale(0.8)`, opacity: 1, offset: 0.5 },
+          { transform: `translate(${tx}px, ${ty}px) rotate(${(k % 2 ? -1 : 1) * 340}deg) scale(0.15)`, opacity: 0.4 },
+        ], { duration: 620, delay: k * 70, easing: 'cubic-bezier(.4,.1,.5,1)', fill: 'backwards' });
+        anim.onfinish = () => { fly.remove(); this.gobble(); };
+        setTimeout(() => this.board.setHole(i, true), k * 70);
+      } else {
+        this.board.setHole(i, true);
+        this.gobble();
+      }
+    });
+  }
+
+  gobble() {
+    this.bananaCount += 1;
     this.updateBanana();
-    sfx.pop();
+    sfx.nom(this.bananaCount);
+    const st = this.hud && this.hud.querySelector('.banana-stage');
+    if (st) { st.classList.remove('nom'); void st.offsetWidth; st.classList.add('nom'); }
   }
 
   bananaSplit(ids) {
     if (this.mode === 'phone' && ids.includes(this.me)) {
-      this.hud && this.hud.querySelector('.banana-widget')?.classList.add('split');
+      this.hud && this.hud.querySelector('.banana-stage')?.classList.add('split');
       const tag = document.createElement('div');
       tag.className = 'split-badge pop-in';
       tag.textContent = 'Banana Split +10%';
@@ -215,36 +254,54 @@ export class Chaos {
   }
 
   showBanana() {
-    if (!this.hud || this.hud.querySelector('.banana-widget')) return this.updateBanana();
+    if (!this.hud) return;
+    this.hud.querySelector('.banana-stage')?.remove();
     const w = document.createElement('div');
-    w.className = 'banana-widget pop-in';
-    w.innerHTML = bananaSVG('me') + '<span class="banana-n"></span>';
+    w.className = 'banana-stage';
+    w.innerHTML = `<div class="banana-big">${bananaSVG()}</div>
+      <div class="banana-info"><b class="banana-n">0</b><small>/ ${this.bananaFull} letters</small><div class="banana-sub">Biggest banana gets +10%</div></div>`;
     this.hud.appendChild(w);
     this.updateBanana();
   }
 
   updateBanana() {
-    const w = this.hud && this.hud.querySelector('.banana-widget');
+    const w = this.hud && this.hud.querySelector('.banana-stage');
     if (!w) return;
-    setBananaFill(w, this.bananaCount);
+    setBananaFill(w, this.bananaCount, this.bananaFull);
     w.querySelector('.banana-n').textContent = this.bananaCount;
+    const full = this.bananaCount >= (this.bananaFull || BANANA_FULL);
+    if (full && !w.classList.contains('full')) { w.classList.add('full'); sfx.solo(); haptic('success'); w.querySelector('.banana-sub').textContent = 'Full banana! Keep going for the lead'; }
     this.onBananaChange && this.onBananaChange(this.bananaCount);
   }
 }
 
-// ---------- banana graphic ----------
+// ---------- Nana's banana ----------
+// An original banana with a little face and Nana's pink bow. It fills from the stem end as letters go in.
 let bananaN = 0;
+const BANANA_SHAPE = 'M10 40 C 26 70, 86 68, 108 24 C 110 18, 108 12, 104 10 C 98 30, 74 46, 44 46 C 30 46, 18 42, 10 36 C 6 35, 6 39, 10 40 Z';
 export function bananaSVG() {
   const id = `bclip${bananaN++}`;
-  const shape = 'M8 34 C 20 46, 50 46, 62 22 C 64 17, 62 12, 59 10 C 57 16, 52 26, 40 31 C 30 35, 18 34, 8 30 C 5 30, 5 33, 8 34 Z';
-  return `<svg class="banana" viewBox="0 0 68 48"><defs><clipPath id="${id}"><path d="${shape}"/></clipPath></defs>
-    <path d="${shape}" fill="rgba(255,255,255,0.08)" stroke="#e8c33a" stroke-width="2.5"/>
-    <rect class="banana-fill" clip-path="url(#${id})" x="0" y="0" width="68" height="48" fill="#ffd23f" style="transform-origin:0 0;transform:scaleX(0)"/>
-    <path d="M59 10 L61 4 L64 5 L62 11 Z" fill="#7a5a2a"/><path d="M8 34 C 6 35, 4 34, 5 32" stroke="#7a5a2a" stroke-width="2" fill="none"/></svg>`;
+  return `<svg class="banana" viewBox="0 0 120 70"><defs>
+      <clipPath id="${id}"><path d="${BANANA_SHAPE}"/></clipPath>
+      <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff07a"/><stop offset="1" stop-color="#f2b705"/></linearGradient>
+    </defs>
+    <path d="${BANANA_SHAPE}" fill="#f6edcf"/>
+    <rect class="banana-fill" clip-path="url(#${id})" x="0" y="0" width="120" height="70" fill="url(#${id}g)" style="transform-origin:0 0;transform:scaleX(0)"/>
+    <path d="${BANANA_SHAPE}" fill="none" stroke="#2b1650" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M104 10 L107 2 L112 3 L109 12 Z" fill="#7a5a2a" stroke="#2b1650" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M10 40 C 7 41, 5 40, 6 37" stroke="#2b1650" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <g class="banana-face">
+      <circle cx="56" cy="53" r="3.4" fill="#2b1650"/><circle cx="57.2" cy="51.8" r="1.1" fill="#fff"/>
+      <circle cx="72" cy="50" r="3.4" fill="#2b1650"/><circle cx="73.2" cy="48.8" r="1.1" fill="#fff"/>
+      <ellipse cx="50" cy="58" rx="4" ry="2.4" fill="#ff8fab" opacity=".7"/><ellipse cx="79" cy="54" rx="4" ry="2.4" fill="#ff8fab" opacity=".7"/>
+      <path class="banana-mouth" d="M60 58 Q 65 63, 70 56" stroke="#2b1650" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(100 13) rotate(-20)"><path d="M0 0 L-9 -6 L-9 6 Z M0 0 L9 -6 L9 6 Z" fill="#ff5c8a" stroke="#2b1650" stroke-width="1.6" stroke-linejoin="round"/><circle r="2.6" fill="#ff5c8a" stroke="#2b1650" stroke-width="1.6"/></g>
+  </svg>`;
 }
-export function setBananaFill(el, n) {
+export function setBananaFill(el, n, full = BANANA_FULL) {
   const f = el.querySelector('.banana-fill');
-  if (f) f.style.transform = `scaleX(${Math.min(1, n / BANANA_FULL)})`;
+  if (f) f.style.transform = `scaleX(${Math.min(1, n / full)})`;
 }
 
 // ---------- Sam's race car ----------

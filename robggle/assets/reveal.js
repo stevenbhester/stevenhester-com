@@ -4,7 +4,7 @@
 import { makeBoard } from './board.js';
 import { sfx } from './sfx.js';
 import { haptic } from './net.js';
-import { ICONS } from './icons.js';
+import { ICONS, UI } from './icons.js';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');
@@ -24,6 +24,9 @@ export function runReveal(R, opt) {
   const alliances = Object.fromEntries((R.alliances || []).map(a => [a.id, a]));
   const me = opt.me;
   let speed = 1;
+  // 1x plays at what used to be half speed; the host's buttons scale from there.
+  const BASE_PACE = 0.5;
+  const pace = () => speed * BASE_PACE;
   let done = false;
 
   const stageCol = document.createElement('div'); stageCol.className = 'stage-col';
@@ -58,7 +61,7 @@ export function runReveal(R, opt) {
   renderCtl();
 
   // ---------- scoreboard ----------
-  const rowH = tv ? Math.max(40, Math.min(72, (innerHeight * 0.62) / Math.max(players.length, 1))) : 48;
+  let rowH = tv ? Math.max(40, Math.min(72, (innerHeight * 0.62) / Math.max(players.length, 1))) : 48;
   scores.style.height = `${players.length * rowH}px`;
   scores.style.setProperty('--rh', `${rowH}px`);
   const running = Object.fromEntries(players.map(p => [p.id, 0]));
@@ -69,6 +72,7 @@ export function runReveal(R, opt) {
     r.className = 'srow';
     const a = p.alliance && alliances[p.alliance];
     r.innerHTML = `${CROWN}${chipHTML(p)}<div class="bar-wrap" ${a ? `style="outline:2px solid ${a.color};outline-offset:-2px"` : ''}><div class="bar" style="--c:${p.color}"></div><span class="label">${esc(p.name)}${p.id === me ? ' (you)' : ''}${R.handicap && p.hcp ? ` <span class="hcp-tag">HCP ${p.hcp}</span>` : ''}</span></div><span class="sc">0</span>`;
+    r.onclick = () => openPlayer(p.id);
     scores.appendChild(r);
     rows[p.id] = r;
   }
@@ -95,7 +99,7 @@ export function runReveal(R, opt) {
     const step = () => {
       if (done) return res();
       const now = performance.now();
-      left -= (now - last) * speed; last = now;
+      left -= (now - last) * pace(); last = now;
       if (left <= 0) res(); else setTimeout(step, 25);
     };
     step();
@@ -123,7 +127,7 @@ export function runReveal(R, opt) {
     card.innerHTML = `<div class="letters">${letters}</div><div class="pts">${pts}</div>${tags.length ? `<div class="wtags">${tags.join('')}</div>` : ''}<div class="finders">${finders}</div>`;
     stage.appendChild(card);
     const color = wd.solo ? 'var(--sun)' : wd.finders.length === 1 && byId[wd.finders[0]] ? byId[wd.finders[0]].color : 'var(--mint)';
-    if (wd.path) mini.light(wd.path, { color, step: Math.min(70, 300 / wd.path.length) / speed });
+    if (wd.path) mini.light(wd.path, { color, step: Math.min(70, 300 / wd.path.length) / pace() });
     sfx.blip(i);
     if (bonusIds.length) setTimeout(() => sfx.bridge(), 200);
     return card;
@@ -151,11 +155,11 @@ export function runReveal(R, opt) {
     f.style.top = `${from.top}px`;
     document.body.appendChild(f);
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      f.style.transitionDuration = `${0.55 / Math.min(speed, 2)}s`;
+      f.style.transitionDuration = `${0.55 / Math.min(pace(), 2)}s`;
       f.style.transform = `translate(${to.left - from.left - from.width / 2 + 16}px, ${to.top - from.top}px) scale(0.7)`;
       f.style.opacity = '0.2';
     }));
-    setTimeout(() => { f.remove(); if (!done) setScore(id, running[id] + amount); }, 560 / Math.min(speed, 2));
+    setTimeout(() => { f.remove(); if (!done) setScore(id, running[id] + amount); }, 560 / Math.min(pace(), 2));
   }
 
   function soloStamp(wd, dur) {
@@ -173,11 +177,18 @@ export function runReveal(R, opt) {
     root.classList.remove('shake'); void root.offsetWidth; root.classList.add('shake');
     sfx.solo();
     if (wd.finders.includes(me)) haptic('success');
-    setTimeout(() => s.remove(), Math.min(1400, dur / speed));
+    setTimeout(() => s.remove(), Math.min(2800, dur / pace()));
   }
 
+  let teamBar = null, teamFound = 0;
   async function sequence() {
-    stage.innerHTML = `<div class="title-stamp">TIME'S UP!</div>`;
+    stage.innerHTML = `<div class="title-stamp">${R.mode === 'coop' ? 'PENS DOWN!' : "TIME'S UP!"}</div>`;
+    if (R.mode === 'coop') {
+      teamBar = document.createElement('div');
+      teamBar.className = 'team-progress reveal-team';
+      teamBar.innerHTML = `<div class="tp-bar"><i style="transform:scaleX(0)"></i></div><span><b>0</b> of ${R.coop.possible} words found together</span>`;
+      stageCol.prepend(teamBar);
+    }
     sfx.stamp();
     await Promise.race([wait(1100), skipped]);
     const words = R.words;
@@ -205,6 +216,7 @@ export function runReveal(R, opt) {
       if (done) return;
       card.classList.add('out');
       pushTicker(wd);
+      if (teamBar) { teamFound++; teamBar.querySelector('i').style.transform = `scaleX(${teamFound / Math.max(1, R.coop.possible)})`; teamBar.querySelector('b').textContent = teamFound; }
     }
     await Promise.race([wait(500), skipped]);
     // Bonuses that land after the words.
@@ -226,6 +238,69 @@ export function runReveal(R, opt) {
     }
   }
 
+  // ---------- collapsible sections (each player's open/closed choice is remembered) ----------
+  const PREF = 'rb:sections';
+  const prefs = () => { try { return JSON.parse(localStorage.getItem(PREF)) || {}; } catch { return {}; } };
+  const savePref = (k, open) => { try { const p = prefs(); p[k] = open; localStorage.setItem(PREF, JSON.stringify(p)); } catch {} };
+  function sectionHTML(key, title, ic, body, defOpen, badge = '') {
+    const p = prefs();
+    const open = key in p ? p[key] : defOpen;
+    return `<section class="pg-sec ${open ? 'open' : ''}" data-sec="${key}">
+      <button class="pg-head"><span class="pg-ic">${UI[ic] || ICONS[ic] || ''}</span><span class="grow">${title}</span>${badge}<span class="chev">${UI.chev}</span></button>
+      <div class="pg-body">${body}</div></section>`;
+  }
+  function wireSections(scope) {
+    scope.querySelectorAll('.pg-sec > .pg-head').forEach(h => {
+      h.onclick = () => {
+        const sec = h.parentElement;
+        const open = !sec.classList.contains('open');
+        sec.classList.toggle('open', open);
+        savePref(sec.dataset.sec, open);
+        if (open) sec.dispatchEvent(new CustomEvent('opened'));
+        haptic('tick');
+      };
+    });
+  }
+
+  function heatBoards(host, id) {
+    if (!host || host.dataset.built) return;
+    host.dataset.built = '1';
+    const all = R.heat ? R.heat.all : new Array(R.tiles.length).fill(0);
+    const own = R.heat && R.heat.by && R.heat.by[id] ? R.heat.by[id] : new Array(R.tiles.length).fill(0);
+    const b1 = makeBoard(R.tiles, R.size); b1.heat(own, 'mint');
+    const b2 = makeBoard(R.tiles, R.size); b2.heat(all, 'hot');
+    const who = byId[id];
+    host.innerHTML = `<div class="heat-row"><div class="heat-box"><div data-h="1"></div><div class="mini-label">${id === me ? 'Your letters' : `${esc(who ? who.name : '')}'s letters`}</div></div><div class="heat-box"><div data-h="2"></div><div class="mini-label">Everyone's letters</div></div></div>`;
+    host.querySelector('[data-h="1"]').appendChild(b1.el);
+    host.querySelector('[data-h="2"]').appendChild(b2.el);
+  }
+  function wireHeat(scope, id) {
+    const sec = scope.querySelector('[data-sec="heat"], [data-sec="p-heat"]');
+    if (!sec) return;
+    const build = () => heatBoards(sec.querySelector('.heat-host'), id);
+    if (sec.classList.contains('open')) build();
+    sec.addEventListener('opened', build);
+  }
+
+  function badgeCard(b, k) {
+    return `<div class="badge-card ${b.tone}" style="--i:${k}"><div class="badge-icon">${ICONS[b.icon] || ICONS.ribbon}</div><div><div class="badge-title">${esc(b.title)}</div><div class="badge-desc">${esc(b.desc)}</div></div></div>`;
+  }
+
+  function marqueeHTML() {
+    if (!R.missed || !R.missed.length) return '';
+    const items = R.missed.map(m => `<span>${esc(m.w.toUpperCase())}</span>`).join('<i>·</i>');
+    return `<div class="marquee"><span class="mq-label">${UI.eye}Nobody found</span><div class="mq-track"><div class="mq-inner">${items}<i>·</i>${items}<i>·</i></div></div></div>`;
+  }
+
+  const coop = R.mode === 'coop';
+  function coopRating(pct) {
+    if (pct >= 75) return 'Legendary word nerds!';
+    if (pct >= 50) return 'Dictionary dream team!';
+    if (pct >= 30) return 'Solid team effort!';
+    if (pct >= 15) return 'Warming up!';
+    return 'Room to grow!';
+  }
+
   function finish() {
     if (done) return;
     done = true;
@@ -233,91 +308,113 @@ export function runReveal(R, opt) {
     mini.unlight();
     document.querySelectorAll('.flyer').forEach(f => f.remove());
     ticker.innerHTML = '';
+    root.classList.add('final-state');
+    if (teamBar) { teamBar.remove(); teamBar = null; }
+    // Tighter rows once the show is over.
+    rowH = tv ? Math.max(36, Math.min(56, (innerHeight * 0.5) / Math.max(players.length, 1))) : 36;
+    scores.style.height = `${players.length * rowH}px`;
+    scores.style.setProperty('--rh', `${rowH}px`);
+    scores.classList.add('compact');
     for (const p of players) setScore(p.id, p.round);
     const order = rerank();
     const top = order[0];
     const tied = order.filter(p => p.round === top.round);
-    if (top && top.round > 0) tied.forEach(p => rows[p.id].classList.add('winner'));
-    root.classList.add('final-state');
+    if (!coop && top && top.round > 0) tied.forEach(p => rows[p.id].classList.add('winner'));
 
-    const best = R.best && R.best.by.map(id => byId[id]).filter(Boolean);
+    // Header: the result and a few fact chips.
     const facts = [];
-    if (R.best) facts.push(`Best word: <b>${esc(R.best.w.toUpperCase())}</b> ${best.map(p => chipHTML(p, 'tiny')).join(' ')}`);
-    facts.push(`Found <b>${R.words.length}</b> of <b>${R.possible}</b> possible words`);
-    if (R.no > 1) facts.push(`Game totals: ${players.slice().sort((a, b) => b.total - a.total).map(p => `${esc(p.name)} <b>${p.total}</b>`).join(' · ')}`);
-    if (R.handicap) {
-      const next = players.filter(p => p.nextHcp !== p.hcp);
-      if (next.length) facts.push(`Next round's handicaps: ${players.map(p => `${esc(p.name)} <b>${p.nextHcp || 0}</b>`).join(' · ')}`);
+    let title;
+    if (coop) {
+      const pct = Math.round((R.coop.found / Math.max(1, R.coop.possible)) * 100);
+      title = coopRating(pct);
+      facts.push(`${UI.users}<b>${R.coop.found}</b> of ${R.coop.possible} words (${pct}%)`);
+      facts.push(`${UI.pencil}Pen passed ${R.coop.passes} time${R.coop.passes === 1 ? '' : 's'}`);
+      facts.push(`${UI.star}<b>${R.coop.points}</b> team points`);
+    } else {
+      title = !top || top.round === 0 ? 'Nobody scored!' : tied.length > 1 ? "It's a tie!" : `${esc(top.name)} wins!`;
+      facts.push(`${UI.list}<b>${R.words.length}</b> of ${R.possible} words found`);
     }
-    const allianceTot = (R.alliances || []).length
-      ? `<div class="alliance-tot">${R.alliances.map(a => `<span style="--ac:${a.color}"><b>${esc(a.name)}</b> ${a.round}</span>`).join('')}</div>` : '';
-    const title = !top || top.round === 0 ? 'Nobody scored!' : tied.length > 1 ? "It's a tie!" : `${esc(top.name)} wins!`;
-    stage.innerHTML = `<div class="final"><div class="winner-name">${title}</div><div class="facts">${facts.map(f => `<div>${f}</div>`).join('')}</div>${allianceTot}</div>`;
+    if (R.best) facts.push(`${UI.star}Best: <b>${esc(R.best.w.toUpperCase())}</b>`);
+    if (!coop && R.no > 1) facts.push(`${UI.crown}Totals: ${players.slice().sort((a, b) => b.total - a.total).slice(0, 3).map(p => `${esc(p.name)} <b>${p.total}</b>`).join(', ')}`);
+    if (R.handicap && !coop) facts.push(`${UI.flag}Next HCP: ${players.map(p => `${esc(p.name)} <b>${p.nextHcp || 0}</b>`).join(', ')}`);
+    (R.alliances || []).forEach(a => facts.push(`<span style="color:${a.color}">${UI.handshake}</span>${esc(a.name)} <b>${a.round}</b>`));
+    stage.innerHTML = `<div class="pg-top"><div class="pg-title">${title}</div><div class="fact-chips">${facts.map(f => `<span class="fact">${f}</span>`).join('')}</div></div>`;
     sfx.fanfare();
-    confetti(top && tied.length === 1 ? top.color : null);
-    if (tied.some(p => p.id === me)) haptic('success');
+    confetti(!coop && top && tied.length === 1 ? top.color : null);
+    if (!coop && tied.some(p => p.id === me)) haptic('success');
 
-    // Heat maps: the mini board becomes everyone's; phones also get their own.
+    // The whole board's heat map stays on the TV; phones keep theirs in a section.
     mini.heat(R.heat ? R.heat.all : new Array(R.tiles.length).fill(0), 'hot');
     miniLabel.textContent = 'Letters everyone used';
-    let heatHTML = '';
-    if (!tv && me && R.heat && R.heat.by) {
-      heatHTML = `<div class="heat-row"><div class="heat-box"><div class="heat-host" data-h="me"></div><div class="mini-label">Your letters</div></div><div class="heat-box"><div class="heat-host" data-h="all"></div><div class="mini-label">Everyone's letters</div></div></div>`;
-      miniWrap.classList.add('hidden');
+    if (!tv) miniWrap.classList.add('hidden');
+    scoreCol.insertAdjacentHTML('beforeend', `<div class="tap-hint">${UI.eye}Tap a player to see their round</div>`);
+
+    if (tv) {
+      extra.innerHTML = `${marqueeHTML()}<div class="tv-badges">${players.map(p => `<div class="tv-badge-row">${chipHTML(p, 'tiny')}<b>${esc(p.name)}</b>${(R.badges[p.id] || []).map(b => `<span class="mini-badge ${b.tone}">${ICONS[b.icon] || ''}${esc(b.title)}</span>`).join('')}</div>`).join('')}</div>`;
+    } else {
+      const mine = byId[me];
+      const sections = [];
+      if (mine) sections.push(sectionHTML('badges', 'Your badges', 'ribbon', '<div class="loot-host"></div>', true, `<span class="count-pill">${(R.badges[me] || []).length}</span>`));
+      if (mine && !coop) sections.push(sectionHTML('react', 'Your reaction', 'chat', attitudeHTML(), true));
+      if (!coop) sections.push(sectionHTML('talk', 'Trash talk', 'chat', '<div class="banter-feed"><div class="empty-line">Nobody has said anything yet…</div></div>', true));
+      if (mine) sections.push(sectionHTML('heat', 'Your letters', 'grid', '<div class="heat-host"></div>', false));
+      extra.innerHTML = marqueeHTML() + sections.join('');
+      wireSections(extra);
+      wireHeat(extra, me);
+      wireAttitude();
+      setTimeout(() => openLoot(extra.querySelector('.loot-host'), me), 900);
     }
-    const missed = R.missed.length
-      ? `<div class="section"><h3>Words nobody found</h3><div class="missed">${R.missed.map((m, i) => `<span style="--i:${i}" data-w="${i}">${esc(m.w)}</span>`).join('')}</div></div>` : '';
-    extra.innerHTML = `${heatHTML}<div class="section badges-section"><h3>${tv ? 'Badges' : 'Your badges'}</h3><div class="loot-host"></div></div>${!tv ? attitudeHTML() : ''}${missed}`;
-    if (heatHTML) {
-      const meCounts = R.heat.by[me] || new Array(R.tiles.length).fill(0);
-      const b1 = makeBoard(R.tiles, R.size); b1.heat(meCounts, 'mint');
-      const b2 = makeBoard(R.tiles, R.size); b2.heat(R.heat.all, 'hot');
-      extra.querySelector('[data-h="me"]').appendChild(b1.el);
-      extra.querySelector('[data-h="all"]').appendChild(b2.el);
-    }
-    extra.querySelectorAll('.missed span').forEach(s => {
-      s.onclick = () => { const m = R.missed[+s.dataset.w]; if (m.path) { mini.light(m.path, { color: 'var(--pink)' }); miniWrap.classList.remove('hidden'); } };
-    });
-    wireAttitude();
-    setTimeout(() => openLoot(extra.querySelector('.loot-host')), 1400);
     renderActions();
   }
 
-  // ---------- badges ----------
-  function badgeCard(b, k) {
-    return `<div class="badge-card ${b.tone}" style="--i:${k}"><div class="badge-icon">${ICONS[b.icon] || ICONS.ribbon}</div><div><div class="badge-title">${esc(b.title)}</div><div class="badge-desc">${esc(b.desc)}</div></div></div>`;
-  }
-  async function openLoot(host) {
+  async function openLoot(host, id) {
     if (!host || !R.badges) return;
-    const who = tv ? players : players.filter(p => p.id === me);
-    const others = tv ? [] : players.filter(p => p.id !== me);
-    for (const p of who) {
-      const list = R.badges[p.id] || [];
-      const box = document.createElement('div');
-      box.className = 'loot';
-      box.innerHTML = `<div class="loot-owner">${chipHTML(p, 'tiny')} ${esc(p.name)}</div><div class="loot-box" style="--c:${p.color}"><div class="lid"></div><div class="body"></div><div class="ribbon"></div></div><div class="loot-cards"></div>`;
-      host.appendChild(box);
-      const lb = box.querySelector('.loot-box');
-      const open = () => {
-        if (lb.classList.contains('open')) return;
-        lb.classList.add('open');
-        sfx.box();
-        burst(box, 30);
-        if (p.id === me) haptic('success');
-        box.querySelector('.loot-cards').innerHTML = list.map(badgeCard).join('');
-      };
-      lb.classList.add('shaking');
-      lb.onclick = open;
-      await new Promise(r => setTimeout(r, tv ? 900 : 1100));
-      open();
-      await new Promise(r => setTimeout(r, tv ? 700 : 300));
-    }
-    if (others.length) {
-      const o = document.createElement('div');
-      o.className = 'others-badges';
-      o.innerHTML = `<h3>Everyone else</h3>${others.map(p => `<div class="other-badges">${chipHTML(p, 'tiny')}<b>${esc(p.name)}</b> ${(R.badges[p.id] || []).map(b => `<span class="mini-badge ${b.tone}" title="${esc(b.desc)}">${esc(b.title)}</span>`).join('')}</div>`).join('')}`;
-      host.appendChild(o);
-    }
+    const p = byId[id];
+    const list = R.badges[id] || [];
+    const box = document.createElement('div');
+    box.className = 'loot';
+    box.innerHTML = `<div class="loot-box" style="--c:${p ? p.color : 'var(--hot)'}"><div class="lid"></div><div class="body"></div><div class="ribbon"></div></div><div class="loot-cards"></div>`;
+    host.appendChild(box);
+    const lb = box.querySelector('.loot-box');
+    const open = () => {
+      if (lb.classList.contains('open')) return;
+      lb.classList.add('open');
+      sfx.box();
+      burst(box, 30);
+      haptic('success');
+      box.querySelector('.loot-cards').innerHTML = list.map(badgeCard).join('');
+      setTimeout(() => lb.remove(), 600);
+    };
+    lb.classList.add('shaking');
+    lb.onclick = open;
+    await new Promise(r => setTimeout(r, 1000));
+    open();
+  }
+
+  // ---------- another player's round ----------
+  function openPlayer(id) {
+    if (!done) return;
+    const p = byId[id];
+    if (!p) return;
+    document.querySelector('.pg-sheet')?.remove();
+    const rank = players.slice().sort((a, b) => b.round - a.round).findIndex(x => x.id === id) + 1;
+    const theirs = R.words.filter(w => w.finders.includes(id) && (!w.via || w.via[id] !== 'leak')).sort((a, b) => b.w.length - a.w.length);
+    const sheet = document.createElement('div');
+    sheet.className = `pg-sheet ${tv ? 'tv' : ''}`;
+    sheet.innerHTML = `<div class="pg-sheet-card">
+      <div class="pg-sheet-head">${chipHTML(p, 'big')}<div class="grow"><div class="pg-sheet-name">${esc(p.name)}${id === me ? ' (you)' : ''}</div><div class="hint-line">${coop ? `${p.round} points written` : `#${rank} · ${p.round} points`} · ${p.words} word${p.words === 1 ? '' : 's'}${p.solos ? ` · ${p.solos} only they found` : ''}</div></div><button class="icon-btn" data-close>${UI.x}</button></div>
+      <div class="pg-sheet-body">
+        ${sectionHTML('p-badges', 'Badges', 'ribbon', `<div class="stack">${(R.badges[id] || []).map(badgeCard).join('')}</div>`, true)}
+        ${sectionHTML('p-words', 'Words', 'list', theirs.length ? `<div class="sheet-words">${theirs.map(w => `<span class="word ${w.solo ? 'solo' : ''}">${esc(w.w)}</span>`).join('')}</div>` : '<div class="empty-line">No words this round.</div>', true, `<span class="count-pill">${theirs.length}</span>`)}
+        ${sectionHTML('p-heat', 'Letters', 'grid', '<div class="heat-host"></div>', false)}
+      </div></div>`;
+    document.body.appendChild(sheet);
+    wireSections(sheet);
+    wireHeat(sheet, id);
+    const close = () => sheet.remove();
+    sheet.querySelector('[data-close]').onclick = close;
+    sheet.onclick = e => { if (e.target === sheet) close(); };
+    haptic('tick');
   }
 
   // ---------- good / bad sport ----------
@@ -326,15 +423,14 @@ export function runReveal(R, opt) {
     if (!mineP) return '';
     const ranked = players.slice().sort((a, b) => b.round - a.round);
     const won = mineP.round === ranked[0].round && mineP.round > 0;
-    return `<div class="section attitude"><h3>${won ? 'You won! How are you taking it?' : 'How are you taking it?'}</h3>
-      <div class="row"><button class="btn mint grow" data-att="good">${won ? 'Gracious winner' : 'Good sport'}</button><button class="btn grow" data-att="bad">${won ? 'Sore winner' : 'Sore loser'}</button></div></div>`;
+    return `<div class="row attitude"><button class="btn small mint grow" data-att="good">${won ? 'Gracious winner' : 'Good sport'}</button><button class="btn small grow" data-att="bad">${won ? 'Sore winner' : 'Sore loser'}</button></div>`;
   }
   function wireAttitude() {
     extra.querySelectorAll('[data-att]').forEach(b => {
       b.onclick = () => { opt.attitude(b.dataset.att); haptic('tick'); b.classList.add('picked'); setTimeout(() => b.classList.remove('picked'), 2500); };
     });
   }
-  // Phones get a running feed under the scores; the TV pops bubbles beside each player's row.
+  // Phones get one-line entries in the Trash talk section; the TV pops a small bubble beside the row.
   function banter(m) {
     const p = byId[m.id];
     const kind = m.role.startsWith('bad') ? 'bad' : 'good';
@@ -352,18 +448,14 @@ export function runReveal(R, opt) {
       setTimeout(() => b.remove(), 8600);
       return;
     }
-    let feed = scoreCol.querySelector('.banter-feed');
-    if (!feed) {
-      feed = document.createElement('div');
-      feed.className = 'banter-feed';
-      feed.innerHTML = '<h3>Trash talk</h3>';
-      scoreCol.appendChild(feed);
-    }
-    const b = document.createElement('div');
-    b.className = `feed-line ${kind}`;
-    b.innerHTML = `${p ? chipHTML(p, 'tiny') : ''}<div class="bubble inline ${kind}">${esc(m.text)}</div>`;
-    feed.querySelector('h3').after(b);
-    [...feed.querySelectorAll('.feed-line')].slice(5).forEach(x => x.remove());
+    const feed = extra.querySelector('.banter-feed');
+    if (!feed) return;
+    feed.querySelector('.empty-line')?.remove();
+    const line = document.createElement('div');
+    line.className = `talk-line ${kind}`;
+    line.innerHTML = `${p ? chipHTML(p, 'tiny') : ''}<span>${esc(m.text)}</span>`;
+    feed.prepend(line);
+    [...feed.querySelectorAll('.talk-line')].slice(4).forEach(x => x.remove());
   }
 
   function renderActions() {

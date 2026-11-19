@@ -21,6 +21,13 @@ const LOGO = `<div class="logo">${'ROBGGLE'.split('').map((c, i) => `<span class
 const SIZE_OPTS = [[4, '4×4'], [5, '5×5'], [6, '6×6']];
 const MIN_OPTS = [[3, '3'], [4, '4'], [5, '5'], [6, '6']];
 const TIME_OPTS = [[60, '1:00'], [90, '1:30'], [120, '2:00'], [180, '3:00'], [240, '4:00'], [300, '5:00']];
+const PEN_OPTS = [[30, '30s'], [45, '45s'], [60, '1:00'], [90, '1:30']];
+const DRY_OPTS = [[10, '10s'], [15, '15s'], [20, '20s'], [30, '30s']];
+const MODES = [
+  { key: 'versus', title: 'Versus', desc: 'Everyone for themselves. Most points wins.', icon: 'crown' },
+  { key: 'coop', title: 'Pass the Pen', desc: 'One person writes, everyone calls out words. Find as many as you can together.', icon: 'pencil' },
+];
+const isCoop = () => S.st && S.st.settings.mode === 'coop';
 const fmtTime = s => `${Math.floor(s / 60)}:${String(Math.max(0, s % 60)).padStart(2, '0')}`;
 
 function joinURL(code) {
@@ -113,6 +120,9 @@ function onMsg(m) {
       S.chaos && S.chaos.bananaSplit(m.ids);
       if (MODE === 'screen') updatePlaySide();
       break;
+    case 'pen': penUpdate(m); break;
+    case 'coopWord': coopWord(m); break;
+    case 'coopEnd': if (S.round && S.round.mode === 'coop' && !S.ended) { S.coopEndReason = m.reason; endLocal(); } break;
     case 'vote': showVote(m); break;
     case 'voteTally': voteTally(m); break;
     case 'voteResult': voteResult(m); break;
@@ -217,6 +227,7 @@ const pipsHTML = n => `<span class="pips">${[1, 2, 3, 4].map(i => `<i class="${i
 
 function botsHTML() {
   if (!isHost()) return '';
+  if (isCoop()) return players().some(p => p.bot) ? `<div class="hint-line center">${icon('bot', 'sm')} Bots sit out Pass the Pen.</div>` : '';
   const count = players().filter(p => p.bot).length;
   return `<section class="panel">
     <div class="panel-head">${icon('bot')}<h3>Computer players</h3>${count ? `<span class="count-pill">${count}</span>` : ''}</div>
@@ -242,28 +253,36 @@ function settingsHTML() {
   const s = S.st.settings;
   const types = s.chaosTypes || CHAOS_LIST;
   if (!isHost()) {
+    const mode = MODES.find(x => x.key === (s.mode || 'versus'));
     const chips = [
+      `<span class="info-chip ${s.mode === 'coop' ? 'mint' : ''}">${icon(mode.icon, 'sm')}${mode.title}</span>`,
       `<span class="info-chip">${icon('grid', 'sm')}${s.size}×${s.size}</span>`,
       `<span class="info-chip">${icon('letters', 'sm')}${s.minLen}+ letters</span>`,
-      `<span class="info-chip">${icon('clock', 'sm')}${fmtTime(s.time)}</span>`,
-      s.handicap ? `<span class="info-chip mint">${icon('flag', 'sm')}Handicap</span>` : '',
+      s.mode === 'coop' ? `<span class="info-chip">${icon('clock', 'sm')}${s.penTime}s turns</span>` : `<span class="info-chip">${icon('clock', 'sm')}${fmtTime(s.time)}</span>`,
+      s.handicap && s.mode !== 'coop' ? `<span class="info-chip mint">${icon('flag', 'sm')}Handicap</span>` : '',
       s.chaos ? `<span class="info-chip hot">${icon('bolt', 'sm')}Family Chaos</span>` : '',
     ].join('');
-    const chaosList = s.chaos ? `<div class="chaos-chips">${types.map(t => `<span class="chaos-chip" style="--c:${INFO[t].color}">${icon(t, 'sm')}${esc(INFO[t].title)}</span>`).join('')}</div>` : '';
+    const chaosList = s.chaos ? `<div class="chaos-chips">${types.filter(t => s.mode !== 'coop' || t !== 'leak').map(t => `<span class="chaos-chip" style="--c:${INFO[t].color}">${icon(t, 'sm')}${esc(INFO[t].title)}</span>`).join('')}</div>` : '';
     return `<div class="info-chips">${chips}</div>${chaosList}`;
   }
   const seg = (key, opts) => `<div class="seg" data-key="${key}">${opts.map(([v, l]) => `<button data-v="${v}" class="${+s[key] === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
-  const chaosGrid = s.chaos ? `<div class="chaos-grid">${CHAOS_LIST.map(t => {
+  const coop = s.mode === 'coop';
+  const modePick = `<div class="mode-pick">${MODES.map(m => `<button class="mode-card ${(s.mode || 'versus') === m.key ? 'on' : ''}" data-mode="${m.key}"><span class="mode-ic">${icon(m.icon)}</span><b>${m.title}</b><small>${m.desc}</small></button>`).join('')}</div>`;
+  const chaosGrid = s.chaos ? `<div class="chaos-grid">${CHAOS_LIST.filter(t => !coop || t !== 'leak').map(t => {
     const on = types.includes(t);
     return `<button class="chaos-pick ${on ? 'on' : ''}" data-chaos="${t}" style="--c:${INFO[t].color}" aria-pressed="${on}">
       <span class="chaos-pick-ic">${icon(t)}</span><b>${esc(INFO[t].title)}</b><small>${esc(INFO[t].blurb)}</small><span class="tick">${icon(on ? 'check' : 'x', 'sm')}</span></button>`;
   }).join('')}</div><div class="hint-line">Tap to switch each one on or off. At least one stays on.</div>` : '';
   return `<div class="settings">
+    ${modePick}
     <div class="setting-block"><div class="setting-label">${icon('grid')}Board size</div>${seg('size', SIZE_OPTS)}</div>
     <div class="setting-block"><div class="setting-label">${icon('letters')}Shortest word</div>${seg('minLen', MIN_OPTS)}</div>
-    <div class="setting-block"><div class="setting-label">${icon('clock')}Round length</div>${seg('time', TIME_OPTS)}</div>
+    ${coop ? `<div class="setting-block"><div class="setting-label">${icon('pencil')}Pen time per turn</div>${seg('penTime', PEN_OPTS)}</div>
+    <div class="setting-block"><div class="setting-label">${icon('clock')}Pass the pen after this long with no word</div>${seg('dryTime', DRY_OPTS)}</div>
+    <div class="hint-line">The game ends when the pen gets passed twice in a row with no words written.</div>`
+    : `<div class="setting-block"><div class="setting-label">${icon('clock')}Round length</div>${seg('time', TIME_OPTS)}</div>`}
     <div class="divider"></div>
-    ${toggleHTML('handicap', !!s.handicap, 'Handicap', 'Golf-style: after a couple of rounds, whoever usually trails gets bonus strokes.', 'flag')}
+    ${coop ? '' : toggleHTML('handicap', !!s.handicap, 'Handicap', 'Golf-style: after a couple of rounds, whoever usually trails gets bonus strokes.', 'flag')}
     ${toggleHTML('chaos', !!s.chaos, 'Family Chaos', 'Surprise events from the family drop in mid-round.', 'bolt')}
     ${chaosGrid}
   </div>`;
@@ -274,6 +293,7 @@ function wireSettings(scope) {
   scope.querySelectorAll('.seg').forEach(seg => {
     seg.querySelectorAll('button').forEach(b => { b.onclick = () => { send({ [seg.dataset.key]: +b.dataset.v }); haptic('tick'); }; });
   });
+  scope.querySelectorAll('[data-mode]').forEach(b => { b.onclick = () => { send({ mode: b.dataset.mode }); haptic('tick'); }; });
   scope.querySelectorAll('[data-toggle]').forEach(b => {
     b.onclick = () => { send({ [b.dataset.toggle]: !S.st.settings[b.dataset.toggle] }); haptic('tick'); };
   });
@@ -305,7 +325,7 @@ function playersHTML({ big } = {}) {
 
 function allianceHTML() {
   const me = member(S.you.id);
-  if (!me || me.role !== 'player') return '';
+  if (!me || me.role !== 'player' || isCoop()) return '';
   const mine = me.alliance && S.st.alliances.find(a => a.id === me.alliance);
   if (mine) {
     return `<section class="panel" style="--ac:${mine.color}">
@@ -458,6 +478,10 @@ function startRound(r) {
   S.bananaCounts = r.bananaCounts || {};
   S.bananaSplit = r.bananaSplit || [];
   S.ended = false;
+  S.coop = r.mode === 'coop';
+  S.pen = r.pen || null;
+  S.team = new Map((r.team || []).map(x => [x.w, x]));
+  S.coopEndReason = null;
   S.view = 'play';
   if (MODE === 'screen') renderScreenPlay(); else renderPlay();
   S.chaos = new Chaos({
@@ -468,6 +492,7 @@ function startRound(r) {
   if (MODE === 'screen' && S.bananaSplit.length) updatePlaySide();
   scheduleCountdown();
   tickClock();
+  if (S.pen) penUpdate(S.pen, true);
 }
 
 function pointsFor(w) { const L = w.length; return L <= 4 ? 1 : L === 5 ? 2 : L === 6 ? 3 : L === 7 ? 5 : 11; }
@@ -475,7 +500,7 @@ function pointsFor(w) { const L = w.length; return L <= 4 ? 1 : L === 5 ? 2 : L 
 function scheduleCountdown() {
   const r = S.round;
   const left = r.startAt - S.conn.now();
-  if (left <= 0) { S.play.board.enabled = MODE !== 'screen'; return; }
+  if (left <= 0) { S.play.board.enabled = MODE !== 'screen' && (!S.coop || (S.pen && S.pen.holder === S.you.id)); return; }
   const box = document.createElement('div');
   box.className = 'countdown';
   document.body.appendChild(box);
@@ -487,7 +512,7 @@ function scheduleCountdown() {
   setTimeout(() => {
     show('GO');
     S.play.board.reveal();
-    S.play.board.enabled = MODE !== 'screen';
+    S.play.board.enabled = MODE !== 'screen' && (!S.coop || (S.pen && S.pen.holder === S.you.id));
     haptic('success');
     setTimeout(() => box.remove(), 700);
   }, left);
@@ -501,6 +526,7 @@ function tickClock() {
   const step = () => {
     if (S.view !== 'play' || S.round.no !== r.no || !S.play) return;
     const now = S.conn.now();
+    if (S.coop) { coopClock(now); if (S.chaos && now >= r.startAt && !S.ended) S.chaos.tick(now - r.startAt); clockRAF = requestAnimationFrame(step); return; }
     const left = Math.max(0, r.endsAt - Math.max(now, r.startAt));
     const sec = Math.ceil(left / 1000);
     const p = S.play;
@@ -529,14 +555,16 @@ function endLocal() {
   S.play.board.enabled = false;
   S.play.board.clear();
   S.play.board.el.classList.add('frozen');
-  if (S.play.cur) S.play.cur.innerHTML = '<span style="color:var(--sun)">Time!</span>';
+  if (S.play.cur) S.play.cur.innerHTML = `<span style="color:var(--sun)">${S.coop ? 'Pens down!' : 'Time!'}</span>`;
+  if (S.coop && S.play.penEl) S.play.penEl.innerHTML = `<div class="pen-banner done">${icon('pencil')}<span>${S.coopEndReason === 'all' ? 'You found every word!' : 'Two quiet turns in a row. Pens down!'}</span></div>`;
   if (S.play.fb && [...S.rejected.values()].some(x => x.challenged)) S.play.fb.textContent = 'Challenges go to a family vote next…';
 }
 
 function renderPlay() {
   const r = S.round;
-  $root.innerHTML = `<div class="play">
-    <div class="hud"><span class="score-pill">${icon('star', 'sm')}<span id="score">0 pts</span></span><div class="timer" id="timer"><i id="bar"></i></div><span class="clock-wrap">${icon('clock', 'sm')}<span class="clock" id="clock"></span></span></div>
+  $root.innerHTML = `<div class="play ${S.coop ? 'coop' : ''}">
+    <div class="hud"><span class="score-pill">${icon(S.coop ? 'users' : 'star', 'sm')}<span id="score">0 pts</span></span><div class="timer" id="timer"><i id="bar"></i></div><span class="clock-wrap">${icon(S.coop ? 'pencil' : 'clock', 'sm')}<span class="clock" id="clock"></span></span></div>
+    ${S.coop ? '<div id="pen" class="pen-zone"></div>' : ''}
     <div class="chaos-hud" id="chaosHud"></div>
     <div class="current" id="cur"></div>
     <div id="boardHost" class="board-host"></div>
@@ -557,6 +585,7 @@ function renderPlay() {
     board, cur, boardHost: host, chaosHud: $root.querySelector('#chaosHud'),
     bar: $root.querySelector('#bar'), clock: $root.querySelector('#clock'), timer: $root.querySelector('#timer'),
     words: $root.querySelector('#words'), fb: $root.querySelector('#fb'), scoreEl: $root.querySelector('#score'), count: $root.querySelector('#count'),
+    penEl: $root.querySelector('#pen'),
   };
   renderWords();
   updateScore();
@@ -590,6 +619,7 @@ function submit(w, path) {
   if (rule) { board.result('no'); fb.textContent = rule; sfx.bad(); haptic('error'); S.conn.send({ t: 'word', w, path }); return; }
   if (w.length < r.minLen) { board.result('no'); fb.textContent = `Too short (${r.minLen}+ letters)`; sfx.bad(); haptic('error'); return; }
   if (S.mine.has(w) || S.pending.has(w)) { board.result('dupe'); fb.textContent = 'Already got that one'; sfx.dupe(); haptic('warning'); return; }
+  if (S.coop && S.team.has(w)) { board.result('dupe'); fb.textContent = 'The team already has that one'; sfx.dupe(); haptic('warning'); return; }
   const letters = board.letters();
   const changed = path.some(i => letters[i] !== r.tiles[i]);
   const known = S.hashes.has(fnv(r.salt + w));
@@ -651,6 +681,7 @@ function wordResult(m) {
   const msgs = {
     time: 'came in after the buzzer', robbert: "isn't 3 letters (Robbert Mode!)", banana: 'used a tile that went to your banana',
     path: "didn't match the board", short: 'is too short', bad: "isn't in our dictionary",
+    notyou: "didn't count: someone else has the pen", teamdupe: 'is already on the team list',
   };
   if (m.reason === 'bad') {
     const x = S.rejected.get(m.w) || { challenged: false };
@@ -697,6 +728,21 @@ function challenge(w) {
 function renderWords() {
   if (!S.play || MODE === 'screen') return;
   const box = S.play.words;
+  if (S.coop) {
+    const team = [...S.team.values()].reverse();
+    let html = team.length ? `<div class="list-head">${icon('users', 'sm')}Team words <small>${team.length} found</small></div>` : `<div class="empty-note">${icon('sparkle')}${S.pen && S.pen.holder === S.you.id ? 'Trace the words your family calls out' : 'Spot words and shout them to whoever has the pen'}</div>`;
+    html += team.map(x => { const p = member(x.by); return `<span class="word team${x.w === S.play.lastNew ? ' new' : ''}">${p ? chipHTML(p, 'tiny') : ''}${esc(x.w)}</span>`; }).join('');
+    const rej = [...S.rejected].filter(([w]) => !S.team.has(w)).reverse().slice(0, 6);
+    if (rej.length) {
+      const left = 3 - [...S.rejected.values()].filter(y => y.challenged).length;
+      html += `<div class="list-head">${icon('gavel', 'sm')}Not in our dictionary <small>challenge it (${left} left) and everyone votes at the end</small></div>`;
+      html += rej.map(([w, x]) => `<span class="word rejected">${esc(w)}${x.challenged ? '<em>challenged</em>' : x.challengeable && left > 0 ? `<button class="challenge-btn" data-c="${esc(w)}">Challenge</button>` : ''}</span>`).join('');
+    }
+    box.innerHTML = html;
+    box.querySelectorAll('[data-c]').forEach(b => { b.onclick = () => challenge(b.dataset.c); });
+    S.play.count.textContent = `${S.team.size} found`;
+    return;
+  }
   const mine = [...S.mine.keys()].reverse();
   const ghosts = [...S.ally.values()].filter(a => !S.mine.has(a.w)).reverse();
   let html = mine.length ? `<div class="list-head">${icon('list', 'sm')}Your words</div>` : `<div class="empty-note">${icon('sparkle')}Drag across touching letters to make words</div>`;
@@ -733,7 +779,84 @@ function renderWords() {
   S.play.count.textContent = `${S.mine.size} word${S.mine.size === 1 ? '' : 's'}`;
 }
 
-function updateScore() { if (S.play && S.play.scoreEl) { const n = scoreOf(); S.play.scoreEl.textContent = `${n} pt${n === 1 ? '' : 's'}`; } }
+function updateScore() {
+  if (!S.play || !S.play.scoreEl) return;
+  if (S.coop) { S.play.scoreEl.textContent = `${S.team.size} / ${S.round.total}`; return; }
+  const n = scoreOf(); S.play.scoreEl.textContent = `${n} pt${n === 1 ? '' : 's'}`;
+}
+
+// ---------------- PASS THE PEN ----------------
+function penUpdate(m, quiet) {
+  const prev = S.pen;
+  S.pen = m;
+  if (!S.play || !S.round || S.ended) return;
+  const mine = S.you && m.holder === S.you.id;
+  const started = S.conn.now() >= S.round.startAt;
+  if (MODE !== 'screen') S.play.board.enabled = mine && started;
+  if (prev && prev.turnNo !== m.turnNo && !quiet) {
+    if (mine) { sfx.solo(); haptic('success'); penStamp('Your pen!'); } else sfx.whoosh();
+    if (MODE !== 'screen' && !mine) S.play.board.clear();
+  } else if (!prev && mine && !quiet) { sfx.solo(); haptic('success'); penStamp('Your pen!'); }
+  renderPen();
+  updateScore();
+  if (MODE === 'screen') updatePlaySide();
+}
+
+function penStamp(text) {
+  if (!S.play || !S.play.board) return;
+  const b = document.createElement('div');
+  b.className = 'bridge-stamp pen-stamp';
+  b.innerHTML = `${text}<small>Trace what everyone calls out</small>`;
+  S.play.board.fx.appendChild(b);
+  setTimeout(() => b.remove(), 1500);
+}
+
+function renderPen() {
+  const el = S.play && S.play.penEl;
+  if (!el || !S.pen) return;
+  const holder = member(S.pen.holder);
+  const mine = S.you && S.pen.holder === S.you.id;
+  const strikes = S.pen.dryTurns ? `<span class="strike">${S.pen.dryTurns === 1 ? 'One quiet turn: one more and the game ends' : ''}</span>` : '';
+  el.innerHTML = `<div class="pen-banner ${mine ? 'mine' : ''}" style="--c:${holder ? holder.color : 'var(--sun)'}">
+      ${holder ? chipHTML(holder) : ''}
+      <div class="grow"><b>${mine ? 'You have the pen!' : `${esc(holder ? holder.name : 'Someone')} has the pen`}</b><small>${mine ? 'Trace what everyone calls out' : 'Spot words and call them out!'}</small></div>
+      ${mine ? `<button class="btn small ghost" id="passPen">Pass</button>` : ''}
+    </div>
+    <div class="dry-meter"><i id="dryBar"></i><span id="dryText"></span></div>${strikes}`;
+  const pass = el.querySelector('#passPen');
+  if (pass) pass.onclick = () => { S.conn.send({ t: 'passPen' }); haptic('tick'); };
+}
+
+function coopClock(now) {
+  const p = S.play;
+  if (!p || !S.pen || S.ended) { if (p && p.clock && !S.pen) p.clock.textContent = '--'; return; }
+  const turnLeft = Math.max(0, S.pen.turnEndsAt - now);
+  const dryLeft = Math.max(0, S.pen.dryAt - now);
+  const penMs = (S.round.settings ? S.round.settings.penTime : 45) * 1000;
+  const dryMs = (S.round.settings ? S.round.settings.dryTime : 15) * 1000;
+  p.bar.style.transform = `scaleX(${turnLeft / penMs})`;
+  const sec = Math.ceil(turnLeft / 1000);
+  if (p.lastSec !== sec) { p.lastSec = sec; p.clock.textContent = fmtTime(sec); }
+  const dryBar = document.getElementById('dryBar');
+  if (dryBar) {
+    const soon = dryLeft < turnLeft;
+    dryBar.style.transform = `scaleX(${Math.min(1, dryLeft / dryMs)})`;
+    dryBar.parentElement.classList.toggle('urgent', soon && dryLeft < 5000);
+    const t = document.getElementById('dryText');
+    const ds = Math.ceil(dryLeft / 1000);
+    if (t && t._s !== ds) { t._s = ds; t.textContent = soon ? `Passes in ${ds}s without a word` : `Turn ends in ${sec}s`; }
+  }
+}
+
+function coopWord(m) {
+  if (!S.round || !S.coop) return;
+  if (!S.team.has(m.w)) S.team.set(m.w, { w: m.w, by: m.by, pts: m.pts });
+  if (S.you && m.by !== S.you.id && MODE !== 'screen') { sfx.ally(); }
+  if (S.play) S.play.lastNew = m.w;
+  renderWords();
+  updateScore();
+  if (MODE === 'screen') { sfx.blip(S.team.size % 12); updatePlaySide(); }
+}
 
 function renderScreenPlay() {
   const r = S.round;
@@ -743,7 +866,7 @@ function renderScreenPlay() {
       <div class="board-wrap board-host" id="boardHost"></div>
       <div class="muted" style="font-size:2.4vmin">${r.size}×${r.size} · words of ${r.minLen}+ letters · join late at ${esc(joinURL(S.code).replace(/^https?:\/\//, ''))}</div>
     </div>
-    <div class="side"><div class="card stack"><h3>Words found</h3><div id="counts" class="stack"></div></div><div id="bananaPanel"></div></div>
+    <div class="side"><div class="card stack"><h3>${S.coop ? 'Pass the Pen' : 'Words found'}</h3><div id="counts" class="stack"></div></div><div id="bananaPanel"></div></div>
   </div>`;
   const board = makeBoard(r.tiles, r.size, { blank: r.startAt > S.conn.now() });
   const host = $root.querySelector('#boardHost');
@@ -756,6 +879,17 @@ function renderScreenPlay() {
 function updatePlaySide(bump) {
   if (!S.play || !S.st) return;
   if (MODE !== 'screen') { renderWords(); return; }
+  if (S.coop) {
+    const holder = S.pen && member(S.pen.holder);
+    const team = [...S.team.values()].reverse();
+    const total = S.round.total || 1;
+    S.play.countsEl.innerHTML = `
+      <div class="tv-pen" style="--c:${holder ? holder.color : 'var(--sun)'}">${holder ? chipHTML(holder, 'big') : ''}<div><b>${esc(holder ? holder.name : '…')}</b><small>has the pen. Call out words!</small></div></div>
+      <div class="dry-meter tv"><i id="dryBar"></i><span id="dryText"></span></div>
+      <div class="team-progress"><div class="tp-bar"><i style="transform:scaleX(${S.team.size / total})"></i></div><span><b>${S.team.size}</b> of ${total} words</span></div>
+      <div class="tv-team-words">${team.slice(0, 18).map(x => { const p = member(x.by); return `<span class="word team">${p ? chipHTML(p, 'tiny') : ''}${esc(x.w)}</span>`; }).join('')}</div>`;
+    return;
+  }
   const counts = S.st.counts || {};
   const ps = players().slice().sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0) || a.name.localeCompare(b.name));
   const el = S.play.countsEl;
@@ -779,8 +913,14 @@ function renderBananaPanel() {
   const on = S.chaos && S.chaos.activeOf('banana', ms);
   if (!on) { el.innerHTML = ''; return; }
   const counts = S.bananaCounts || {};
-  el.innerHTML = `<div class="card stack banana-panel"><h3>Banana race</h3>${players().map(p => `<div class="row banana-row">${chipHTML(p, 'tiny')}<span class="grow">${esc(p.name)}</span><span class="banana-mini" data-n="${counts[p.id] || 0}">${bananaSVG()}</span><b>${counts[p.id] || 0}</b></div>`).join('')}</div>`;
-  el.querySelectorAll('.banana-mini').forEach(b => setBananaFill(b, +b.dataset.n));
+  const full = (on.data && on.data.full) || 30;
+  const ranked = players().slice().sort((x, y) => (counts[y.id] || 0) - (counts[x.id] || 0));
+  const lead = counts[ranked[0] && ranked[0].id] || 0;
+  el.innerHTML = `<div class="card stack banana-panel"><div class="panel-head">${icon('banana')}<h3>Nana's banana race</h3></div><div class="hint-line">First to ${full} letters fills it. Biggest banana gets +10%.</div>${ranked.map(p => {
+    const n = counts[p.id] || 0;
+    return `<div class="banana-row ${n && n === lead ? 'leader' : ''}">${chipHTML(p, 'tiny')}<span class="grow">${esc(p.name)}${n && n === lead ? ` ${icon('crown', 'sm')}` : ''}</span><span class="banana-mini" data-n="${n}">${bananaSVG()}</span><b>${n}</b></div>`;
+  }).join('')}</div>`;
+  el.querySelectorAll('.banana-mini').forEach(b => setBananaFill(b, +b.dataset.n, full));
 }
 
 function screenBridge(m) {
