@@ -1,0 +1,2 @@
+# GitHub Pages skips dot-folders by default; Apple reads the app-link file from .well-known.
+include: [".well-known"]

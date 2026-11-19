@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["7FR35W6Q64.com.stevenhester.robggle"],
+        "components": [{ "/": "/robggle/join/*", "comment": "Lobby invite links and QR codes open the app" }]
+      }
+    ]
+  }
+}
