@@ -75,5 +75,12 @@ export const sfx = {
     seq.forEach(([s, at]) => tone(392 * 2 ** (s / 12), { at, dur: 0.3, type: 'square', vol: 0.12 }));
     tone(392 * 4, { at: 0.66, dur: 0.8, type: 'triangle', vol: 0.15 });
   },
+  alarm() { [0, 0.16, 0.32].forEach(at => tone(988, { at, dur: 0.1, type: 'square', vol: 0.1 })); tone(1319, { at: 0.48, dur: 0.25, type: 'square', vol: 0.12 }); },
+  snore() { tone(110, { dur: 0.9, type: 'sawtooth', vol: 0.08, slide: 1.3, attack: 0.3 }); tone(90, { at: 1.1, dur: 0.8, type: 'sawtooth', vol: 0.06, slide: 0.7, attack: 0.2 }); },
+  vroom() { tone(70, { dur: 1.4, type: 'sawtooth', vol: 0.16, slide: 3.2, attack: 0.05 }); noise({ at: 0.9, dur: 0.6, vol: 0.18, freq: 500 }); },
+  pop() { tone(660, { dur: 0.06, type: 'sine', vol: 0.25, slide: 1.8 }); },
+  bridge() { [0, 4, 7, 11, 14].forEach((s, i) => tone(523 * 2 ** (s / 12), { at: i * 0.045, dur: 0.18, type: 'triangle', vol: 0.15 })); },
+  gavel() { noise({ dur: 0.08, vol: 0.4, freq: 250 }); tone(140, { dur: 0.15, type: 'sine', vol: 0.4, slide: 0.6 }); },
+  box() { noise({ dur: 0.5, vol: 0.3, freq: 1500 }); [0, 7, 12, 19].forEach((s, i) => tone(523 * 2 ** (s / 12), { at: 0.15 + i * 0.06, dur: 0.25, type: 'square', vol: 0.08 })); },
   join() { tone(660, { dur: 0.08, type: 'triangle', vol: 0.2 }); tone(990, { at: 0.08, dur: 0.14, type: 'triangle', vol: 0.2 }); },
 };

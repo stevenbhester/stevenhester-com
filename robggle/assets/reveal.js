@@ -1,13 +1,15 @@
 // End-of-round show: every found word gets its moment, points fly into a racing scoreboard,
-// words nobody else found get stamped x2, then a crown and confetti for the winner.
+// words nobody else found get stamped x2. The host can change the speed live for everyone.
+// Then bonuses, heat maps, loot-box badges, and good/bad sport speech bubbles.
 import { makeBoard } from './board.js';
 import { sfx } from './sfx.js';
 import { haptic } from './net.js';
+import { ICONS } from './icons.js';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');
 const CROWN = '<svg class="crown" viewBox="0 0 28 20"><path d="M2 18 L4 5 L10 11 L14 2 L18 11 L24 5 L26 18 Z" fill="#ffd23f" stroke="#b38f10" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+const SPEEDS = [0.5, 1, 2, 4];
 
 export function chipHTML(p, cls = '') {
   return `<span class="chip ${cls}" style="--c:${p.color}">${initial(p.name)}</span>`;
@@ -21,26 +23,42 @@ export function runReveal(R, opt) {
   const byId = Object.fromEntries(players.map(p => [p.id, p]));
   const alliances = Object.fromEntries((R.alliances || []).map(a => [a.id, a]));
   const me = opt.me;
+  let speed = 1;
+  let done = false;
 
+  const stageCol = document.createElement('div'); stageCol.className = 'stage-col';
   const stage = document.createElement('div'); stage.className = 'stage';
+  const ticker = document.createElement('div'); ticker.className = 'ticker';
+  stageCol.append(stage, ticker);
   const miniWrap = document.createElement('div'); miniWrap.className = 'mini';
   const mini = makeBoard(R.tiles, R.size);
-  miniWrap.appendChild(mini.el);
+  const miniLabel = document.createElement('div'); miniLabel.className = 'mini-label';
+  miniWrap.append(mini.el, miniLabel);
   const scores = document.createElement('div'); scores.className = 'scores';
+  const scoreCol = document.createElement('div'); scoreCol.className = 'score-col';
+  scoreCol.appendChild(scores);
+  const extra = document.createElement('div'); extra.className = 'extra';
   const actions = document.createElement('div'); actions.className = 'reveal-actions';
-  const skip = document.createElement('button'); skip.className = 'btn small ghost skip'; skip.textContent = 'Skip';
+  const ctl = document.createElement('div'); ctl.className = 'speed-ctl';
 
-  if (tv) root.append(miniWrap, stage, scores, actions, skip);
-  else {
-    const scoreScroll = document.createElement('div');
-    scoreScroll.style.cssText = 'overflow:auto;min-height:0';
-    scoreScroll.appendChild(scores);
-    root.append(stage, miniWrap, scoreScroll, actions, skip);
-  }
+  if (tv) root.append(miniWrap, stageCol, scoreCol, actions, ctl);
+  else root.append(ctl, stageCol, miniWrap, scoreCol, extra, actions);
+  if (tv) stageCol.appendChild(extra);
   document.body.appendChild(root);
 
+  // ---------- speed control (host drives it for everyone) ----------
+  function renderCtl() {
+    if (done) { ctl.innerHTML = ''; return; }
+    if (opt.isHost()) {
+      ctl.innerHTML = `${SPEEDS.map(s => `<button class="btn small ${s === speed ? '' : 'ghost'}" data-s="${s}">${s === 0.5 ? '½' : s}×</button>`).join('')}<button class="btn small ghost" data-skip="1">Skip</button>`;
+      ctl.querySelectorAll('[data-s]').forEach(b => { b.onclick = () => opt.control({ speed: +b.dataset.s }); });
+      ctl.querySelector('[data-skip]').onclick = () => opt.control({ skip: true });
+    } else ctl.innerHTML = speed !== 1 ? `<span class="speed-tag">${speed === 0.5 ? '½' : speed}× speed</span>` : '';
+  }
+  renderCtl();
+
   // ---------- scoreboard ----------
-  const rowH = tv ? Math.max(40, Math.min(72, (innerHeight * 0.8) / Math.max(players.length, 1))) : 48;
+  const rowH = tv ? Math.max(40, Math.min(72, (innerHeight * 0.62) / Math.max(players.length, 1))) : 48;
   scores.style.height = `${players.length * rowH}px`;
   scores.style.setProperty('--rh', `${rowH}px`);
   const running = Object.fromEntries(players.map(p => [p.id, 0]));
@@ -50,7 +68,7 @@ export function runReveal(R, opt) {
     const r = document.createElement('div');
     r.className = 'srow';
     const a = p.alliance && alliances[p.alliance];
-    r.innerHTML = `${CROWN}${chipHTML(p)}<div class="bar-wrap" ${a ? `style="outline:2px solid ${a.color};outline-offset:-2px"` : ''}><div class="bar" style="--c:${p.color}"></div><span class="label">${esc(p.name)}${p.id === me ? ' (you)' : ''}</span></div><span class="sc">0</span>`;
+    r.innerHTML = `${CROWN}${chipHTML(p)}<div class="bar-wrap" ${a ? `style="outline:2px solid ${a.color};outline-offset:-2px"` : ''}><div class="bar" style="--c:${p.color}"></div><span class="label">${esc(p.name)}${p.id === me ? ' (you)' : ''}${R.handicap && p.hcp ? ` <span class="hcp-tag">HCP ${p.hcp}</span>` : ''}</span></div><span class="sc">0</span>`;
     scores.appendChild(r);
     rows[p.id] = r;
   }
@@ -60,14 +78,28 @@ export function runReveal(R, opt) {
     return order;
   }
   rerank();
-  function addPoints(id, n) {
-    running[id] += n;
+  function setScore(id, v) {
+    running[id] = v;
     const r = rows[id];
-    r.querySelector('.bar').style.transform = `scaleX(${running[id] / maxScore})`;
-    r.querySelector('.sc').textContent = running[id];
+    r.querySelector('.bar').style.transform = `scaleX(${Math.min(1, v / maxScore)})`;
+    r.querySelector('.sc').textContent = v;
     r.classList.remove('hit'); void r.offsetWidth; r.classList.add('hit');
     rerank();
   }
+
+  // ---------- timing that follows the host's speed ----------
+  let resolveSkip;
+  const skipped = new Promise(r => { resolveSkip = r; });
+  const wait = ms => new Promise(res => {
+    let left = ms, last = performance.now();
+    const step = () => {
+      if (done) return res();
+      const now = performance.now();
+      left -= (now - last) * speed; last = now;
+      if (left <= 0) res(); else setTimeout(step, 25);
+    };
+    step();
+  });
 
   // ---------- word card ----------
   function showCard(wd, i) {
@@ -80,34 +112,50 @@ export function runReveal(R, opt) {
     card.style.setProperty('--ls', `${ls}px`);
     const letters = wd.w.toUpperCase().split('').map((c, k) => `<span style="--i:${k}">${c}</span>`).join('');
     const pts = wd.solo ? `+${wd.base} <span style="color:var(--sun)">×${R.soloMult}</span>` : `+${wd.pts}`;
-    const finders = wd.finders.map((id, k) => byId[id] ? chipHTML(byId[id]).replace('class="chip ', `style="--i:${k}" class="chip `) : '').join('');
-    card.innerHTML = `<div class="letters">${letters}</div><div class="pts">${pts}</div><div class="finders">${finders}</div>`;
+    const tags = [];
+    const bonusIds = Object.keys(wd.bonus || {});
+    if (bonusIds.length) tags.push(`<span class="wtag bridge">+${Math.max(...Object.values(wd.bonus))} bridge</span>`);
+    const vias = Object.values(wd.via || {});
+    if (vias.includes('challenge')) tags.push('<span class="wtag vote">voted in</span>');
+    if (vias.includes('leak')) tags.push('<span class="wtag leak">leaked</span>');
+    if (vias.includes('copy')) tags.push('<span class="wtag copy">ally copy</span>');
+    const finders = wd.finders.map((id, k) => byId[id] ? chipHTML(byId[id], wd.via && wd.via[id] === 'leak' ? 'leaked' : '').replace('class="chip ', `style="--i:${k}" class="chip `) : '').join('');
+    card.innerHTML = `<div class="letters">${letters}</div><div class="pts">${pts}</div>${tags.length ? `<div class="wtags">${tags.join('')}</div>` : ''}<div class="finders">${finders}</div>`;
     stage.appendChild(card);
     const color = wd.solo ? 'var(--sun)' : wd.finders.length === 1 && byId[wd.finders[0]] ? byId[wd.finders[0]].color : 'var(--mint)';
-    if (wd.path) mini.light(wd.path, { color, step: Math.min(70, 300 / wd.path.length) });
+    if (wd.path) mini.light(wd.path, { color, step: Math.min(70, 300 / wd.path.length) / speed });
     sfx.blip(i);
+    if (bonusIds.length) setTimeout(() => sfx.bridge(), 200);
     return card;
   }
 
-  function flyPoints(card, wd) {
-    const from = card.querySelector('.pts').getBoundingClientRect();
-    for (const id of wd.finders) {
-      const row = rows[id];
-      if (!row) continue;
-      const to = row.querySelector('.sc').getBoundingClientRect();
-      const f = document.createElement('div');
-      f.className = 'flyer' + (wd.solo ? ' solo' : '');
-      f.textContent = `+${wd.pts}`;
-      f.style.left = `${from.left + from.width / 2 - 16}px`;
-      f.style.top = `${from.top}px`;
-      document.body.appendChild(f);
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        f.style.transform = `translate(${to.left - from.left - from.width / 2 + 16}px, ${to.top - from.top}px) scale(0.7)`;
-        f.style.opacity = '0.2';
-      }));
-      setTimeout(() => { f.remove(); if (!done) { addPoints(id, wd.pts); } }, 560);
-    }
-    setTimeout(() => sfx.coin(), 540);
+  function pushTicker(wd) {
+    const item = document.createElement('div');
+    item.className = 'tick-item' + (wd.solo ? ' solo' : '');
+    item.innerHTML = `<b>${esc(wd.w.toUpperCase())}</b><span class="tick-chips">${wd.finders.map(id => byId[id] ? chipHTML(byId[id], 'tiny') : '').join('')}</span><span class="tick-pts">+${wd.pts}</span>`;
+    ticker.prepend(item);
+    const items = [...ticker.children];
+    items.forEach((el, k) => { el.style.setProperty('--k', k); el.classList.toggle('fading', k >= 3); });
+    items.slice(5).forEach(el => el.remove());
+  }
+
+  function fly(fromEl, id, amount, cls = '') {
+    const row = rows[id];
+    if (!row || !fromEl) return;
+    const from = fromEl.getBoundingClientRect();
+    const to = row.querySelector('.sc').getBoundingClientRect();
+    const f = document.createElement('div');
+    f.className = 'flyer ' + cls;
+    f.textContent = `+${amount}`;
+    f.style.left = `${from.left + from.width / 2 - 16}px`;
+    f.style.top = `${from.top}px`;
+    document.body.appendChild(f);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      f.style.transitionDuration = `${0.55 / Math.min(speed, 2)}s`;
+      f.style.transform = `translate(${to.left - from.left - from.width / 2 + 16}px, ${to.top - from.top}px) scale(0.7)`;
+      f.style.opacity = '0.2';
+    }));
+    setTimeout(() => { f.remove(); if (!done) setScore(id, running[id] + amount); }, 560 / Math.min(speed, 2));
   }
 
   function soloStamp(wd, dur) {
@@ -125,83 +173,197 @@ export function runReveal(R, opt) {
     root.classList.remove('shake'); void root.offsetWidth; root.classList.add('shake');
     sfx.solo();
     if (wd.finders.includes(me)) haptic('success');
-    setTimeout(() => s.remove(), Math.min(1400, dur));
+    setTimeout(() => s.remove(), Math.min(1400, dur / speed));
   }
-
-  // ---------- sequence ----------
-  let done = false;
-  let resolveSkip;
-  const skipped = new Promise(r => { resolveSkip = r; });
-  skip.onclick = () => { if (!done) resolveSkip(); };
-  const wait = ms => Promise.race([sleep(ms), skipped]);
 
   async function sequence() {
     stage.innerHTML = `<div class="title-stamp">TIME'S UP!</div>`;
     sfx.stamp();
-    await wait(1100);
+    await Promise.race([wait(1100), skipped]);
     const words = R.words;
     if (!words.length) {
       stage.innerHTML = `<div class="title-stamp" style="font-size:32px">Nobody found a single word?!</div>`;
-      await wait(1600);
+      await Promise.race([wait(1600), skipped]);
       return;
     }
-    // Longer words and solos get more time; the whole show stays around 10-30s.
+    // Longer words and solos get more time; the whole show stays around 10-30s at 1x.
     const N = words.length;
     const weight = (wd, i) => 0.7 + 0.18 * (wd.w.length - 3) + (wd.solo ? 0.7 : 0) + (i >= N - 3 ? 0.9 : 0);
     const total = Math.min(30000, Math.max(7000, N * 650));
     const wsum = words.reduce((s, wd, i) => s + weight(wd, i), 0);
     for (let i = 0; i < N; i++) {
+      if (done) return;
       const wd = words[i];
       const dur = Math.max(320, (total * weight(wd, i)) / wsum);
       const card = showCard(wd, i);
-      await wait(Math.min(260, dur * 0.35));
+      const lead = Math.min(260, dur * 0.35);
+      await Promise.race([wait(lead), skipped]);
       if (done) return;
-      flyPoints(card, wd);
+      for (const id of wd.finders) fly(card.querySelector('.pts'), id, wd.pts + ((wd.bonus || {})[id] || 0), wd.solo ? 'solo' : '');
       if (wd.solo) soloStamp(wd, dur);
-      await wait(dur - Math.min(260, dur * 0.35));
+      await Promise.race([wait(dur - lead), skipped]);
       if (done) return;
       card.classList.add('out');
+      pushTicker(wd);
     }
-    await wait(600);
+    await Promise.race([wait(500), skipped]);
+    // Bonuses that land after the words.
+    const banana = players.filter(p => p.bananaBonus);
+    if (banana.length && !done) {
+      stage.innerHTML = `<div class="bonus-card pop-in"><div class="bonus-title">Banana Split!</div><div class="muted">Fullest banana: +10% of the round</div><div class="finders">${banana.map(p => chipHTML(p)).join('')}</div></div>`;
+      sfx.solo();
+      await Promise.race([wait(500), skipped]);
+      banana.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.bananaBonus, 'solo'));
+      await Promise.race([wait(1500), skipped]);
+    }
+    const strokes = players.filter(p => p.strokes);
+    if (strokes.length && !done) {
+      stage.innerHTML = `<div class="bonus-card pop-in"><div class="bonus-title">Handicap strokes</div><div class="muted">Golf rules: everyone gets their usual gap back</div><div class="stroke-list">${strokes.map(p => `<div class="row">${chipHTML(p, 'tiny')}<span class="grow">${esc(p.name)}</span><span class="muted small">HCP ${p.hcp}</span><b>+${p.strokes}</b></div>`).join('')}</div></div>`;
+      sfx.coin();
+      await Promise.race([wait(600), skipped]);
+      strokes.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.strokes));
+      await Promise.race([wait(1600), skipped]);
+    }
   }
 
   function finish() {
     if (done) return;
     done = true;
-    skip.remove();
+    renderCtl();
     mini.unlight();
     document.querySelectorAll('.flyer').forEach(f => f.remove());
-    for (const p of players) {
-      running[p.id] = p.round;
-      const r = rows[p.id];
-      r.querySelector('.bar').style.transform = `scaleX(${p.round / maxScore})`;
-      r.querySelector('.sc').textContent = R.no > 1 ? `${p.round}` : p.round;
-    }
+    ticker.innerHTML = '';
+    for (const p of players) setScore(p.id, p.round);
     const order = rerank();
     const top = order[0];
     const tied = order.filter(p => p.round === top.round);
     if (top && top.round > 0) tied.forEach(p => rows[p.id].classList.add('winner'));
+    root.classList.add('final-state');
 
     const best = R.best && R.best.by.map(id => byId[id]).filter(Boolean);
-    const soloKing = players.slice().sort((a, b) => b.solos - a.solos)[0];
     const facts = [];
     if (R.best) facts.push(`Best word: <b>${esc(R.best.w.toUpperCase())}</b> ${best.map(p => chipHTML(p, 'tiny')).join(' ')}`);
-    if (soloKing && soloKing.solos) facts.push(`Most words only they found: <b>${esc(soloKing.name)}</b> (${soloKing.solos})`);
     facts.push(`Found <b>${R.words.length}</b> of <b>${R.possible}</b> possible words`);
-    if (R.no > 1) facts.push(`Game totals: ${order.slice().sort((a, b) => b.total - a.total).map(p => `${esc(p.name)} <b>${p.total}</b>`).join(' · ')}`);
+    if (R.no > 1) facts.push(`Game totals: ${players.slice().sort((a, b) => b.total - a.total).map(p => `${esc(p.name)} <b>${p.total}</b>`).join(' · ')}`);
+    if (R.handicap) {
+      const next = players.filter(p => p.nextHcp !== p.hcp);
+      if (next.length) facts.push(`Next round's handicaps: ${players.map(p => `${esc(p.name)} <b>${p.nextHcp || 0}</b>`).join(' · ')}`);
+    }
     const allianceTot = (R.alliances || []).length
       ? `<div class="alliance-tot">${R.alliances.map(a => `<span style="--ac:${a.color}"><b>${esc(a.name)}</b> ${a.round}</span>`).join('')}</div>` : '';
-    const missed = R.missed.length
-      ? `<h3 style="margin-top:6px">Words nobody found</h3><div class="missed">${R.missed.map((m, i) => `<span style="--i:${i}" data-w="${i}">${esc(m.w)}</span>`).join('')}</div>` : '';
     const title = !top || top.round === 0 ? 'Nobody scored!' : tied.length > 1 ? "It's a tie!" : `${esc(top.name)} wins!`;
-    stage.innerHTML = `<div class="final"><div class="winner-name">${title}</div><div class="facts">${facts.map(f => `<div>${f}</div>`).join('')}</div>${allianceTot}${missed}</div>`;
-    stage.querySelectorAll('.missed span').forEach(s => {
-      s.onclick = () => { const m = R.missed[+s.dataset.w]; if (m.path) mini.light(m.path, { color: 'var(--pink)' }); };
-    });
+    stage.innerHTML = `<div class="final"><div class="winner-name">${title}</div><div class="facts">${facts.map(f => `<div>${f}</div>`).join('')}</div>${allianceTot}</div>`;
     sfx.fanfare();
-    confetti(top ? (tied.length > 1 ? null : top.color) : null);
+    confetti(top && tied.length === 1 ? top.color : null);
     if (tied.some(p => p.id === me)) haptic('success');
+
+    // Heat maps: the mini board becomes everyone's; phones also get their own.
+    mini.heat(R.heat ? R.heat.all : new Array(R.tiles.length).fill(0), 'hot');
+    miniLabel.textContent = 'Letters everyone used';
+    let heatHTML = '';
+    if (!tv && me && R.heat && R.heat.by) {
+      heatHTML = `<div class="heat-row"><div class="heat-box"><div class="heat-host" data-h="me"></div><div class="mini-label">Your letters</div></div><div class="heat-box"><div class="heat-host" data-h="all"></div><div class="mini-label">Everyone's letters</div></div></div>`;
+      miniWrap.classList.add('hidden');
+    }
+    const missed = R.missed.length
+      ? `<div class="section"><h3>Words nobody found</h3><div class="missed">${R.missed.map((m, i) => `<span style="--i:${i}" data-w="${i}">${esc(m.w)}</span>`).join('')}</div></div>` : '';
+    extra.innerHTML = `${heatHTML}<div class="section badges-section"><h3>${tv ? 'Badges' : 'Your badges'}</h3><div class="loot-host"></div></div>${!tv ? attitudeHTML() : ''}${missed}`;
+    if (heatHTML) {
+      const meCounts = R.heat.by[me] || new Array(R.tiles.length).fill(0);
+      const b1 = makeBoard(R.tiles, R.size); b1.heat(meCounts, 'mint');
+      const b2 = makeBoard(R.tiles, R.size); b2.heat(R.heat.all, 'hot');
+      extra.querySelector('[data-h="me"]').appendChild(b1.el);
+      extra.querySelector('[data-h="all"]').appendChild(b2.el);
+    }
+    extra.querySelectorAll('.missed span').forEach(s => {
+      s.onclick = () => { const m = R.missed[+s.dataset.w]; if (m.path) { mini.light(m.path, { color: 'var(--pink)' }); miniWrap.classList.remove('hidden'); } };
+    });
+    wireAttitude();
+    setTimeout(() => openLoot(extra.querySelector('.loot-host')), 1400);
     renderActions();
+  }
+
+  // ---------- badges ----------
+  function badgeCard(b, k) {
+    return `<div class="badge-card ${b.tone}" style="--i:${k}"><div class="badge-icon">${ICONS[b.icon] || ICONS.ribbon}</div><div><div class="badge-title">${esc(b.title)}</div><div class="badge-desc">${esc(b.desc)}</div></div></div>`;
+  }
+  async function openLoot(host) {
+    if (!host || !R.badges) return;
+    const who = tv ? players : players.filter(p => p.id === me);
+    const others = tv ? [] : players.filter(p => p.id !== me);
+    for (const p of who) {
+      const list = R.badges[p.id] || [];
+      const box = document.createElement('div');
+      box.className = 'loot';
+      box.innerHTML = `<div class="loot-owner">${chipHTML(p, 'tiny')} ${esc(p.name)}</div><div class="loot-box" style="--c:${p.color}"><div class="lid"></div><div class="body"></div><div class="ribbon"></div></div><div class="loot-cards"></div>`;
+      host.appendChild(box);
+      const lb = box.querySelector('.loot-box');
+      const open = () => {
+        if (lb.classList.contains('open')) return;
+        lb.classList.add('open');
+        sfx.box();
+        burst(box, 30);
+        if (p.id === me) haptic('success');
+        box.querySelector('.loot-cards').innerHTML = list.map(badgeCard).join('');
+      };
+      lb.classList.add('shaking');
+      lb.onclick = open;
+      await new Promise(r => setTimeout(r, tv ? 900 : 1100));
+      open();
+      await new Promise(r => setTimeout(r, tv ? 700 : 300));
+    }
+    if (others.length) {
+      const o = document.createElement('div');
+      o.className = 'others-badges';
+      o.innerHTML = `<h3>Everyone else</h3>${others.map(p => `<div class="other-badges">${chipHTML(p, 'tiny')}<b>${esc(p.name)}</b> ${(R.badges[p.id] || []).map(b => `<span class="mini-badge ${b.tone}" title="${esc(b.desc)}">${esc(b.title)}</span>`).join('')}</div>`).join('')}`;
+      host.appendChild(o);
+    }
+  }
+
+  // ---------- good / bad sport ----------
+  function attitudeHTML() {
+    const mineP = byId[me];
+    if (!mineP) return '';
+    const ranked = players.slice().sort((a, b) => b.round - a.round);
+    const won = mineP.round === ranked[0].round && mineP.round > 0;
+    return `<div class="section attitude"><h3>${won ? 'You won! How are you taking it?' : 'How are you taking it?'}</h3>
+      <div class="row"><button class="btn mint grow" data-att="good">${won ? 'Gracious winner' : 'Good sport'}</button><button class="btn grow" data-att="bad">${won ? 'Sore winner' : 'Sore loser'}</button></div></div>`;
+  }
+  function wireAttitude() {
+    extra.querySelectorAll('[data-att]').forEach(b => {
+      b.onclick = () => { opt.attitude(b.dataset.att); haptic('tick'); b.classList.add('picked'); setTimeout(() => b.classList.remove('picked'), 2500); };
+    });
+  }
+  // Phones get a running feed under the scores; the TV pops bubbles beside each player's row.
+  function banter(m) {
+    const p = byId[m.id];
+    const kind = m.role.startsWith('bad') ? 'bad' : 'good';
+    sfx.pop();
+    const row = rows[m.id];
+    if (row) { row.classList.remove('talking'); void row.offsetWidth; row.classList.add('talking'); }
+    if (tv) {
+      if (!row) return;
+      row.querySelector('.bubble')?.remove();
+      const b = document.createElement('div');
+      b.className = `bubble side ${kind}`;
+      b.textContent = m.text;
+      row.appendChild(b);
+      setTimeout(() => b.classList.add('out'), 8000);
+      setTimeout(() => b.remove(), 8600);
+      return;
+    }
+    let feed = scoreCol.querySelector('.banter-feed');
+    if (!feed) {
+      feed = document.createElement('div');
+      feed.className = 'banter-feed';
+      feed.innerHTML = '<h3>Trash talk</h3>';
+      scoreCol.appendChild(feed);
+    }
+    const b = document.createElement('div');
+    b.className = `feed-line ${kind}`;
+    b.innerHTML = `${p ? chipHTML(p, 'tiny') : ''}<div class="bubble inline ${kind}">${esc(m.text)}</div>`;
+    feed.querySelector('h3').after(b);
+    [...feed.querySelectorAll('.feed-line')].slice(5).forEach(x => x.remove());
   }
 
   function renderActions() {
@@ -224,7 +386,12 @@ export function runReveal(R, opt) {
 
   return {
     el: root,
-    refreshActions() { if (done) renderActions(); },
+    refreshActions() { if (done) renderActions(); else renderCtl(); },
+    control(m) {
+      if (m.speed) { speed = m.speed; renderCtl(); }
+      if (m.skip && !done) resolveSkip();
+    },
+    banter,
     close() { done = true; mini.destroy(); root.remove(); document.querySelectorAll('.flyer, canvas.confetti').forEach(x => x.remove()); },
   };
 }
