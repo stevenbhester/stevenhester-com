@@ -901,6 +901,17 @@ window.addEventListener('robggle:open', e => {
   connect({ t: 'join', code, role: 'player', name });
 });
 
+// The Door Bowl studio card: once a launch in the app, once a visit on the TV screen (or ?intro=1).
+(() => {
+  let seen = false;
+  try { seen = sessionStorage.getItem('rb:intro') === '1'; } catch {}
+  const want = params.has('intro') || (!seen && (IN_APP || MODE === 'screen'));
+  if (!want) return;
+  try { sessionStorage.setItem('rb:intro', '1'); } catch {}
+  const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
+  import('./intro.js').then(m => m.playIntro({ freezeAt })).catch(() => {});
+})();
+
 if (MODE === 'home') renderLanding();
 else if (MODE === 'screen') {
   $root.innerHTML = `<div class="wrap center" style="padding-top:20vh">${LOGO}<p class="muted">Opening a lobby…</p></div>`;
