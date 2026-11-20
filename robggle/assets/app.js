@@ -1,10 +1,10 @@
 // Robggle client. One file drives three pages: /robggle/ (home), /robggle/game/ (screen), /robggle/join/ (controller).
-import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER } from './net.js?v=9072c22-1795139502';
-import { makeBoard, tileText } from './board.js?v=9072c22-1795139502';
-import { sfx, unlock } from './sfx.js?v=9072c22-1795139502';
-import { runReveal, chipHTML } from './reveal.js?v=9072c22-1795139502';
-import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=9072c22-1795139502';
-import { icon } from './icons.js?v=9072c22-1795139502';
+import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=fd261f1-1795140523';
+import { makeBoard, tileText } from './board.js?v=fd261f1-1795140523';
+import { sfx, unlock } from './sfx.js?v=fd261f1-1795140523';
+import { runReveal, chipHTML } from './reveal.js?v=fd261f1-1795140523';
+import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=fd261f1-1795140523';
+import { icon } from './icons.js?v=fd261f1-1795140523';
 
 const MODE = document.body.dataset.mode; // home | screen | join
 const $root = document.getElementById('root');
@@ -67,7 +67,62 @@ function connect(hello) {
   if (!S.conn) S.conn = new Conn(onMsg, onStatus);
   S.conn.hello = hello;
   S.conn.open();
-  if (S.conn.ws && S.conn.ws.readyState === 1) S.conn.ws.send(JSON.stringify(hello));
+  if (S.conn.ws && S.conn.ws.readyState === 1) S.conn.ws.send(JSON.stringify({ ...hello, build: BUILD, app: APP_BUILD }));
+}
+
+// ---------------- builds ----------------
+// Everyone in a lobby plays the same build. A page that's behind (what's published, or anyone else in the
+// lobby) reloads itself when nothing is happening: in the lobby, or once its end-of-round show is over.
+// The reload lands back in the same lobby. The iPhone app's own shell only changes with a TestFlight build,
+// so an old app gets an "Update in TestFlight" button instead.
+const TESTFLIGHT = 'itms-beta://';
+S.latest = null;
+function newestBuild() {
+  const others = S.st ? S.st.members.filter(m => m.connected && !m.bot).map(m => m.build || 0) : [];
+  return Math.max(BUILD, (S.latest && S.latest.build) || 0, ...others);
+}
+const appBehind = () => APP_BUILD != null && S.latest && APP_BUILD < (S.latest.minApp || 1);
+let latestAt = 0;
+async function refreshLatest(force) {
+  if (!BUILD || (!force && Date.now() - latestAt < 60000)) return;
+  latestAt = Date.now();
+  const v = await fetchLatest();
+  if (v && v.build) { S.latest = v; checkBuild(); }
+}
+function checkBuild() {
+  if (!BUILD) return;
+  const want = newestBuild();
+  if (want <= BUILD) return;
+  const phase = S.st ? S.st.phase : null;
+  const finished = phase === 'results' && (!S.reveal || S.reveal.done());
+  if (S.st && phase !== 'lobby' && !finished) return; // never mid-round or mid-show
+  let tried = null;
+  try { tried = JSON.parse(sessionStorage.getItem('rb:update')); } catch {}
+  const n = tried && tried.build === want && Date.now() - tried.at < 300000 ? tried.n : 0;
+  if (n >= 2) { // reloaded twice and still old (a stubborn cache): stop holding the lobby up
+    if (!S.updateStuck && S.conn) { S.updateStuck = true; S.conn.send({ t: 'buildStuck' }); }
+    return;
+  }
+  try {
+    sessionStorage.setItem('rb:update', JSON.stringify({ build: want, n: n + 1, at: Date.now() }));
+    if (phase === 'results') sessionStorage.setItem('rb:skipShow', String(S.st.roundNo || 0));
+  } catch {}
+  toast(`Updating to build ${want}…`, 3000);
+  const q = new URLSearchParams(location.search);
+  q.set('b', want);
+  setTimeout(() => location.replace(`${location.pathname}?${q}`), 700);
+}
+setInterval(checkBuild, 3000);
+const buildLine = () => `<div class="build-line">Build ${BUILD || 'dev'}${APP_BUILD != null ? ` · app ${APP_BUILD}` : ''}</div>`;
+const appUpdateHTML = () => (appBehind() ? `<a class="btn wide with-ic app-update" href="${TESTFLIGHT}">${icon('refresh')}New app ready: update in TestFlight</a>` : '');
+// Tags for people in the lobby who aren't on the newest build yet.
+function buildTag(p) {
+  if (p.bot) return '';
+  const newest = newestBuild();
+  if (newest && (p.build || 0) < newest) return `<span class="tag old">${(p.build || 0) ? 'updating…' : 'old version'}</span>`;
+  const apps = S.st.members.filter(m => m.app != null && !m.bot).map(m => m.app);
+  if (p.app != null && p.app < Math.max(p.app, (S.latest && S.latest.minApp) || 1, ...apps)) return '<span class="tag old">old app</span>';
+  return '';
 }
 
 let statusTimer;
@@ -106,6 +161,8 @@ function onMsg(m) {
       if (m.phase === 'lobby') { closeReveal(); closeVote(); renderLobby(); }
       else if (S.view === 'play') updatePlaySide();
       if (S.reveal) S.reveal.refreshActions();
+      checkBuild();
+      if (m.phase === 'lobby') refreshLatest();
       break;
     }
     case 'round': startRound(m); break;
@@ -182,6 +239,8 @@ function renderHome() {
       <div id="lobbies" class="stack"><div class="empty-note">Looking for games…</div></div>
     </section>
     <button class="btn ghost wide with-ic" id="create">${icon('plus')}Start a game (no screen needed)</button>
+    ${appUpdateHTML()}
+    ${buildLine()}
   </div>`;
   const nameEl = $root.querySelector('#name');
   const getName = () => {
@@ -319,7 +378,7 @@ function wireSettings(scope) {
 function playersHTML({ big } = {}) {
   const ps = players();
   if (!ps.length) return `<div class="empty-note">${icon('users')}Waiting for players to join…</div>`;
-  const row = p => `<div class="player-row pop-in ${p.bot ? 'is-bot' : ''}" data-id="${p.id}">${chipHTML(p, p.connected ? '' : 'off')}<span class="name grow" style="${big ? 'font-size:24px' : ''}">${esc(p.name)}</span>${p.bot ? `<span class="tag bot" style="--c:${botLevel(p.bot).color}">${icon('bot', 'sm')}${botLevel(p.bot).label}</span>${isHost() ? `<button class="icon-btn tiny" data-unbot="${p.id}" aria-label="Remove bot">${icon('x', 'sm')}</button>` : ''}` : ''}${p.id === S.st.hostId ? `<span class="tag host">${icon('crown', 'sm')}host</span>` : ''}${S.you && p.id === S.you.id ? '<span class="tag">you</span>' : ''}${S.st.settings.handicap && p.hcp ? `<span class="tag hcp">${icon('flag', 'sm')}${p.hcp}</span>` : ''}${S.st.roundNo && p.total ? `<span class="tag">${p.total} pts</span>` : ''}</div>`;
+  const row = p => `<div class="player-row pop-in ${p.bot ? 'is-bot' : ''}" data-id="${p.id}">${chipHTML(p, p.connected ? '' : 'off')}<span class="name grow" style="${big ? 'font-size:24px' : ''}">${esc(p.name)}</span>${p.bot ? `<span class="tag bot" style="--c:${botLevel(p.bot).color}">${icon('bot', 'sm')}${botLevel(p.bot).label}</span>${isHost() ? `<button class="icon-btn tiny" data-unbot="${p.id}" aria-label="Remove bot">${icon('x', 'sm')}</button>` : ''}` : ''}${p.id === S.st.hostId ? `<span class="tag host">${icon('crown', 'sm')}host</span>` : ''}${S.you && p.id === S.you.id ? '<span class="tag">you</span>' : ''}${S.st.settings.handicap && p.hcp ? `<span class="tag hcp">${icon('flag', 'sm')}${p.hcp}</span>` : ''}${S.st.roundNo && p.total ? `<span class="tag">${p.total} pts</span>` : ''}${buildTag(p)}</div>`;
   let html = '';
   for (const a of S.st.alliances) {
     const mem = ps.filter(p => p.alliance === a.id);
@@ -373,10 +432,12 @@ function renderLobby() {
     <div class="sticky-start">
       ${isHost() ? `<button class="btn wide big-btn with-ic" id="start">${icon('play')}Start game</button>` : `<div class="waiting-pill">${icon('clock', 'sm')}Waiting for the host to start…</div>`}
     </div>
+    ${appUpdateHTML()}
     <div class="lobby-foot">
       ${isHost() && S.st.roundNo ? `<button class="link-btn" id="reset">Reset scores</button>` : ''}
       <button class="link-btn" id="leave">${icon('door', 'sm')}Leave game</button>
     </div>
+    ${buildLine()}
   </div>`;
   document.scrollingElement.scrollTop = keepScroll;
   wireSettings($root);
@@ -437,6 +498,7 @@ function renderScreenLobby() {
         ${isHost() && S.st.roundNo ? '<button class="link-btn" id="reset">Reset scores</button>' : ''}
         <button class="link-btn" id="newlobby">${icon('refresh', 'sm')}New lobby</button>
       </div>
+      ${buildLine()}
     </div>
   </div>`;
   void s;
@@ -1024,6 +1086,9 @@ function showResults(R) {
   });
   rv.no = R.no;
   S.reveal = rv;
+  let skip = null;
+  try { skip = sessionStorage.getItem('rb:skipShow'); sessionStorage.removeItem('rb:skipShow'); } catch {}
+  if (skip != null) rv.control({ skip: true }); // just reloaded for an update: they already watched it
 }
 
 function closeReveal() {
@@ -1049,7 +1114,7 @@ window.addEventListener('robggle:open', e => {
   if (!want) return;
   try { sessionStorage.setItem('rb:intro', '1'); } catch {}
   const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
-  import('./intro.js?v=9072c22-1795139502').then(m => m.playIntro({ freezeAt })).catch(() => {});
+  import('./intro.js?v=fd261f1-1795140523').then(m => m.playIntro({ freezeAt })).catch(() => {});
 })();
 
 if (MODE === 'home') renderLanding();
@@ -1071,5 +1136,6 @@ else if (MODE === 'screen') {
     if (code) { $root.querySelector('#code').value = code; toast('Pick a name, then tap Join'); }
   }
 }
-console.log('Robggle server:', SERVER);
+console.log('Robggle server:', SERVER, 'build', BUILD, 'app', APP_BUILD);
+refreshLatest(true).then(() => { if (appBehind() && S.view === 'home') renderHome(); });
 if (location.hostname === 'localhost') window.__rb = S; // local testing only

@@ -14,6 +14,29 @@ export const SERVER = (() => {
 
 const WS_URL = SERVER.replace(/^http/, 'ws') + '/ws';
 
+// Build number of this copy of the game. tools/publish_site.sh stamps it (the robggle repo's commit count);
+// 0 means a local, unpublished copy, which never asks anyone to update. ?build=N fakes one on localhost.
+export const BUILD = (() => {
+  const stamped = 14;
+  const q = new URLSearchParams(location.search).get('build');
+  return location.hostname === 'localhost' && q ? +q : stamped;
+})();
+// The iPhone app's own build (CFBundleVersion), from its user agent: "RobggleApp/1.0 (2)".
+// The first TestFlight build said just "RobggleApp/1.0", so that counts as build 1. null in a browser.
+export const APP_BUILD = (() => {
+  const m = navigator.userAgent.match(/RobggleApp\/[\d.]+(?: \((\d+)\))?/);
+  if (m) return m[1] ? +m[1] : 1;
+  const q = new URLSearchParams(location.search).get('appBuild');
+  return location.hostname === 'localhost' && q ? +q : null;
+})();
+// What's published right now: { build, minApp }. Never cached.
+export async function fetchLatest() {
+  try {
+    const r = await fetch(new URL(`../version.json?t=${Date.now()}`, import.meta.url), { cache: 'no-store' });
+    return await r.json();
+  } catch { return null; }
+}
+
 // Must match server/board.js
 export function fnv(str) {
   let h = 0x811c9dc5;
@@ -53,7 +76,7 @@ export class Conn {
     ws.onopen = () => {
       this.retry = 0;
       this.onStatus('open');
-      if (this.hello) ws.send(JSON.stringify(this.hello));
+      if (this.hello) ws.send(JSON.stringify({ ...this.hello, build: BUILD, app: APP_BUILD }));
       for (const m of this.queue.splice(0)) ws.send(JSON.stringify(m));
       this.pingBurst();
     };

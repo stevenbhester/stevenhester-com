@@ -1,10 +1,10 @@
 // End-of-round show: every found word gets its moment, points fly into a racing scoreboard,
 // words nobody else found get stamped x2. The host can change the speed live for everyone.
 // Then bonuses, heat maps, loot-box badges, and good/bad sport speech bubbles.
-import { makeBoard } from './board.js?v=9072c22-1795139502';
-import { sfx } from './sfx.js?v=9072c22-1795139502';
-import { haptic } from './net.js?v=9072c22-1795139502';
-import { ICONS, UI } from './icons.js?v=9072c22-1795139502';
+import { makeBoard } from './board.js?v=fd261f1-1795140523';
+import { sfx } from './sfx.js?v=fd261f1-1795140523';
+import { haptic } from './net.js?v=fd261f1-1795140523';
+import { ICONS, UI } from './icons.js?v=fd261f1-1795140523';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');
@@ -529,6 +529,7 @@ export function runReveal(R, opt) {
   return {
     el: root,
     refreshActions() { if (done) renderActions(); else renderCtl(); },
+    done: () => done,
     control(m) {
       if (m.speed) { speed = m.speed; renderCtl(); }
       if (m.skip && !done) resolveSkip();
