@@ -1,10 +1,21 @@
 // The letter grid. Interactive boards let you trace a word by dragging across tiles.
 // Chaos events can change a tile's letter (Z's), pull tiles out (bananas) or block them (Set cards).
-import { sfx } from './sfx.js?v=b5d94dd-1795098092';
-import { haptic } from './net.js?v=b5d94dd-1795098092';
+import { sfx } from './sfx.js?v=9072c22-1795139502';
+import { haptic } from './net.js?v=9072c22-1795139502';
 
 export const tileText = t => (t === 'qu' ? 'Qu' : t.toUpperCase());
 const tileHTML = t => (t === 'qu' ? '<span class="qu">Qu</span>' : t.toUpperCase());
+
+// Flat (2D) flips only: iPhone Safari can leave a 3D-turned tile half drawn. Any earlier flip on the
+// tile is cancelled first, and a timer clears this one even if the animation clock stalls.
+function flip(t, frames, ms) {
+  if (t._flip) t._flip.cancel();
+  const a = t.animate(frames, { duration: ms, easing: 'ease-out' });
+  t._flip = a;
+  const done = () => { if (t._flip === a) { a.cancel(); t._flip = null; } };
+  a.onfinish = done;
+  setTimeout(done, ms + 150);
+}
 
 export function makeBoard(tiles, size, opts = {}) {
   const cur = tiles.slice();          // what each tile says right now
@@ -93,8 +104,8 @@ export function makeBoard(tiles, size, opts = {}) {
       const t = tileEls[i];
       t.classList.toggle('zzz', l !== tiles[i]);
       if (!hidden) {
-        t.animate([{ transform: 'rotateX(90deg)' }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
         t.innerHTML = tileHTML(l);
+        flip(t, [{ transform: 'scaleY(0.08)' }, { transform: 'scaleY(1.12)', offset: 0.65 }, { transform: 'none' }], 320);
       }
     },
     setHole(i, on) {
@@ -145,11 +156,21 @@ export function makeBoard(tiles, size, opts = {}) {
     reveal() {
       hidden = false;
       tileEls.forEach((t, i) => {
-        t.animate([{ transform: 'rotateY(90deg)' }, { transform: 'none' }], { duration: 320, delay: i * 25, easing: 'ease-out', fill: 'backwards' });
-        setTimeout(() => { t.innerHTML = tileHTML(cur[i]); }, i * 25 + 100);
+        setTimeout(() => {
+          t.innerHTML = tileHTML(cur[i]);
+          flip(t, [{ transform: 'scaleX(0.05)' }, { transform: 'scaleX(1.06)', offset: 0.7 }, { transform: 'none' }], 300);
+        }, i * 25);
       });
     },
     centerOf,
+    // Sleepover moods: 'drowsy' (about to nod off), 'wake' (just woke up) or null.
+    mood(i, m) {
+      const t = tileEls[i];
+      if (t._mood === m) return;
+      if (t._mood) t.classList.remove(t._mood);
+      t._mood = m;
+      if (m) { void t.offsetWidth; t.classList.add(m); }
+    },
     destroy() { ro.disconnect(); },
   };
 

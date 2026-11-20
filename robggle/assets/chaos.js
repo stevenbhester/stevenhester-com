@@ -1,10 +1,11 @@
 // Family Chaos Mode, client side. The server planned every event; this draws them in sync
 // (phones and the TV use the same server clock) and enforces the parts phones can check instantly.
-import { sfx } from './sfx.js?v=b5d94dd-1795098092';
-import { haptic } from './net.js?v=b5d94dd-1795098092';
-import { UI } from './icons.js?v=b5d94dd-1795098092';
+import { sfx } from './sfx.js?v=9072c22-1795139502';
+import { haptic } from './net.js?v=9072c22-1795139502';
+import { UI } from './icons.js?v=9072c22-1795139502';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const tutKey = t => (t === 'leak' || t === 'sleepover' ? t + '2' : t); // bump when a tutorial changes
 const store = {
   seen(k) { try { return localStorage.getItem('rb:seen:' + k) === '1'; } catch { return false; } },
   mark(k) { try { localStorage.setItem('rb:seen:' + k, '1'); } catch {} },
@@ -20,8 +21,8 @@ export const INFO = {
   sleepover: {
     blurb: 'Tiles doze off into Z\'s',
     title: 'James & Tara Sleepover', color: '#5ab0ff',
-    short: 'Lines of tiles are dozing off. Sleeping tiles count as Z!',
-    tut: 'Rows and columns fall asleep one tile at a time, then wake back up. While a tile shows Z it really is a Z, so ZOO, ZIP and FIZZ are suddenly on the table.',
+    short: 'Three tiles are dozing off. Sleeping tiles count as Z!',
+    tut: "Three tiles get sleepy, nod off and turn into Z's for a while, then wake back up. While a tile shows Z it really is a Z, so ZIP, ZOO and DOZE are suddenly on the table.",
   },
   robbert: {
     blurb: '3-letter words only',
@@ -36,10 +37,10 @@ export const INFO = {
     tut: 'Tap 3 cards. They make a set when, for each of count, shape, color and fill, the three cards are all the same or all different. A set clears those 3 cards plus every card touching their sides. The counter shows how many sets are left; at zero, every card clears.',
   },
   leak: {
-    blurb: 'Your words may go to everyone',
+    blurb: 'Found words get announced',
     title: "Steven & Erin's Alliance Mode", color: '#b48cff',
-    short: 'Careful: 1 in 4 words you find gets sent to everyone!',
-    tut: 'Steven and Erin are sharing. For a little while, each word you find has a 1 in 4 chance of being handed to every other player too. Free points for them, and it ruins your "only you" bonus.',
+    short: "Psst! Words people find get announced up top. You still have to find them yourself!",
+    tut: "Steven and Erin can't keep a secret. For a little while, each word anyone finds has a 1 in 2 chance of being announced at the top of everyone's screen, like \"Mia found TOAST!\" It's a tip, not a gift: trace it yourself to get the points. And if your word gets out, someone may steal your \"only you\" bonus.",
   },
   banana: {
     blurb: 'Used letters fill your banana',
@@ -60,7 +61,7 @@ function rng(seed) {
 }
 
 export class Chaos {
-  constructor({ round, board, mode, host, hud, me, onSetCleared, onBananaChange }) {
+  constructor({ round, board, mode, host, hud, me, member, has, onSetCleared, onBananaChange }) {
     this.events = round.chaos || [];
     this.round = round;
     this.board = board;
@@ -68,6 +69,8 @@ export class Chaos {
     this.host = host;            // element banners/tutorials attach to
     this.hud = hud;              // element for the "active" pill (phone)
     this.me = me;
+    this.member = member || (() => null); // id -> player
+    this.has = has || (() => false);      // have I found this word?
     this.onSetCleared = onSetCleared;
     this.onBananaChange = onBananaChange;
     this.state = new Map();      // id -> 'warn' | 'active' | 'done'
@@ -140,7 +143,7 @@ export class Chaos {
     this.banner(info, e.type);
     sfx.alarm();
     haptic('warning');
-    if (this.mode === 'phone' && !store.seen(e.type)) this.tutorial(e.type);
+    if (this.mode === 'phone' && !store.seen(tutKey(e.type))) this.tutorial(e.type);
   }
 
   begin(e, st) {
@@ -151,7 +154,7 @@ export class Chaos {
     const b = this.board;
     if (e.type === 'sam' && !this.fx.sam) this.fx.sam = new RaceCar(b, e.data.seed);
     if (e.type === 'robbert') b.el.classList.add('robbert');
-    if (e.type === 'leak') b.el.classList.add('leaky');
+    if (e.type === 'leak') { b.el.classList.add('leaky'); this.openTips(e); }
     if (e.type === 'banana') { this.bananaFull = (e.data && e.data.full) || BANANA_FULL; this.bananaFirst = null; b.el.classList.add('banana-mode'); if (this.mode === 'phone' && !this.bananaDone) this.showBanana(); sfx.bananaHello(); }
     if (e.type === 'set' && this.mode === 'phone') this.fx.set = new SetCards(b, ms => { this.onSetCleared && this.onSetCleared(ms); }, e.dur);
     if (e.type === 'sleepover') sfx.snore();
@@ -160,9 +163,13 @@ export class Chaos {
 
   during(e, rel) {
     if (e.type === 'sleepover') {
+      const b = this.board;
       for (const z of e.data.zs) {
-        const on = rel >= z.from && rel < z.to;
-        this.board.setLetter(z.tile, on ? 'z' : this.board.original[z.tile]);
+        const asleep = rel >= z.from && rel < z.to;
+        const drowsy = z.drowsy !== undefined && rel >= z.drowsy && rel < z.from;
+        if (asleep && b.letters()[z.tile] !== 'z') sfx.yawn();
+        b.setLetter(z.tile, asleep ? 'z' : b.original[z.tile]);
+        b.mood(z.tile, drowsy ? 'drowsy' : rel >= z.to && rel < z.to + 700 ? 'wake' : null);
       }
     }
     if (e.type === 'sam' && this.fx.sam) this.fx.sam.frame(rel);
@@ -177,10 +184,10 @@ export class Chaos {
     this.state.set(e.id, 'done');
     const b = this.board;
     if (st === 'warn') this.closeBanner();
-    if (e.type === 'sleepover') e.data.zs.forEach(z => b.setLetter(z.tile, b.original[z.tile]));
+    if (e.type === 'sleepover') e.data.zs.forEach(z => { b.setLetter(z.tile, b.original[z.tile]); b.mood(z.tile, null); });
     if (e.type === 'sam' && this.fx.sam) { this.fx.sam.stop(); this.fx.sam = null; }
     if (e.type === 'robbert') b.el.classList.remove('robbert');
-    if (e.type === 'leak') b.el.classList.remove('leaky');
+    if (e.type === 'leak') { b.el.classList.remove('leaky'); this.closeTips(); }
     if (e.type === 'banana') {
       b.el.classList.remove('banana-mode');
       // The tiles grow back, one after another.
@@ -302,6 +309,68 @@ export class Chaos {
     }
   }
 
+  // ---------- Steven & Erin: "Mia found TOAST!" chips ----------
+  // One row of like-button chips. New ones push the oldest out when the row is full; all of them
+  // go when the event ends. Nobody gets the word for free: they still have to trace it.
+  openTips(e) {
+    const parent = this.mode === 'phone' ? this.hud : this.host && this.host.parentElement;
+    if (!parent || this.tipRail) return;
+    const rail = document.createElement('div');
+    rail.className = `tip-rail ${this.mode}`;
+    if (this.mode === 'phone') parent.appendChild(rail); else parent.insertBefore(rail, this.host.nextSibling);
+    this.tipRail = rail;
+    for (const t of this.round.tips || []) if (t.at >= e.at && t.at < e.at + e.dur) this.tip(t, true);
+  }
+
+  tip(m, quiet) {
+    if (!this.tipRail) {
+      // The announcement beat our own clock to the event start: keep it for when the row opens.
+      (this.round.tips || (this.round.tips = [])).push(m);
+      return;
+    }
+    const rail = this.tipRail;
+    if (this.mode === 'phone' && m.from === this.me) return; // you already know you found it
+    if ([...rail.children].some(c => c.dataset.w === m.w && !c.classList.contains('leaving'))) return;
+    const p = this.member(m.from);
+    const c = document.createElement('div');
+    c.className = `tip${quiet ? '' : ' like'}`;
+    c.dataset.w = m.w;
+    c.style.setProperty('--pc', (p && p.color) || '#b48cff');
+    c.innerHTML = `<span class="tip-heart">${UI.heart}<i class="burst">${'<b></b>'.repeat(6)}</i></span><span class="tip-text"><span class="tip-who">${esc(p ? p.name : 'Someone')} found</span> <b class="tip-word">${esc(m.w.toUpperCase())}!</b></span>`;
+    rail.appendChild(c);
+    if (this.mode === 'phone' && this.has(m.w)) this.tipFound(m.w);
+    this.fitTips();
+    if (!quiet) { sfx.like(); if (this.mode === 'phone') haptic('tick'); }
+  }
+
+  // You traced a word someone announced: the chip stays, marked as yours.
+  tipFound(w) {
+    const c = this.tipRail && [...this.tipRail.children].find(x => x.dataset.w === w && !x.classList.contains('got'));
+    if (!c) return;
+    c.classList.add('got');
+    c.querySelector('.tip-who').insertAdjacentHTML('beforebegin', '<span class="tip-got">got it</span>');
+  }
+
+  // First in, first out: drop the oldest chips until the row fits again.
+  fitTips() {
+    const rail = this.tipRail;
+    const chips = [...rail.children].filter(c => !c.classList.contains('leaving'));
+    while (chips.length > 1 && rail.scrollWidth > rail.clientWidth + 1) {
+      const old = chips.shift();
+      old.style.left = `${old.offsetLeft}px`;
+      old.classList.add('leaving'); // out of the row at once, then fades away
+      setTimeout(() => old.remove(), 320);
+    }
+  }
+
+  closeTips() {
+    const rail = this.tipRail;
+    if (!rail) return;
+    this.tipRail = null;
+    rail.classList.add('out');
+    setTimeout(() => rail.remove(), 450);
+  }
+
   destroy() {
     for (const e of this.events) if (this.state.get(e.id) === 'active') this.end(e, 'active');
     this.closeBanner();
@@ -346,7 +415,7 @@ export class Chaos {
     t.className = 'chaos-tut';
     t.style.setProperty('--c', info.color);
     t.innerHTML = `<div class="chaos-tut-card pop-in"><div class="tut-head"><span class="chaos-icon small">${UI[type] || ''}</span><div><div class="chaos-kicker">New chaos!</div><h2>${esc(info.title)}</h2></div></div><p>${esc(info.tut)}</p>${type === 'set' ? `<div class="set-example">${[[1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 2, 0]].map(c => cardSVG(c)).join('')}</div><p class="small muted">Same shape and fill, but different counts and colors: that's a set.</p>` : ''}<button class="btn wide">Got it</button></div>`;
-    t.querySelector('button').onclick = () => { store.mark(type); t.remove(); };
+    t.querySelector('button').onclick = () => { store.mark(tutKey(type)); t.remove(); };
     document.body.appendChild(t);
   }
 
@@ -494,25 +563,18 @@ class RaceCar {
     for (const [rx, ry] of rear) { tg.beginPath(); tg.arc(rx, ry, L * 0.06, 0, 6.29); tg.fill(); }
     // Smoke puffs.
     for (const [rx, ry] of rear) if (Math.random() < 0.8) this.parts.push({ x: rx, y: ry, r: L * 0.08, vr: L * 0.012 + Math.random() * L * 0.01, a: 0.55, vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.5) * 0.6 });
-    if (this.parts.length > 200) this.parts.splice(0, this.parts.length - 200);
+    if (this.parts.length > 260) this.parts.splice(0, this.parts.length - 260);
     this.drawSmoke(true, x, y, h, L);
   }
   drawSmoke(withCar, x, y, h, L) {
     const g = this.smoke.getContext('2d');
     g.clearRect(0, 0, this.w, this.w);
-    // Puffs are batched by how see-through they are: one fill per band instead of one per puff.
-    const bands = [[], [], [], [], [], []];
+    // One fill per puff: overlapping puffs have to stack up to make thick smoke (batching them flattened it).
     for (const p of this.parts) {
       p.r += p.vr; p.a *= 0.975; p.x += p.vx; p.y += p.vy;
-      bands[Math.min(5, Math.floor(p.a * 10))].push(p);
+      g.fillStyle = `rgba(225, 220, 235, ${p.a.toFixed(3)})`;
+      g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.29); g.fill();
     }
-    bands.forEach((list, k) => {
-      if (!list.length) return;
-      g.fillStyle = `rgba(225, 220, 235, ${(k + 0.5) / 10})`;
-      g.beginPath();
-      for (const p of list) { g.moveTo(p.x + p.r, p.y); g.arc(p.x, p.y, p.r, 0, 6.29); }
-      g.fill();
-    });
     this.parts = this.parts.filter(p => p.a > 0.02);
     if (withCar) drawCar(g, x, y, h, L);
   }

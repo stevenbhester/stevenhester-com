@@ -1,10 +1,10 @@
 // End-of-round show: every found word gets its moment, points fly into a racing scoreboard,
 // words nobody else found get stamped x2. The host can change the speed live for everyone.
 // Then bonuses, heat maps, loot-box badges, and good/bad sport speech bubbles.
-import { makeBoard } from './board.js?v=b5d94dd-1795098092';
-import { sfx } from './sfx.js?v=b5d94dd-1795098092';
-import { haptic } from './net.js?v=b5d94dd-1795098092';
-import { ICONS, UI } from './icons.js?v=b5d94dd-1795098092';
+import { makeBoard } from './board.js?v=9072c22-1795139502';
+import { sfx } from './sfx.js?v=9072c22-1795139502';
+import { haptic } from './net.js?v=9072c22-1795139502';
+import { ICONS, UI } from './icons.js?v=9072c22-1795139502';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');
@@ -140,12 +140,23 @@ export function runReveal(R, opt) {
     return cards;
   }
 
+  // One tile size for the whole show, so every word sits at the same height. It's set once the words are
+  // lined up: big enough for the longest word (up to eight letters) and for the widest pair shown side by
+  // side. Only a word longer than that shrinks to fit.
+  let tileSize = 0;
+  const GAP = 5, PAIR_GAP = 14;
+  const fitRow = (letters, cards = 1) => ((stage.clientWidth || 300) - 12 - (cards - 1) * PAIR_GAP - (letters - cards) * GAP) / letters;
+  function sizeTiles(beats) {
+    const longest = Math.min(8, Math.max(3, ...beats.flat().map(wd => wd.w.length)));
+    const widestPair = Math.max(0, ...beats.filter(b => b.length === 2).map(b => b[0].w.length + b[1].w.length));
+    tileSize = Math.min(tv ? 84 : 44, fitRow(longest), widestPair ? fitRow(widestPair, 2) : Infinity);
+  }
+  const letterSize = len => Math.min(tileSize || fitRow(Math.max(len, 5)), fitRow(len));
+
   function showCard(wd, i, host, share) {
     const card = document.createElement('div');
     card.className = 'wordcard' + (wd.solo ? ' solo' : '');
-    const stageW = (stage.clientWidth || 300) / share;
-    const ls = Math.min(tv ? 90 / share : 46 / (share === 2 ? 1.35 : 1), (stageW - 20) / wd.w.length - 5);
-    card.style.setProperty('--ls', `${ls}px`);
+    card.style.setProperty('--ls', `${letterSize(wd.w.length)}px`);
     const letters = wd.w.toUpperCase().split('').map((c, k) => `<span style="--i:${k}">${c}</span>`).join('');
     const pts = wd.solo ? `+${wd.base} <span style="color:var(--sun)">×${R.soloMult}</span>` : `+${wd.pts}`;
     const tags = [];
@@ -156,7 +167,8 @@ export function runReveal(R, opt) {
     if (vias.includes('leak')) tags.push('<span class="wtag leak">leaked</span>');
     if (vias.includes('copy')) tags.push('<span class="wtag copy">ally copy</span>');
     const finders = wd.finders.map((id, k) => byId[id] ? chipHTML(byId[id], wd.via && wd.via[id] === 'leak' ? 'leaked' : '').replace('class="chip ', `style="--i:${k}" class="chip `) : '').join('');
-    card.innerHTML = `<div class="letters">${letters}</div><div class="pts">${pts}</div>${tags.length ? `<div class="wtags">${tags.join('')}</div>` : ''}<div class="finders">${finders}</div>`;
+    // Every row is always there (tags may be empty) so the letters never move between words.
+    card.innerHTML = `<div class="letters">${letters}</div><div class="pts-row"><div class="pts">${pts}</div></div><div class="wtags">${tags.join('')}</div><div class="finders">${finders}</div>`;
     host.appendChild(card);
     const color = wd.solo ? 'var(--sun)' : wd.finders.length === 1 && byId[wd.finders[0]] ? byId[wd.finders[0]].color : 'var(--mint)';
     if (wd.path && share === 1) mini.light(wd.path, { color, step: Math.min(70, 300 / wd.path.length) / pace() });
@@ -194,7 +206,7 @@ export function runReveal(R, opt) {
     setTimeout(() => { f.remove(); if (!done) setScore(id, running[id] + amount, { cls }); }, 560 / Math.min(pace(), 2));
   }
 
-  function soloStamp(wd, dur) {
+  function soloStamp(wd, dur, card) {
     const by = wd.soloBy || {};
     let who;
     if (by.alliance && alliances[by.alliance]) who = `Only ${esc(alliances[by.alliance].name)}!`;
@@ -204,9 +216,9 @@ export function runReveal(R, opt) {
     const s = document.createElement('div');
     s.className = 'stamp';
     s.innerHTML = `${who}<small>×${R.soloMult} points</small>`;
-    stage.appendChild(s);
+    // On the TV it sits in the corner; on phones it lands beside the points, in a row that's always there.
+    (tv || !card ? stage : card.querySelector('.pts-row')).appendChild(s);
     burst(stage, 26);
-    root.classList.remove('shake'); void root.offsetWidth; root.classList.add('shake');
     sfx.solo();
     if (wd.finders.includes(me)) haptic('success');
     setTimeout(() => s.remove(), Math.min(2800, dur / pace()));
@@ -238,6 +250,7 @@ export function runReveal(R, opt) {
       else beats.push([words[i]]);
     }
     const N = beats.length;
+    sizeTiles(beats);
     const weightOf = (b, i) => b.reduce((s, wd) => s + 0.7 + 0.18 * (wd.w.length - 3) + (wd.solo ? 0.7 : 0), 0) / (b.length === 2 ? 1.5 : 1) + (i >= N - 3 ? 0.9 : 0);
     const total = Math.min(30000, Math.max(7000, N * 650));
     const wsum = beats.reduce((s, b, i) => s + weightOf(b, i), 0);
@@ -251,7 +264,7 @@ export function runReveal(R, opt) {
       if (done) return;
       beat.forEach((wd, j) => {
         for (const id of wd.finders) fly(cards[j].querySelector('.pts'), id, wd.pts + ((wd.bonus || {})[id] || 0), wd.solo ? 'solo' : '');
-        if (wd.solo) soloStamp(wd, dur);
+        if (wd.solo) soloStamp(wd, dur, cards[j]);
       });
       await Promise.race([wait(dur - lead), skipped]);
       if (done) return;

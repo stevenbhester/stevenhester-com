@@ -1,10 +1,10 @@
 // Robggle client. One file drives three pages: /robggle/ (home), /robggle/game/ (screen), /robggle/join/ (controller).
-import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER } from './net.js?v=b5d94dd-1795098092';
-import { makeBoard, tileText } from './board.js?v=b5d94dd-1795098092';
-import { sfx, unlock } from './sfx.js?v=b5d94dd-1795098092';
-import { runReveal, chipHTML } from './reveal.js?v=b5d94dd-1795098092';
-import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=b5d94dd-1795098092';
-import { icon } from './icons.js?v=b5d94dd-1795098092';
+import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER } from './net.js?v=9072c22-1795139502';
+import { makeBoard, tileText } from './board.js?v=9072c22-1795139502';
+import { sfx, unlock } from './sfx.js?v=9072c22-1795139502';
+import { runReveal, chipHTML } from './reveal.js?v=9072c22-1795139502';
+import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=9072c22-1795139502';
+import { icon } from './icons.js?v=9072c22-1795139502';
 
 const MODE = document.body.dataset.mode; // home | screen | join
 const $root = document.getElementById('root');
@@ -112,7 +112,7 @@ function onMsg(m) {
     case 'counts': if (S.st) { S.st.counts = m.counts; if (m.banana) S.bananaCounts = m.banana; updatePlaySide(true); } break;
     case 'wordResult': wordResult(m); break;
     case 'ally': allyWord(m); break;
-    case 'leaked': leakedWord(m); break;
+    case 'tip': S.chaos && S.chaos.tip(m); break;
     case 'bridge': screenBridge(m); break;
     case 'challengeAck': if (S.play && S.play.fb) S.play.fb.textContent = `Challenge filed: ${m.w.toUpperCase()} goes to a vote after the round`; break;
     case 'bananaWin': {
@@ -494,6 +494,7 @@ function startRound(r) {
   S.chaos = new Chaos({
     round: r, board: S.play.board, mode: MODE === 'screen' ? 'tv' : 'phone',
     host: S.play.boardHost, hud: S.play.chaosHud, me: S.you && S.you.id,
+    member, has: w => S.mine.has(w),
     onSetCleared: ms => { S.conn.send({ t: 'setCleared', ms }); toast('All cards cleared!'); },
   });
   if (MODE === 'screen' && S.bananaSplit.length) updatePlaySide();
@@ -679,7 +680,8 @@ function wordResult(m) {
       if (m.bonus) bridgeReaction(m.bonus);
       S.play.lastNew = m.w;
     }
-    if (m.leaked) { S.play.fb.textContent = `${m.w.toUpperCase()} leaked to everyone!`; floatText('LEAKED', 'leak'); sfx.dupe(); }
+    if (m.leaked) { S.play.fb.textContent = `Psst! Everyone just heard you found ${m.w.toUpperCase()}`; floatText('LEAKED', 'leak'); sfx.dupe(); }
+    if (!had && S.chaos) S.chaos.tipFound(m.w);
     if (m.path && S.chaos) S.chaos.bananaWord(m.path, m.bananaDone);
     renderWords(); updateScore();
     return;
@@ -708,16 +710,6 @@ function allyWord(m) {
     if (!S.mine.has(m.w) && S.view === 'play' && !S.ended) { sfx.ally(); haptic('tick'); }
     renderWords();
   }
-}
-
-function leakedWord(m) {
-  if (!S.round || S.mine.has(m.w)) return;
-  S.mine.set(m.w, { pts: m.pts, via: 'leak', from: m.from });
-  const p = member(m.from);
-  if (S.play && S.play.fb) S.play.fb.textContent = `${p ? p.name : 'Someone'} leaked ${m.w.toUpperCase()} to you!`;
-  sfx.ally();
-  S.play && (S.play.lastNew = m.w);
-  renderWords(); updateScore();
 }
 
 function challenge(w) {
@@ -1057,7 +1049,7 @@ window.addEventListener('robggle:open', e => {
   if (!want) return;
   try { sessionStorage.setItem('rb:intro', '1'); } catch {}
   const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
-  import('./intro.js?v=b5d94dd-1795098092').then(m => m.playIntro({ freezeAt })).catch(() => {});
+  import('./intro.js?v=9072c22-1795139502').then(m => m.playIntro({ freezeAt })).catch(() => {});
 })();
 
 if (MODE === 'home') renderLanding();

@@ -31,6 +31,7 @@ export const ICONS = {
 
 // Interface icons (lobby, settings, HUD).
 export const UI = {
+  heart: svg('<path d="M12 20s-7-4.4-9-8.6C1.6 8.4 3.6 5 7 5c2 0 3.3 1.1 5 3 1.7-1.9 3-3 5-3 3.4 0 5.4 3.4 4 6.4C19 15.6 12 20 12 20Z" fill="currentColor" stroke="none"/>'),
   grid: svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
   letters: svg('<path d="M3 19 L8 5 L13 19M5 14h6"/><path d="M15 12h4a2 2 0 0 1 0 4h-4v-8h3.5a2 2 0 0 1 0 4"/>'),
   clock: svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>'),
