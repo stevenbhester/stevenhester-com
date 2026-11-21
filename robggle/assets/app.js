@@ -1,11 +1,11 @@
 // Robggle client. One file drives three pages: /robggle/ (home), /robggle/game/ (screen), /robggle/join/ (controller).
-import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=0dabfef-1795241502';
-import { makeBoard, tileText } from './board.js?v=0dabfef-1795241502';
-import { sfx, unlock, audioReady } from './sfx.js?v=0dabfef-1795241502';
-import { runReveal, chipHTML } from './reveal.js?v=0dabfef-1795241502';
-import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=0dabfef-1795241502';
-import { icon } from './icons.js?v=0dabfef-1795241502';
-import { startMusic, stopMusic, preloadMusic } from './music.js?v=0dabfef-1795241502';
+import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=dc43a80-1795243967';
+import { makeBoard, tileText } from './board.js?v=dc43a80-1795243967';
+import { sfx, unlock, audioReady } from './sfx.js?v=dc43a80-1795243967';
+import { runReveal, chipHTML, confetti } from './reveal.js?v=dc43a80-1795243967';
+import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=dc43a80-1795243967';
+import { icon } from './icons.js?v=dc43a80-1795243967';
+import { startMusic, stopMusic, preloadMusic } from './music.js?v=dc43a80-1795243967';
 
 const MODE = document.body.dataset.mode; // home | screen | join
 const $root = document.getElementById('root');
@@ -174,7 +174,8 @@ function onMsg(m) {
     case 'launch': S.chaos && S.chaos.launch(m); break;
     case 'point': showPoint(m); break;
     case 'wordle': S.chaos && S.chaos.wordleMark(m); break;
-    case 'wordleWin': case 'wordleEnd': S.chaos && S.chaos.wordleOver(m); screenWordle(m); break;
+    case 'wordleWin': case 'wordleEnd': S.chaos && S.chaos.wordleOver(m); screenWordle(m); wordleParty(m); break;
+    case 'naughty': screenNaughty(m); break;
     case 'bridge': screenBridge(m); break;
     case 'challengeAck': if (S.play && S.play.fb) S.play.fb.textContent = `Challenge filed: ${m.w.toUpperCase()} goes to a vote after the round`; break;
     case 'bananaWin': {
@@ -489,6 +490,9 @@ function renderScreenLobby() {
   const url = joinURL(S.code);
   const shown = url.replace(/^https?:\/\//, '').replace(/\?c=.*/, '');
   const s = S.st.settings;
+  // The settings column scrolls on its own, and this redraws on every change: keep its place (and the page's).
+  const side0 = $root.querySelector('.screen .side');
+  const keepSide = side0 ? side0.scrollTop : 0, keepPage = document.scrollingElement.scrollTop;
   $root.innerHTML = `<div class="screen">
     <div class="left">
       ${LOGO}
@@ -514,6 +518,9 @@ function renderScreenLobby() {
     </div>
   </div>`;
   void s;
+  const side = $root.querySelector('.screen .side');
+  if (side) side.scrollTop = keepSide;
+  document.scrollingElement.scrollTop = keepPage;
   wireSettings($root);
   wireBots($root);
   const st = $root.querySelector('#start');
@@ -830,8 +837,70 @@ function showPoint(m) {
   if (iHoldThePen) haptic('tick');
 }
 
+// ---------------- NAUGHTY WORDS ----------------
+// Swearing is allowed. It gets bleeped, scolded and counted toward the Potty Mouth badge.
+const SCOLDS = ['Language!', 'Ooh, naughty!', 'Swear jar!', 'Nana heard that!', 'Wash that mouth out!', 'Who taught you that?'];
+function naughtyReaction() {
+  if (!S.play || MODE === 'screen') return;
+  const b = document.createElement('div');
+  b.className = 'bridge-stamp naughty-stamp';
+  b.innerHTML = `${SCOLDS[Math.floor(Math.random() * SCOLDS.length)]}<small>It still counts</small>`;
+  S.play.board.fx.appendChild(b);
+  setTimeout(() => b.remove(), 1700);
+  sfx.bleep();
+  haptic('warning');
+}
+// The TV tells on them (who, not what).
+function screenNaughty(m) {
+  if (MODE !== 'screen' || !S.play || S.view !== 'play') return;
+  const p = member(m.id);
+  if (!p) return;
+  sfx.bleep();
+  let box = document.getElementById('scoreToasts');
+  if (!box) { box = document.createElement('div'); box.id = 'scoreToasts'; box.className = 'score-toasts'; document.body.appendChild(box); }
+  const t = document.createElement('div');
+  t.className = 'score-toast naughty';
+  t.style.setProperty('--c', '#ff5c8a');
+  t.innerHTML = `${chipHTML(p, 'tiny')}<b>${esc(p.name)}</b><span>said a naughty word!</span>`;
+  box.prepend(t);
+  [...box.children].slice(4).forEach(x => x.remove());
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 3200);
+}
+
+// ---------------- WORDLE IN ONE (OR TWO) ----------------
+// Getting G-ma's word on the first guess takes over every screen; the second guess gets a banner across every board.
+function wordleParty(m) {
+  if (m.t !== 'wordleWin' || !(m.n <= 2) || S.view !== 'play') return;
+  const p = member(m.id);
+  const name = m.team ? 'The team' : esc(p ? p.name : 'Someone');
+  const color = p ? p.color : '#6aaa64';
+  document.querySelectorAll('.wordle-mega, .wordle-big').forEach(x => x.remove());
+  const el = document.createElement('div');
+  if (m.n === 1) {
+    el.className = 'wordle-mega';
+    el.style.setProperty('--c', color);
+    el.innerHTML = `<div class="wm-rays"></div><div class="wm-card"><div class="wm-kicker">${p && !m.team ? chipHTML(p, 'big') : ''}<span>${name}</span></div><div class="wm-title"><span>WORDLE</span><span>IN</span><span class="one">ONE!</span></div><div class="wm-sub">First guess. No clues. Somebody check their pockets.</div></div>`;
+    document.body.appendChild(el);
+    [0, 500, 1100, 1800].forEach((t, k) => setTimeout(() => confetti(k % 2 ? color : null), t));
+    sfx.fanfare(); setTimeout(() => sfx.box(), 250); setTimeout(() => sfx.fanfare(), 1300);
+    haptic('success'); setTimeout(() => haptic('success'), 500);
+    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 600); }, 5200);
+  } else {
+    el.className = 'wordle-big';
+    el.style.setProperty('--c', color);
+    el.innerHTML = `<div class="wb-title">WORDLE IN TWO!</div><div class="wb-sub">${p && !m.team ? chipHTML(p, 'tiny') : ''}<span>${name} only needed two guesses</span></div>`;
+    (S.play ? S.play.boardHost : document.body).appendChild(el);
+    S.play && S.play.board.sweep('#6aaa64');
+    confetti(color);
+    sfx.fanfare(); setTimeout(() => sfx.solo(), 300);
+    haptic('success');
+    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 500); }, 3400);
+  }
+}
+
 function wordResult(m) {
   if (!S.play) return;
+  if (m.ok && m.naughty) naughtyReaction();
   if (m.lock > 0 && !locked()) lockOut(m.lock);
   if (m.reason === 'locked') return;
   const board = S.play.board;
@@ -1136,7 +1205,9 @@ function screenWordle(m) {
   const t = document.createElement('div');
   t.className = 'tv-callout pop-in';
   t.style.setProperty('--c', p ? p.color : '#6aaa64');
-  t.innerHTML = m.id ? `${p ? chipHTML(p) : ''}<span><b>${esc(p ? p.name : 'Someone')}</b> got the Wordle in ${m.n}! <em>${esc(m.word.toUpperCase())}</em></span>` : `<span>Nobody got G-ma's Wordle. It was <em>${esc(m.word.toUpperCase())}</em></span>`;
+  // (The word only shows when the whole room got it together, in Pass the Pen.)
+  const word = m.word ? ` <em>${esc(m.word.toUpperCase())}</em>` : '';
+  t.innerHTML = m.id ? `${p ? chipHTML(p) : ''}<span><b>${m.team ? 'The team' : esc(p ? p.name : 'Someone')}</b> got the Wordle in ${m.n}!${word}</span>` : `<span>Nobody got G-ma's Wordle. She's keeping it to herself.</span>`;
   S.play.boardHost.appendChild(t);
   setTimeout(() => t.remove(), 4500);
 }
@@ -1273,7 +1344,7 @@ window.addEventListener('robggle:open', e => {
   if (!want) return;
   try { sessionStorage.setItem('rb:intro', '1'); } catch {}
   const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
-  import('./intro.js?v=0dabfef-1795241502').then(m => m.playIntro({ freezeAt })).catch(() => {});
+  import('./intro.js?v=dc43a80-1795243967').then(m => m.playIntro({ freezeAt })).catch(() => {});
 })();
 
 if (MODE === 'home') renderLanding();

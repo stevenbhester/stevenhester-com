@@ -23,7 +23,7 @@ export function audioOut() { return ctx ? { ctx, master } : null; }
 
 export function audioReady() { return !!ctx && ctx.state === 'running'; }
 
-export function setMuted(v) { muted = v; if (v) import('./music.js?v=0dabfef-1795241502').then(m => m.stopMusic(0.3)); try { localStorage.setItem('rb:mute', v ? '1' : '0'); } catch {} }
+export function setMuted(v) { muted = v; if (v) import('./music.js?v=dc43a80-1795243967').then(m => m.stopMusic(0.3)); try { localStorage.setItem('rb:mute', v ? '1' : '0'); } catch {} }
 export function isMuted() { return muted; }
 
 function tone(freq, { at = 0, dur = 0.12, type = 'sine', vol = 0.3, slide = 0, attack = 0.005 } = {}) {
@@ -139,6 +139,8 @@ export const sfx = {
       tone(f / 2, { at, dur: k === 2 ? 0.26 : 0.15, type: 'square', vol: 0.06, slide: 0.9, attack: 0.02 });
     });
   },
+  // A naughty word: the TV censor's bleep, then a little "ooh".
+  bleep() { tone(1000, { dur: 0.32, type: 'sine', vol: 0.2, attack: 0.01 }); tone(420, { at: 0.36, dur: 0.3, type: 'triangle', vol: 0.14, slide: 1.7, attack: 0.05 }); },
   // Someone pointed at a letter.
   point() { tone(988, { dur: 0.07, type: 'sine', vol: 0.16 }); tone(1319, { at: 0.06, dur: 0.12, type: 'sine', vol: 0.12 }); },
   // Ice cubes clinking.

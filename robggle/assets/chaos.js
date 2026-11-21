@@ -1,8 +1,8 @@
 // Family Chaos Mode, client side. The server planned every event; this draws them in sync
 // (phones and the TV use the same server clock) and enforces the parts phones can check instantly.
-import { sfx } from './sfx.js?v=0dabfef-1795241502';
-import { haptic } from './net.js?v=0dabfef-1795241502';
-import { UI } from './icons.js?v=0dabfef-1795241502';
+import { sfx } from './sfx.js?v=dc43a80-1795243967';
+import { haptic } from './net.js?v=dc43a80-1795243967';
+import { UI } from './icons.js?v=dc43a80-1795243967';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const tutKey = t => (t === 'leak' || t === 'sleepover' ? t + '2' : t); // bump when a tutorial changes
@@ -113,7 +113,7 @@ export class Chaos {
     if (round.banana && round.banana.removed) round.banana.removed.forEach(i => board.setHole(i, true));
     this.heights = (round.climb || []).slice();          // Charlie: how tall each of my tiles is
     this.launchData = round.launch || null;               // Jess: { id, letter, tiles }
-    this.wd = { slots: [null, null, null, null, null], status: {}, n: 0, last: null, over: !!(round.wordle && round.wordle.winner) };
+    this.wd = { slots: [null, null, null, null, null], status: {}, n: 0, last: null, guesses: [], over: !!(round.wordle && round.wordle.winner) };
     if (round.wordle) for (const g of round.wordle.guesses || []) this.wordleApply(g);
   }
 
@@ -417,7 +417,9 @@ export class Chaos {
       t.classList.remove('ignite');
       setTimeout(() => {
         b.setHole(i, false);
-        t.classList.remove('launched', 'landing'); void t.offsetWidth; t.classList.add('landing');
+        // ("touchdown", not "landing": that name is the home page's layout, and it stretched the tile.)
+        t.classList.remove('launched', 'touchdown'); void t.offsetWidth; t.classList.add('touchdown');
+        setTimeout(() => t.classList.remove('touchdown'), 700);
         if (this.mode === 'phone') sfx.thud();
       }, k * 110);
     });
@@ -429,9 +431,16 @@ export class Chaos {
     this.hud.querySelector('.wordle-stage')?.remove();
     const w = document.createElement('div');
     w.className = 'wordle-stage';
-    w.innerHTML = `<div class="wd-slots">${'<span class="wd-slot"></span>'.repeat(5)}</div><div class="wd-info"><b>${this.round.mode === 'coop' ? "G-ma's hidden word (team clues)" : "G-ma's hidden word"}</b><div class="wd-last"></div><small class="wd-sub"></small></div>`;
+    w.innerHTML = `<div class="wd-left"><div class="wd-slots">${'<span class="wd-slot"></span>'.repeat(5)}</div><div class="wd-hist"></div></div><div class="wd-info"><b>${this.round.mode === 'coop' ? "G-ma's hidden word (team clues)" : "G-ma's hidden word"}</b><small class="wd-sub"></small></div>`;
     this.hud.appendChild(w);
     this.drawWordle();
+  }
+
+  // How many past guesses to keep on screen: as many as fit comfortably above the board.
+  wordleRows() {
+    if (this.mode === 'tv') return 6;
+    const h = window.innerHeight;
+    return h >= 880 ? 5 : h >= 800 ? 4 : h >= 720 ? 3 : 2;
   }
 
   drawWordle() {
@@ -442,8 +451,9 @@ export class Chaos {
         el.textContent = c ? c.toUpperCase() : '';
         el.classList.toggle('g', !!c);
       });
-      const last = this.wd.last;
-      w.querySelector('.wd-last').innerHTML = last ? [...last.w].map((c, i) => `<i class="${last.marks[i]}">${esc(c.toUpperCase())}</i>`).join('') : '';
+      // The latest guesses, oldest first, the newest at the bottom.
+      const recent = this.wd.guesses.slice(-this.wordleRows());
+      w.querySelector('.wd-hist').innerHTML = recent.map((g, k) => `<div class="wd-row${k === recent.length - 1 ? ' new' : ''}">${[...g.w].map((c, i) => `<i class="${g.marks[i]}">${esc(c.toUpperCase())}</i>`).join('')}</div>`).join('');
       const yellow = Object.keys(this.wd.status).filter(c => this.wd.status[c] === 'y').sort();
       w.querySelector('.wd-sub').textContent = !this.wd.n ? (this.round.mode === 'coop' ? 'Every word the pen writes is a clue' : 'Trace any word for clues') : `${this.wd.n} guess${this.wd.n === 1 ? '' : 'es'}${yellow.length ? ` · somewhere: ${yellow.join(' ').toUpperCase()}` : ''}`;
     }
@@ -467,6 +477,7 @@ export class Chaos {
     const rank = { g: 3, y: 2, x: 1 };
     this.wd.n++;
     this.wd.last = g;
+    this.wd.guesses.push(g);
     [...g.w].forEach((c, i) => {
       const s = g.marks[i];
       if (s === 'g' && i < 5) this.wd.slots[i] = c;
@@ -494,10 +505,15 @@ export class Chaos {
     const st = this.hud && this.hud.querySelector('.wordle-stage');
     if (!st) return;
     const p = m.id ? this.member(m.id) : null;
-    const word = `<div class="wd-slots">${[...m.word].map(c => `<span class="wd-slot g">${esc(c.toUpperCase())}</span>`).join('')}</div>`;
+    // The word itself is only for whoever got it (the server doesn't send it to anyone else). Everybody else
+    // keeps the blanks they'd worked out.
+    const shown = m.word ? [...m.word] : this.wd.slots;
+    const word = `<div class="wd-slots">${shown.map(c => `<span class="wd-slot ${c ? 'g' : ''}">${c ? esc(c.toUpperCase()) : '?'}</span>`).join('')}</div>`;
+    const who = m.team ? `The team got the Wordle in ${m.n}!` : m.id ? `${m.id === this.me ? 'You' : esc(p ? p.name : 'Someone')} got the Wordle in ${m.n}!` : 'Nobody got the Wordle';
+    const sub = m.word ? `G-ma's word was ${esc(m.word.toUpperCase())}` : m.id ? 'The word stays their secret' : "G-ma's keeping it to herself";
     st.classList.add('result');
     st.classList.toggle('won', !!m.id);
-    st.innerHTML = `${word}<div class="wd-info"><b>${m.team ? `The team got the Wordle in ${m.n}!` : m.id ? `${m.id === this.me ? 'You' : esc(p ? p.name : 'Someone')} got the Wordle in ${m.n}!` : 'Nobody got the Wordle'}</b><small class="wd-sub">${m.id ? "G-ma's word was" : 'It was'} ${esc(m.word.toUpperCase())}</small></div>`;
+    st.innerHTML = `<div class="wd-left">${word}</div><div class="wd-info"><b>${who}</b><small class="wd-sub">${sub}</small></div>`;
     if (m.id === this.me || m.team) { sfx.fanfare(); haptic('success'); } else sfx.solo();
     setTimeout(() => st.remove(), 6000);
   }

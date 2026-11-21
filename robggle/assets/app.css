@@ -127,7 +127,8 @@ h3 { margin: 0; font-size: 17px; color: var(--muted); font-weight: 500; }
 .lobby-code { font-weight: 700; letter-spacing: 0.12em; font-size: 20px; background: var(--tile); color: var(--tile-ink); padding: 6px 9px; border-radius: 10px; box-shadow: 0 3px 0 var(--tile-edge); }
 
 /* ---------- board ---------- */
-.board { position: relative; display: grid; gap: var(--gap, 8px); width: 100%; aspect-ratio: 1; touch-action: none; }
+/* Rows are always equal shares of the square, whatever is (or isn't) inside the tiles. */
+.board { position: relative; display: grid; gap: var(--gap, 8px); width: 100%; aspect-ratio: 1; grid-auto-rows: minmax(0, 1fr); touch-action: none; }
 .tile {
   position: relative; display: grid; place-items: center; border-radius: 18%;
   background: var(--tile); color: var(--tile-ink);
@@ -861,6 +862,9 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .tiles i.solo { background: linear-gradient(180deg, #fff3a8, #ffd23f 60%, #c9a20a); }
 .tiles i span { font-style: normal; font-weight: 700; font-size: min(11px, calc(var(--pts) * var(--ppx) * 0.72)); line-height: 1; letter-spacing: 0.08em; color: rgba(95, 58, 16, 0.85); white-space: nowrap; text-overflow: clip; }
 .reveal.tv .tiles i span { font-size: min(1.7vmin, calc(var(--pts) * var(--ppx) * 0.72)); }
+.tiles i { container-type: inline-size; }
+.tiles i span { text-align: center; font-size: min(11px, calc(var(--pts) * var(--ppx) * 0.78 / var(--lines, 1)), calc(128cqw / var(--chars, 8))); }
+.reveal.tv .tiles i span { font-size: min(1.7vmin, calc(var(--pts) * var(--ppx) * 0.78 / var(--lines, 1)), calc(128cqw / var(--chars, 8))); }
 .tiles i.fun { background: linear-gradient(180deg, #ffd0df, #ff5c8a 60%, #c23a63); }
 .tiles i.fun span { color: #fff; }
 .tiles i.stroke { background: linear-gradient(180deg, #b9f5e2, #3ee0b0 60%, #1f9c78); }
@@ -1050,7 +1054,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .tile.ignite { animation: ignite 0.09s linear infinite alternate; box-shadow: 0 var(--edge, 6px) 0 #c2410c, 0 calc(var(--edge, 6px) + 6px) 18px 4px rgba(255, 138, 61, 0.9); }
 @keyframes ignite { from { translate: -2px 1px; } to { translate: 2px -1px; } }
 .tile.launched { background: rgba(0, 0, 0, 0.3) radial-gradient(circle at 50% 55%, rgba(255, 138, 61, 0.35) 0 22%, rgba(60, 40, 30, 0.6) 23% 40%, transparent 41%); }
-.tile.landing { animation: landing 0.5s cubic-bezier(0.3, 1.3, 0.5, 1); }
+.tile.touchdown { animation: landing 0.5s cubic-bezier(0.3, 1.3, 0.5, 1); }
 @keyframes landing { from { translate: 0 -120vh; rotate: 20deg; } 70% { translate: 0 0; rotate: 0deg; scale: 1.15 0.85; } to { scale: 1; } }
 .flying-tile.rocket { overflow: visible; }
 .flying-tile.rocket .flame { position: absolute; left: 22%; right: 22%; top: 96%; height: 130%; border-radius: 40% 40% 50% 50% / 20% 20% 80% 80%; background: linear-gradient(180deg, #fff3a8, #ffb13d 35%, #ff5c3d 70%, transparent); animation: flame 0.08s linear infinite alternate; transform-origin: 50% 0; }
@@ -1065,6 +1069,15 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .wd-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
 .wd-info b { font-size: 14px; }
 .wd-sub { color: var(--muted); font-size: 12px; }
+.wd-left { display: flex; flex-direction: column; gap: 5px; flex: none; }
+.wd-hist { display: flex; flex-direction: column; gap: 3px; }
+.wd-row { display: flex; gap: 2px; opacity: 0.75; }
+.wd-row.new { opacity: 1; }
+.wd-row i { font-style: normal; font-weight: 700; font-size: 12px; width: 19px; height: 20px; border-radius: 4px; display: grid; place-items: center; color: #fff; background: #5b5870; }
+.wd-row i.g { background: #6aaa64; } .wd-row i.y { background: #c9b458; color: #2b2400; }
+.wd-row.new i { animation: popIn 0.25s both; }
+.wordle-stage { align-items: flex-start; }
+.chaos-hud.tv .wd-row i { width: 2.6vmin; height: 2.8vmin; font-size: 1.7vmin; }
 .wd-last { display: flex; gap: 2px; min-height: 18px; }
 .wd-last i { font-style: normal; font-weight: 700; font-size: 11px; width: 16px; height: 18px; border-radius: 3px; display: grid; place-items: center; color: #fff; background: #5b5870; }
 .wd-last i.g { background: #6aaa64; } .wd-last i.y { background: #c9b458; color: #2b2400; }
@@ -1100,3 +1113,27 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .chaos-hud.tv .wd-sub { font-size: 1.7vmin; }
 .chaos-hud.tv .wd-last i { width: 2.2vmin; height: 2.5vmin; font-size: 1.5vmin; }
 .chaos-hud.tv .wordle-stage.result .wd-info b { font-size: 2.4vmin; }
+
+/* ---------- naughty words ---------- */
+.naughty-stamp { color: var(--pink); text-shadow: 0 4px 0 #a02a52, 0 10px 30px rgba(0, 0, 0, 0.6); font-size: 34px; white-space: nowrap; }
+.wtag.naughty { background: var(--pink); color: #fff; }
+
+/* ---------- Wordle in one (every screen) and in two (every board) ---------- */
+.wordle-mega { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; pointer-events: none; background: radial-gradient(circle at 50% 45%, rgba(106, 170, 100, 0.55), rgba(20, 10, 40, 0.88) 70%); animation: fadeIn 0.25s both; overflow: hidden; }
+.wordle-mega.out { opacity: 0; transition: opacity 0.6s; }
+.wm-rays { position: absolute; left: 50%; top: 45%; width: 220vmax; height: 220vmax; translate: -50% -50%; background: repeating-conic-gradient(rgba(255, 255, 255, 0.09) 0 9deg, transparent 9deg 18deg); animation: wmSpin 9s linear infinite; }
+@keyframes wmSpin { to { rotate: 360deg; } }
+.wm-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1.4vmin; text-align: center; padding: 0 16px; }
+.wm-kicker { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: min(7vmin, 34px); color: #fff; animation: popIn 0.4s 0.15s both; }
+.wm-title { display: flex; flex-direction: column; align-items: center; line-height: 0.92; font-weight: 700; font-size: min(19vmin, 110px); color: #fff; text-shadow: 0 0.07em 0 #3f7a3a, 0 0.2em 0.5em rgba(0, 0, 0, 0.5); }
+.wm-title span { animation: wmSlam 0.5s cubic-bezier(0.2, 1.7, 0.4, 1) both; }
+.wm-title span:nth-child(2) { font-size: 0.5em; animation-delay: 0.18s; }
+.wm-title span.one { font-size: 1.45em; color: var(--sun); text-shadow: 0 0.06em 0 #b38f10, 0 0.2em 0.5em rgba(0, 0, 0, 0.5); animation: wmSlam 0.6s 0.4s cubic-bezier(0.2, 1.7, 0.4, 1) both, wmPulse 0.7s 1.1s ease-in-out infinite alternate; }
+@keyframes wmSlam { from { transform: scale(4) rotate(-8deg); opacity: 0; } }
+@keyframes wmPulse { to { scale: 1.1; rotate: -3deg; } }
+.wm-sub { font-size: min(4.6vmin, 20px); color: rgba(255, 255, 255, 0.9); animation: fadeIn 0.5s 1s both; }
+.wordle-big { position: absolute; left: -8px; right: -8px; top: 50%; translate: 0 -50%; z-index: 28; pointer-events: none; padding: 16px 12px; border-radius: 20px; text-align: center; background: linear-gradient(135deg, #6aaa64, #3f7a3a); border: 4px solid #fff; box-shadow: 0 0 0 6px var(--c), 0 16px 40px rgba(0, 0, 0, 0.55); animation: wbIn 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both; rotate: -3deg; }
+.wordle-big.out { opacity: 0; scale: 0.8; transition: opacity 0.45s, scale 0.45s; }
+.wb-title { font-weight: 700; font-size: min(11vmin, 46px); color: #fff; text-shadow: 0 4px 0 rgba(0, 0, 0, 0.3); line-height: 1; }
+.wb-sub { margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; font-size: min(4.4vmin, 17px); color: #fff; }
+@keyframes wbIn { from { transform: scale(0.2) rotate(12deg); opacity: 0; } }

@@ -1,10 +1,10 @@
 // End-of-round show: every found word gets its moment, points fly into a racing scoreboard,
 // words nobody else found get stamped x2. The host can change the speed live for everyone.
 // Then bonuses, heat maps, loot-box badges, and good/bad sport speech bubbles.
-import { makeBoard } from './board.js?v=0dabfef-1795241502';
-import { sfx } from './sfx.js?v=0dabfef-1795241502';
-import { haptic } from './net.js?v=0dabfef-1795241502';
-import { ICONS, UI } from './icons.js?v=0dabfef-1795241502';
+import { makeBoard } from './board.js?v=dc43a80-1795243967';
+import { sfx } from './sfx.js?v=dc43a80-1795243967';
+import { haptic } from './net.js?v=dc43a80-1795243967';
+import { ICONS, UI } from './icons.js?v=dc43a80-1795243967';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');
@@ -109,7 +109,17 @@ export function runReveal(R, opt) {
     const t = document.createElement('i');
     t.style.cssText = `--cum:${col._cum};--pts:${pts};--jx:${((jitter(id, i) - 0.5) * 4).toFixed(1)}px;--rot:${((jitter(id, i + 99) - 0.5) * 3).toFixed(1)}deg`;
     t.className = `${cls}${instant ? '' : ' drop'}`;
-    if (label) t.innerHTML = `<span>${esc(String(label).toUpperCase())}</span>`;
+    if (label) {
+      // Long award names go on two lines (split at the space nearest the middle), then shrink to the piece's width.
+      const text = String(label).toUpperCase();
+      let lines = [text];
+      if (text.length > 11 && text.includes(' ')) {
+        const cuts = [...text].map((c, k) => (c === ' ' ? k : -1)).filter(k => k > 0);
+        const cut = cuts.reduce((a, b) => (Math.abs(b - text.length / 2) < Math.abs(a - text.length / 2) ? b : a));
+        lines = [text.slice(0, cut), text.slice(cut + 1)];
+      }
+      t.innerHTML = `<span style="--chars:${Math.max(...lines.map(x => x.length))};--lines:${lines.length}">${lines.map(esc).join('<br>')}</span>`;
+    }
     col._tiles.appendChild(t);
     col._cum += pts;
     col.style.setProperty('--ct', col._cum);
@@ -179,6 +189,7 @@ export function runReveal(R, opt) {
     if (vias.includes('challenge')) tags.push('<span class="wtag vote">voted in</span>');
     if (vias.includes('leak')) tags.push('<span class="wtag leak">leaked</span>');
     if (vias.includes('copy')) tags.push('<span class="wtag copy">ally copy</span>');
+    if (wd.naughty) tags.push('<span class="wtag naughty">naughty!</span>');
     const finders = wd.finders.map((id, k) => byId[id] ? chipHTML(byId[id], wd.via && wd.via[id] === 'leak' ? 'leaked' : '').replace('style="--c:', `style="--i:${k};--c:`) : '').join('');
     // Every row is always there (tags may be empty) so the letters never move between words.
     card.innerHTML = `<div class="letters">${letters}</div><div class="pts-row"><div class="pts">${pts}</div></div><div class="wtags">${tags.join('')}</div><div class="finders">${finders}</div>`;

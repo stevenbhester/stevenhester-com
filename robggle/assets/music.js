@@ -1,6 +1,6 @@
 // The round music (web/robggle/audio/round.m4a, made by tools/make_music.py): one long loop. It starts up
 // front for a few seconds, then sinks under the game so the sound effects stay on top.
-import { audioOut, isMuted } from './sfx.js?v=0dabfef-1795241502';
+import { audioOut, isMuted } from './sfx.js?v=dc43a80-1795243967';
 
 const FILE = new URL('../audio/round.m4a', import.meta.url);
 const LOUD = 0.85, BED = 0.3;          // up front, then the level it settles at

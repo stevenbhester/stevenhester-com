@@ -1,7 +1,7 @@
 // The letter grid. Interactive boards let you trace a word by dragging across tiles.
 // Chaos events can change a tile's letter (Z's), pull tiles out (bananas) or block them (Set cards).
-import { sfx } from './sfx.js?v=0dabfef-1795241502';
-import { haptic } from './net.js?v=0dabfef-1795241502';
+import { sfx } from './sfx.js?v=dc43a80-1795243967';
+import { haptic } from './net.js?v=dc43a80-1795243967';
 
 export const tileText = t => (t === 'qu' ? 'Qu' : t.toUpperCase());
 const tileHTML = t => (t === 'qu' ? '<span class="qu">Qu</span>' : t.toUpperCase());
