@@ -1,10 +1,11 @@
 // Robggle client. One file drives three pages: /robggle/ (home), /robggle/game/ (screen), /robggle/join/ (controller).
-import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=5ac4f5c-1795227530';
-import { makeBoard, tileText } from './board.js?v=5ac4f5c-1795227530';
-import { sfx, unlock } from './sfx.js?v=5ac4f5c-1795227530';
-import { runReveal, chipHTML } from './reveal.js?v=5ac4f5c-1795227530';
-import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=5ac4f5c-1795227530';
-import { icon } from './icons.js?v=5ac4f5c-1795227530';
+import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=0dabfef-1795241502';
+import { makeBoard, tileText } from './board.js?v=0dabfef-1795241502';
+import { sfx, unlock, audioReady } from './sfx.js?v=0dabfef-1795241502';
+import { runReveal, chipHTML } from './reveal.js?v=0dabfef-1795241502';
+import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=0dabfef-1795241502';
+import { icon } from './icons.js?v=0dabfef-1795241502';
+import { startMusic, stopMusic, preloadMusic } from './music.js?v=0dabfef-1795241502';
 
 const MODE = document.body.dataset.mode; // home | screen | join
 const $root = document.getElementById('root');
@@ -170,6 +171,10 @@ function onMsg(m) {
     case 'wordResult': wordResult(m); break;
     case 'ally': allyWord(m); break;
     case 'tip': S.chaos && S.chaos.tip(m); break;
+    case 'launch': S.chaos && S.chaos.launch(m); break;
+    case 'point': showPoint(m); break;
+    case 'wordle': S.chaos && S.chaos.wordleMark(m); break;
+    case 'wordleWin': case 'wordleEnd': S.chaos && S.chaos.wordleOver(m); screenWordle(m); break;
     case 'bridge': screenBridge(m); break;
     case 'challengeAck': if (S.play && S.play.fb) S.play.fb.textContent = `Challenge filed: ${m.w.toUpperCase()} goes to a vote after the round`; break;
     case 'bananaWin': {
@@ -281,7 +286,9 @@ function renderHome() {
 }
 
 // ---------------- LOBBY ----------------
-const CHAOS_LIST = ['sam', 'sleepover', 'robbert', 'set', 'leak', 'banana'];
+const CHAOS_LIST = ['sam', 'sleepover', 'robbert', 'set', 'leak', 'banana', 'monster', 'swap', 'climb', 'launch', 'wordle'];
+// These lean on each player's own words, so they sit out Pass the Pen.
+const COOP_SKIP = ['leak', 'climb', 'launch'];
 const BOT_LEVELS = [
   { key: 'tara', name: 'Tara', label: 'Very easy', pips: 1, color: '#3ee0b0' },
   { key: 'max', name: 'Max', label: 'Easy', pips: 2, color: '#5ab0ff' },
@@ -327,15 +334,16 @@ function settingsHTML() {
       s.mode === 'coop' ? `<span class="info-chip">${icon('clock', 'sm')}${s.penTime}s turns</span>` : `<span class="info-chip">${icon('clock', 'sm')}${fmtTime(s.time)}</span>`,
       s.handicap && s.mode !== 'coop' ? `<span class="info-chip mint">${icon('flag', 'sm')}Handicap</span>` : '',
       s.funAwards && s.mode !== 'coop' ? `<span class="info-chip mint">${icon('star', 'sm')}For-fun awards</span>` : '',
+      s.noGuess ? `<span class="info-chip hot">${icon('book', 'sm')}Thou Shalt Not Guess</span>` : '',
       s.chaos ? `<span class="info-chip hot">${icon('bolt', 'sm')}Family Chaos</span>` : '',
     ].join('');
-    const chaosList = s.chaos ? `<div class="chaos-chips">${types.filter(t => s.mode !== 'coop' || t !== 'leak').map(t => `<span class="chaos-chip" style="--c:${INFO[t].color}">${icon(t, 'sm')}${esc(INFO[t].title)}</span>`).join('')}</div>` : '';
+    const chaosList = s.chaos ? `<div class="chaos-chips">${types.filter(t => INFO[t] && (s.mode !== 'coop' || !COOP_SKIP.includes(t))).map(t => `<span class="chaos-chip" style="--c:${INFO[t].color}">${icon(t, 'sm')}${esc(INFO[t].title)}</span>`).join('')}</div>` : '';
     return `<div class="info-chips">${chips}</div>${chaosList}`;
   }
   const seg = (key, opts) => `<div class="seg" data-key="${key}">${opts.map(([v, l]) => `<button data-v="${v}" class="${+s[key] === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
   const coop = s.mode === 'coop';
   const modePick = `<div class="mode-pick">${MODES.map(m => `<button class="mode-card ${(s.mode || 'versus') === m.key ? 'on' : ''}" data-mode="${m.key}"><span class="mode-ic">${icon(m.icon)}</span><b>${m.title}</b><small>${m.desc}</small></button>`).join('')}</div>`;
-  const chaosGrid = s.chaos ? `<div class="chaos-grid">${CHAOS_LIST.filter(t => !coop || t !== 'leak').map(t => {
+  const chaosGrid = s.chaos ? `<div class="chaos-grid">${CHAOS_LIST.filter(t => !coop || !COOP_SKIP.includes(t)).map(t => {
     const on = types.includes(t);
     return `<button class="chaos-pick ${on ? 'on' : ''}" data-chaos="${t}" style="--c:${INFO[t].color}" aria-pressed="${on}">
       <span class="chaos-pick-ic">${icon(t)}</span><b>${esc(INFO[t].title)}</b><small>${esc(INFO[t].blurb)}</small><span class="tick">${icon(on ? 'check' : 'x', 'sm')}</span></button>`;
@@ -351,6 +359,7 @@ function settingsHTML() {
     <div class="divider"></div>
     ${coop ? '' : toggleHTML('handicap', !!s.handicap, 'Handicap', 'Golf-style: after a couple of rounds, whoever usually trails gets bonus strokes.', 'flag')}
     ${coop ? '' : toggleHTML('funAwards', !!s.funAwards, 'For-fun awards', 'Silly bonus categories after every round, each worth real points. Totally unfair, on purpose.', 'star')}
+    ${toggleHTML('noGuess', !!s.noGuess, 'Thou Shalt Not Guess', 'Two wrong words in a row and you sit out for 5 seconds. Nuh-uh-uh!', 'book')}
     ${toggleHTML('chaos', !!s.chaos, 'Family Chaos', 'Surprise events from the family drop in mid-round.', 'bolt')}
     ${chaosGrid}
   </div>`;
@@ -476,6 +485,7 @@ function qrSVG(text) {
 }
 
 function renderScreenLobby() {
+  soundPrompt();
   const url = joinURL(S.code);
   const shown = url.replace(/^https?:\/\//, '').replace(/\?c=.*/, '');
   const s = S.st.settings;
@@ -541,10 +551,12 @@ function startRound(r) {
   S.chaos && S.chaos.destroy();
   S.chaos = null;
   S.round = r;
+  scheduleMusic(r);
   S.mine = new Map(r.mine.map(x => [x.w, { pts: x.pts, via: x.via, from: x.from }]));
   S.ally = new Map(r.allyWords.map(a => [a.w, a]));
   S.rejected = new Map((r.rejected || []).map(x => [x.w, { challenged: x.challenged, challengeable: true }]));
   S.pending = new Map();
+  clearLock();
   S.hashes = new Set([...r.hashes, ...(r.custom || [])]);
   S.bananaCounts = r.bananaCounts || {};
   S.bananaSplit = r.bananaSplit || [];
@@ -555,6 +567,7 @@ function startRound(r) {
   S.coopEndReason = null;
   S.view = 'play';
   if (MODE === 'screen') renderScreenPlay(); else renderPlay();
+  if (r.lock > 0) lockOut(r.lock);
   S.chaos = new Chaos({
     round: r, board: S.play.board, mode: MODE === 'screen' ? 'tv' : 'phone',
     host: S.play.boardHost, hud: S.play.chaosHud, me: S.you && S.you.id,
@@ -572,7 +585,7 @@ function pointsFor(w) { const L = w.length; return L <= 4 ? 1 : L === 5 ? 2 : L 
 function scheduleCountdown() {
   const r = S.round;
   const left = r.startAt - S.conn.now();
-  if (left <= 0) { S.play.board.enabled = MODE !== 'screen' && (!S.coop || (S.pen && S.pen.holder === S.you.id)); return; }
+  if (left <= 0) { S.play.board.enabled = MODE !== 'screen' && !locked() && (!S.coop || (S.pen && S.pen.holder === S.you.id)); return; }
   const box = document.createElement('div');
   box.className = 'countdown';
   document.body.appendChild(box);
@@ -584,7 +597,7 @@ function scheduleCountdown() {
   setTimeout(() => {
     show('GO');
     S.play.board.reveal();
-    S.play.board.enabled = MODE !== 'screen' && (!S.coop || (S.pen && S.pen.holder === S.you.id));
+    S.play.board.enabled = MODE !== 'screen' && !locked() && (!S.coop || (S.pen && S.pen.holder === S.you.id));
     haptic('success');
     setTimeout(() => box.remove(), 700);
   }, left);
@@ -618,8 +631,20 @@ function tickClock() {
   step();
 }
 
+// Music plays on the TV, or on phones when there's no TV in the game (six phones playing it would be a lot).
+function scheduleMusic(r) {
+  clearTimeout(S.musicTimer);
+  stopMusic(0.3);
+  const tvHere = S.st && S.st.members.some(m => m.role === 'screen' && m.connected);
+  if (MODE !== 'screen' && tvHere) return;
+  preloadMusic();
+  S.musicTimer = setTimeout(() => { if (S.round === r && !S.ended) startMusic(); }, Math.max(0, r.startAt - S.conn.now()));
+}
+
 function endLocal() {
   S.ended = true;
+  clearTimeout(S.musicTimer);
+  stopMusic(1.2);
   sfx.buzzer();
   haptic('error');
   S.chaos && S.chaos.destroy();
@@ -651,6 +676,7 @@ function renderPlay() {
     onWord: (w, path) => submit(w, path),
   });
   board.enabled = false;
+  wirePointing(board);
   const host = $root.querySelector('#boardHost');
   host.appendChild(board.el);
   S.play = {
@@ -689,9 +715,19 @@ function submit(w, path) {
   if (w.length < 2) return board.clear();
   const rule = S.chaos && S.chaos.rule(w, msIntoRound());
   if (rule) { board.result('no'); fb.textContent = rule; sfx.bad(); haptic('error'); S.conn.send({ t: 'word', w, path }); return; }
-  if (w.length < r.minLen) { board.result('no'); fb.textContent = `Too short (${r.minLen}+ letters)`; sfx.bad(); haptic('error'); return; }
-  if (S.mine.has(w) || S.pending.has(w)) { board.result('dupe'); fb.textContent = 'Already got that one'; sfx.dupe(); haptic('warning'); return; }
-  if (S.coop && S.team.has(w)) { board.result('dupe'); fb.textContent = 'The team already has that one'; sfx.dupe(); haptic('warning'); return; }
+  const robbertNow = S.chaos && S.chaos.activeOf('robbert', msIntoRound());
+  if (w.length < r.minLen && !(robbertNow && w.length === 3)) { board.result('no'); fb.textContent = `Too short (${r.minLen}+ letters)`; sfx.bad(); haptic('error'); return; }
+  if (S.mine.has(w) || S.pending.has(w)) {
+    // During G-ma's Wordle a word you already have still works as a guess.
+    const guess = S.chaos && S.chaos.isActive('wordle') && S.mine.has(w);
+    if (guess) S.conn.send({ t: 'word', w, path });
+    board.result('dupe'); fb.textContent = guess ? 'Already yours, but it counts as a guess' : 'Already got that one'; sfx.dupe(); haptic('warning'); return;
+  }
+  if (S.coop && S.team.has(w)) {
+    const guess = S.chaos && S.chaos.isActive('wordle');
+    if (guess) S.conn.send({ t: 'word', w, path });
+    board.result('dupe'); fb.textContent = guess ? 'The team has it, but it counts as a guess' : 'The team already has that one'; sfx.dupe(); haptic('warning'); return;
+  }
   const letters = board.letters();
   const changed = path.some(i => letters[i] !== r.tiles[i]);
   const known = S.hashes.has(fnv(r.salt + w));
@@ -707,6 +743,7 @@ function submit(w, path) {
     fb.textContent = ally ? `Copied from ${member(ally.by)?.name || 'your ally'}` : pointsFor(w) >= 3 ? 'Nice one!' : '';
     floatText(`+${pointsFor(w)}`);
     if (bonus) bridgeReaction(bonus);
+    S.chaos && S.chaos.wordUsed(path);
     S.play.lastNew = w;
     renderWords();
     updateScore();
@@ -727,8 +764,76 @@ function submit(w, path) {
   renderWords();
 }
 
+// ---------------- THOU SHALT NOT GUESS ----------------
+// Two wrong words in a row (the server counts) and the board locks for a few seconds, with a wagging finger.
+const FINGER = `<svg viewBox="0 0 70 96">
+  <rect x="17" y="80" width="40" height="14" rx="4" fill="#5ab0ff" stroke="#2b1650" stroke-width="3.5"/>
+  <path d="M14 50 h12 V14 a7.5 7.5 0 0 0 -15 0 V46 Z" fill="#ffe2bd" stroke="#2b1650" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M14.5 24 h8" stroke="#2b1650" stroke-width="2.5" stroke-linecap="round" opacity=".3"/>
+  <path d="M11 48 h15 V44 a6 6 0 0 1 11 0 a6 6 0 0 1 11 0 a6 6 0 0 1 11 2 V68 a14 14 0 0 1 -14 14 H25 a14 14 0 0 1 -14 -14 Z" fill="#ffe2bd" stroke="#2b1650" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M37 46 v9 M48 46 v9" stroke="#2b1650" stroke-width="3" stroke-linecap="round"/>
+  <path d="M16 70 c 8 -8 20 -9 30 -3 c 4 3 2 9 -4 8 l -12 -2" fill="#ffe2bd" stroke="#2b1650" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+const locked = () => S.lockUntil > Date.now();
+function clearLock() {
+  clearTimeout(S.lockTimer); clearInterval(S.lockTick);
+  S.lockUntil = 0;
+  document.querySelectorAll('.nuhuh').forEach(x => x.remove());
+}
+function lockOut(ms) {
+  if (!S.play || MODE === 'screen' || !(ms > 0) || S.ended) return;
+  clearLock();
+  S.lockUntil = Date.now() + ms;
+  const b = S.play.board;
+  clearTimeout(b._t);
+  b.enabled = false;
+  b.clear();
+  const el = document.createElement('div');
+  el.className = 'nuhuh';
+  el.innerHTML = `<div class="nuhuh-hand">${FINGER}</div><b>Nuh-uh-uh!</b><span>No guessing. Back in <i></i></span>`;
+  S.play.boardHost.appendChild(el);
+  S.play.fb.textContent = 'Two wrong in a row: time-out!';
+  sfx.nuhuh();
+  haptic('error');
+  const tick = () => { el.querySelector('i').textContent = Math.max(1, Math.ceil((S.lockUntil - Date.now()) / 1000)); };
+  tick();
+  S.lockTick = setInterval(tick, 200);
+  S.lockTimer = setTimeout(() => {
+    clearLock();
+    if (S.play && !S.ended) S.play.board.enabled = S.coop ? !!(S.pen && S.you && S.pen.holder === S.you.id) : true;
+  }, ms);
+}
+
+// ---------------- POINTING AT A LETTER (PASS THE PEN) ----------------
+// Anyone without the pen can hold a letter for a moment: it glows in their color on every screen.
+function wirePointing(board) {
+  let timer = null, start = null;
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  board.el.addEventListener('pointerdown', e => {
+    if (!S.coop || board.enabled || S.ended || !S.round || S.conn.now() < S.round.startAt) return;
+    const t = e.target.closest && e.target.closest('.tile');
+    if (!t) return;
+    start = [e.clientX, e.clientY];
+    cancel();
+    timer = setTimeout(() => { timer = null; S.conn.send({ t: 'point', tile: +t.dataset.i }); haptic('tick'); }, 350);
+  });
+  board.el.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - start[0], e.clientY - start[1]) > 14) cancel(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => board.el.addEventListener(n, cancel));
+}
+function showPoint(m) {
+  if (!S.play || S.view !== 'play' || S.ended) return;
+  const p = member(m.id);
+  if (!p) return;
+  S.play.board.point(m.tile, p.id, p.color, (p.name || '?').trim().charAt(0).toUpperCase() || '?');
+  const iHoldThePen = S.you && S.pen && S.pen.holder === S.you.id;
+  if (MODE === 'screen' || iHoldThePen) sfx.point();
+  if (iHoldThePen) haptic('tick');
+}
+
 function wordResult(m) {
   if (!S.play) return;
+  if (m.lock > 0 && !locked()) lockOut(m.lock);
+  if (m.reason === 'locked') return;
   const board = S.play.board;
   const pend = S.pending.get(m.w);
   S.pending.delete(m.w);
@@ -739,7 +844,8 @@ function wordResult(m) {
       board.result('ok');
       sfx.ok(m.w.length);
       haptic('success');
-      S.play.fb.textContent = pend ? `${m.w.toUpperCase()} counts. Sweet dreams!` : '';
+      S.play.fb.textContent = pend ? `${m.w.toUpperCase()} counts${m.w.includes('z') ? '. Sweet dreams!' : '!'}` : '';
+      if (pend && S.chaos) S.chaos.wordUsed(pend.path);
       floatText(`+${m.pts - (m.bonus || 0)}`);
       if (m.bonus) bridgeReaction(m.bonus);
       S.play.lastNew = m.w;
@@ -752,7 +858,7 @@ function wordResult(m) {
   }
   if (m.reason === 'dupe') return; // already counted (e.g. resent after a reconnect)
   const msgs = {
-    time: 'came in after the buzzer', robbert: "isn't 3 letters (Robbert Mode!)", banana: 'used a tile that went to your banana',
+    time: 'came in after the buzzer', robbert: "isn't 3 letters (Robbert Mode!)", banana: 'used a tile that went to your banana', launch: 'used a letter that Jess launched into space',
     path: "didn't match the board", short: 'is too short', bad: "isn't in our dictionary",
     notyou: "didn't count: someone else has the pen", teamdupe: 'is already on the team list',
   };
@@ -764,6 +870,7 @@ function wordResult(m) {
   if (S.mine.has(m.w)) { S.mine.delete(m.w); }
   if (pend) { board.result('no'); sfx.bad(); }
   if (pend || m.reason !== 'robbert') S.play.fb.textContent = `${m.w.toUpperCase()} ${msgs[m.reason] || "didn't count"}`;
+  if (m.lock > 0) S.play.fb.textContent = 'Two wrong in a row. Time-out!';
   renderWords(); updateScore();
 }
 
@@ -860,7 +967,7 @@ function penUpdate(m, quiet) {
   if (!S.play || !S.round || S.ended) return;
   const mine = S.you && m.holder === S.you.id;
   const started = S.conn.now() >= S.round.startAt;
-  if (MODE !== 'screen') S.play.board.enabled = mine && started;
+  if (MODE !== 'screen') S.play.board.enabled = mine && started && !locked();
   if (prev && prev.turnNo !== m.turnNo && !quiet) {
     if (mine) { sfx.solo(); haptic('success'); penStamp('Your pen!'); } else sfx.whoosh();
     if (MODE !== 'screen' && !mine) S.play.board.clear();
@@ -887,7 +994,7 @@ function renderPen() {
   const strikes = S.pen.dryTurns ? `<span class="strike">${S.pen.dryTurns === 1 ? 'One quiet turn: one more and the game ends' : ''}</span>` : '';
   el.innerHTML = `<div class="pen-banner ${mine ? 'mine' : ''}" style="--c:${holder ? holder.color : 'var(--sun)'}">
       ${holder ? chipHTML(holder) : ''}
-      <div class="grow"><b>${mine ? 'You have the pen!' : `${esc(holder ? holder.name : 'Someone')} has the pen`}</b><small>${mine ? 'Trace what everyone calls out' : 'Spot words and call them out!'}</small></div>
+      <div class="grow"><b>${mine ? 'You have the pen!' : `${esc(holder ? holder.name : 'Someone')} has the pen`}</b><small>${mine ? 'Trace what everyone calls out' : 'Call out words. Hold a letter to point at it!'}</small></div>
       ${mine ? `<button class="btn small ghost" id="passPen">Pass</button>` : ''}
     </div>
     <div class="dry-meter"><i id="dryBar"></i><span id="dryText"></span></div>${strikes}`;
@@ -928,18 +1035,20 @@ function coopWord(m) {
 
 function renderScreenPlay() {
   const r = S.round;
+  soundPrompt();
+  document.getElementById('scoreToasts')?.remove();
   $root.innerHTML = `<div class="screen">
     <div class="left">
       <div class="row" style="width:min(80vmin,100%)"><div class="timer grow" id="timer"><i id="bar"></i></div><span class="clock" id="clock"></span></div>
       <div class="board-wrap board-host" id="boardHost"></div>
       <div class="muted" style="font-size:2.4vmin">${r.size}×${r.size} · words of ${r.minLen}+ letters · join late at ${esc(joinURL(S.code).replace(/^https?:\/\//, ''))}</div>
     </div>
-    <div class="side"><div class="card stack"><h3>${S.coop ? 'Pass the Pen' : 'Words found'}</h3><div id="counts" class="stack"></div></div><div id="bananaPanel"></div></div>
+    <div class="side"><div class="chaos-hud tv" id="chaosHud"></div><div class="card stack"><h3>${S.coop ? 'Pass the Pen' : 'Words found'}</h3><div id="counts" class="stack"></div></div><div id="bananaPanel"></div></div>
   </div>`;
   const board = makeBoard(r.tiles, r.size, { blank: r.startAt > S.conn.now() });
   const host = $root.querySelector('#boardHost');
   host.appendChild(board.el);
-  S.play = { board, boardHost: host, chaosHud: null, bar: $root.querySelector('#bar'), clock: $root.querySelector('#clock'), timer: $root.querySelector('#timer'), countsEl: $root.querySelector('#counts'), bananaEl: $root.querySelector('#bananaPanel'), shown: {} };
+  S.play = { board, boardHost: host, chaosHud: $root.querySelector('#chaosHud'), bar: $root.querySelector('#bar'), clock: $root.querySelector('#clock'), timer: $root.querySelector('#timer'), countsEl: $root.querySelector('#counts'), bananaEl: $root.querySelector('#bananaPanel'), shown: {} };
   updatePlaySide();
   if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(() => {});
 }
@@ -968,7 +1077,7 @@ function updatePlaySide(bump) {
     const split = (S.bananaSplit || []).includes(p.id) ? '<span class="split-badge small">Banana Split</span>' : '';
     return `<div class="screen-player" data-id="${p.id}" ${a ? `style="box-shadow:inset 4px 0 0 ${a.color}"` : ''}>${chipHTML(p, p.connected ? '' : 'off')}<span class="name">${esc(p.name)}${a ? `<br><span class="muted small" style="color:${a.color}">${esc(a.name)}</span>` : ''}${split}</span><span class="count ${changed ? 'bump' : ''}">${n}</span></div>`;
   }).join('');
-  if (bump) ps.forEach(p => { if (S.play.shown[p.id] !== (counts[p.id] || 0) && S.play.shown[p.id] !== undefined) sfx.blip(Math.min(11, counts[p.id] || 0)); });
+  if (bump) ps.forEach(p => { const n = counts[p.id] || 0, was = S.play.shown[p.id]; if (was !== undefined && n > was) { sfx.ding(n); scoreToast(p, n); } });
   ps.forEach(p => { S.play.shown[p.id] = counts[p.id] || 0; });
   renderBananaPanel();
 }
@@ -992,11 +1101,51 @@ function renderBananaPanel() {
   el.querySelectorAll('.banana-mini').forEach(b => setBananaFill(b, +b.dataset.n, full));
 }
 
+// The TV pops a little toast (with a ding) every time somebody scores, so you feel everyone else finding words.
+const TOAST_LINES = ['found one!', 'scores!', 'got another!', 'strikes again!', 'is cooking!', 'keeps going!'];
+function scoreToast(p, n) {
+  let box = document.getElementById('scoreToasts');
+  if (!box) { box = document.createElement('div'); box.id = 'scoreToasts'; box.className = 'score-toasts'; document.body.appendChild(box); }
+  const t = document.createElement('div');
+  t.className = 'score-toast';
+  t.style.setProperty('--c', p.color);
+  t.innerHTML = `${chipHTML(p, 'tiny')}<b>${esc(p.name)}</b><span>${n === 1 ? 'found a word!' : TOAST_LINES[n % TOAST_LINES.length]}</span><em>${n}</em>`;
+  box.prepend(t);
+  [...box.children].slice(4).forEach(x => x.remove());
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 2200);
+}
+
+// Browsers only allow sound after a click on the page, and nobody clicks the TV, so ask once.
+function soundPrompt() {
+  if (MODE !== 'screen' || audioReady() || document.getElementById('soundPrompt')) return;
+  const b = document.createElement('button');
+  b.id = 'soundPrompt';
+  b.className = 'sound-prompt';
+  b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4Z" fill="currentColor" fill-opacity=".25"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>Click anywhere to turn on sound`;
+  document.body.appendChild(b);
+  const gone = () => { unlock(); setTimeout(() => { if (audioReady()) b.remove(); }, 200); };
+  addEventListener('pointerdown', gone);
+  addEventListener('keydown', gone);
+}
+
+// The TV says who cracked G-ma's Wordle (phones show it where their blanks were).
+function screenWordle(m) {
+  if (MODE !== 'screen' || !S.play || S.view !== 'play') return;
+  const p = m.id && member(m.id);
+  sfx.fanfare();
+  const t = document.createElement('div');
+  t.className = 'tv-callout pop-in';
+  t.style.setProperty('--c', p ? p.color : '#6aaa64');
+  t.innerHTML = m.id ? `${p ? chipHTML(p) : ''}<span><b>${esc(p ? p.name : 'Someone')}</b> got the Wordle in ${m.n}! <em>${esc(m.word.toUpperCase())}</em></span>` : `<span>Nobody got G-ma's Wordle. It was <em>${esc(m.word.toUpperCase())}</em></span>`;
+  S.play.boardHost.appendChild(t);
+  setTimeout(() => t.remove(), 4500);
+}
+
 function screenBridge(m) {
   if (MODE !== 'screen' || !S.play || S.view !== 'play') return;
   const p = member(m.id);
   S.play.board.sweep(m.kind === 'both' ? 'var(--pink)' : 'var(--sun)');
-  sfx.bridge();
+  sfx.bridgeBig();
   const t = document.createElement('div');
   t.className = 'tv-callout pop-in';
   t.style.setProperty('--c', p ? p.color : 'var(--sun)');
@@ -1075,6 +1224,8 @@ function closeVote() {
 
 // ---------------- RESULTS ----------------
 function showResults(R) {
+  clearTimeout(S.musicTimer);
+  stopMusic(1.2);
   if (S.reveal && S.reveal.no === R.no) return;
   closeReveal();
   closeVote();
@@ -1122,7 +1273,7 @@ window.addEventListener('robggle:open', e => {
   if (!want) return;
   try { sessionStorage.setItem('rb:intro', '1'); } catch {}
   const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
-  import('./intro.js?v=5ac4f5c-1795227530').then(m => m.playIntro({ freezeAt })).catch(() => {});
+  import('./intro.js?v=0dabfef-1795241502').then(m => m.playIntro({ freezeAt })).catch(() => {});
 })();
 
 if (MODE === 'home') renderLanding();

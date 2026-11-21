@@ -1,10 +1,10 @@
 // End-of-round show: every found word gets its moment, points fly into a racing scoreboard,
 // words nobody else found get stamped x2. The host can change the speed live for everyone.
 // Then bonuses, heat maps, loot-box badges, and good/bad sport speech bubbles.
-import { makeBoard } from './board.js?v=5ac4f5c-1795227530';
-import { sfx } from './sfx.js?v=5ac4f5c-1795227530';
-import { haptic } from './net.js?v=5ac4f5c-1795227530';
-import { ICONS, UI } from './icons.js?v=5ac4f5c-1795227530';
+import { makeBoard } from './board.js?v=0dabfef-1795241502';
+import { sfx } from './sfx.js?v=0dabfef-1795241502';
+import { haptic } from './net.js?v=0dabfef-1795241502';
+import { ICONS, UI } from './icons.js?v=0dabfef-1795241502';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');
@@ -64,15 +64,15 @@ export function runReveal(R, opt) {
   renderCtl();
 
   // ---------- scoreboard: a tower of letter tiles, seen edge-on, for each player ----------
-  // Everyone keeps their spot; towers grow as tiles drop in, scaled so the tallest fits.
+  // Towers are scaled to whoever is ahead right now (at least 10 points' worth), so as someone pulls away
+  // you watch the gap open up. Every word is its own piece, as thick as its points, with the word on its edge.
   const running = Object.fromEntries(players.map(p => [p.id, 0]));
-  const maxScore = Math.max(1, ...players.map(p => p.round));
   const TOWER_H = tv ? Math.max(160, Math.min(380, innerHeight * 0.5)) : Math.max(90, Math.min(140, innerHeight - 640));
-  // Tiles are at least 3px thick; on big scores each tile stands for several points so the tallest tower fits.
-  const unit = Math.max(1, Math.ceil(maxScore / (TOWER_H / 3)));
-  const sliceH = Math.min(9, TOWER_H / Math.ceil(maxScore / unit));
+  const MIN_TOP = 10;
   scores.className = 'towers';
   scores.style.setProperty('--th', `${TOWER_H}px`);
+  const rescale = () => scores.style.setProperty('--ppx', `${(TOWER_H / Math.max(MIN_TOP, ...Object.values(running))).toFixed(3)}px`);
+  rescale();
   const rows = {};
   const jitter = (id, i) => { const h = Math.sin(i * 12.9898 + id.charCodeAt(0) * 78.233) * 43758.5453; return h - Math.floor(h); };
   for (const p of players) {
@@ -86,31 +86,36 @@ export function runReveal(R, opt) {
     rows[p.id] = col;
     col._tiles = col.querySelector('.tiles');
     col._sc = col.querySelector('.tsc');
-    col._n = 0;
+    col._cum = 0;
   }
-  // Drops `n` tiles onto a tower (or lays them straight in when `instant`).
-  function addTiles(id, n, { instant = false, cls = '' } = {}) {
-    const col = rows[id];
-    if (!col || n <= 0) return;
-    const frag = document.createDocumentFragment();
-    for (let k = 0; k < n; k++) {
-      const i = col._n++;
-      const t = document.createElement('i');
-      const jx = (jitter(id, i) - 0.5) * 6, rot = (jitter(id, i + 99) - 0.5) * 4;
-      t.style.cssText = `bottom:${(i * sliceH).toFixed(1)}px;height:${Math.max(1.2, sliceH - 0.6).toFixed(1)}px;--jx:${jx.toFixed(1)}px;--rot:${rot.toFixed(1)}deg${instant ? '' : `;animation-delay:${k * 45}ms`}`;
-      if (cls) t.className = cls;
-      if (!instant) t.classList.add('drop');
-      frag.appendChild(t);
-    }
-    col._tiles.appendChild(frag);
+  // Every scoring item, in the order the show plays them, so a skip can lay in whatever hadn't landed yet.
+  const order = R.words.slice().sort((a, b) => (a.solo - b.solo) || a.w.length - b.w.length || b.finders.length - a.finders.length || a.w.localeCompare(b.w));
+  const laid = new Set();
+  function itemsFor(id) {
+    const p = byId[id];
+    const out = [];
+    for (const wd of order) if (wd.finders.includes(id)) out.push({ key: `w:${wd.w}:${id}`, pts: wd.pts + ((wd.bonus || {})[id] || 0), label: wd.w, cls: wd.solo ? 'solo' : '' });
+    if (p.bananaBonus) out.push({ key: `banana:${id}`, pts: p.bananaBonus, label: 'banana', cls: 'solo' });
+    if (p.strokes) out.push({ key: `stroke:${id}`, pts: p.strokes, label: 'handicap', cls: 'stroke' });
+    (R.fun || []).forEach((a, k) => { if (a.winners.some(w => w.id === id)) out.push({ key: `fun:${k}:${id}`, pts: a.pts, label: a.title, cls: 'fun' }); });
+    return out;
   }
-  function setScore(id, v, opts = {}) {
+  // Adds one piece to a tower and its points to the score.
+  function score(id, pts, label, { instant = false, cls = '', key } = {}) {
     const col = rows[id];
-    if (!col) return;
-    running[id] = v;
-    addTiles(id, Math.max(v > 0 ? 1 : 0, Math.round(v / unit)) - col._n, opts);
-    col._sc.textContent = v;
-    col.style.setProperty('--h', `${(col._n * sliceH).toFixed(1)}px`);
+    if (!col || pts <= 0 || (key && laid.has(key))) return;
+    if (key) laid.add(key);
+    const i = col._tiles.children.length;
+    const t = document.createElement('i');
+    t.style.cssText = `--cum:${col._cum};--pts:${pts};--jx:${((jitter(id, i) - 0.5) * 4).toFixed(1)}px;--rot:${((jitter(id, i + 99) - 0.5) * 3).toFixed(1)}deg`;
+    t.className = `${cls}${instant ? '' : ' drop'}`;
+    if (label) t.innerHTML = `<span>${esc(String(label).toUpperCase())}</span>`;
+    col._tiles.appendChild(t);
+    col._cum += pts;
+    col.style.setProperty('--ct', col._cum);
+    running[id] += pts;
+    col._sc.textContent = running[id];
+    rescale();
     col.classList.remove('hit'); void col.offsetWidth; col.classList.add('hit');
   }
   const ranked = () => players.slice().sort((a, b) => running[b.id] - running[a.id] || a.name.localeCompare(b.name));
@@ -195,7 +200,7 @@ export function runReveal(R, opt) {
     items.slice(5).forEach(el => el.remove());
   }
 
-  function fly(fromEl, id, amount, cls = '') {
+  function fly(fromEl, id, amount, cls = '', label = '', key = '') {
     const row = rows[id];
     if (!row || !fromEl) return;
     const from = fromEl.getBoundingClientRect();
@@ -211,7 +216,7 @@ export function runReveal(R, opt) {
       f.style.transform = `translate(${to.left - from.left - from.width / 2 + 16}px, ${to.top - from.top}px) scale(0.7)`;
       f.style.opacity = '0.2';
     }));
-    setTimeout(() => { f.remove(); if (!done) setScore(id, running[id] + amount, { cls }); }, 560 / Math.min(pace(), 2));
+    setTimeout(() => { f.remove(); if (!done) score(id, amount, label, { cls, key }); }, 560 / Math.min(pace(), 2));
   }
 
   function soloStamp(wd, dur, card) {
@@ -224,8 +229,8 @@ export function runReveal(R, opt) {
     const s = document.createElement('div');
     s.className = 'stamp';
     s.innerHTML = `${who}<small>×${R.soloMult} points</small>`;
-    // On the TV it sits in the corner; on phones it lands beside the points, in a row that's always there.
-    (tv || !card ? stage : card.querySelector('.pts-row')).appendChild(s);
+    // It lands beside the points, in a row that's always there, so it never covers the word.
+    (card ? card.querySelector('.pts-row') : stage).appendChild(s);
     burst(stage, 26);
     sfx.solo();
     if (wd.finders.includes(me)) haptic('success');
@@ -245,7 +250,7 @@ export function runReveal(R, opt) {
     await Promise.race([wait(1100), skipped]);
     // Words several people found come first, then the ones only one person (or alliance) found,
     // each group short to long, so the x2 stamps build to the end.
-    const words = R.words.slice().sort((a, b) => (a.solo - b.solo) || a.w.length - b.w.length || b.finders.length - a.finders.length || a.w.localeCompare(b.w));
+    const words = order;
     if (!words.length) {
       stage.innerHTML = `<div class="title-stamp" style="font-size:32px">Nobody found a single word?!</div>`;
       await Promise.race([wait(1600), skipped]);
@@ -273,7 +278,7 @@ export function runReveal(R, opt) {
       await Promise.race([wait(lead), skipped]);
       if (done) return;
       beat.forEach((wd, j) => {
-        for (const id of wd.finders) fly(cards[j].querySelector('.pts'), id, wd.pts + ((wd.bonus || {})[id] || 0), wd.solo ? 'solo' : '');
+        for (const id of wd.finders) fly(cards[j].querySelector('.pts'), id, wd.pts + ((wd.bonus || {})[id] || 0), wd.solo ? 'solo' : '', wd.w, `w:${wd.w}:${id}`);
         if (wd.solo) soloStamp(wd, dur, cards[j]);
       });
       await Promise.race([wait(dur - lead), skipped]);
@@ -289,7 +294,7 @@ export function runReveal(R, opt) {
       stage.innerHTML = `<div class="bonus-card pop-in"><div class="bonus-title">Banana Split!</div><div class="muted">Fullest banana: +10% of the round</div><div class="finders">${banana.map(p => chipHTML(p)).join('')}</div></div>`;
       sfx.solo();
       await Promise.race([wait(500), skipped]);
-      banana.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.bananaBonus, 'solo'));
+      banana.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.bananaBonus, 'solo', 'banana', `banana:${p.id}`));
       await Promise.race([wait(1500), skipped]);
     }
     const strokes = players.filter(p => p.strokes);
@@ -297,7 +302,7 @@ export function runReveal(R, opt) {
       stage.innerHTML = `<div class="bonus-card pop-in"><div class="bonus-title">Handicap strokes</div><div class="muted">Golf rules: everyone gets their usual gap back</div><div class="stroke-list">${strokes.map(p => `<div class="row">${chipHTML(p, 'tiny')}<span class="grow">${esc(p.name)}</span><span class="muted small">HCP ${p.hcp}</span><b>+${p.strokes}</b></div>`).join('')}</div></div>`;
       sfx.coin();
       await Promise.race([wait(600), skipped]);
-      strokes.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.strokes, 'stroke'));
+      strokes.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.strokes, 'stroke', 'handicap', `stroke:${p.id}`));
       await Promise.race([wait(1600), skipped]);
     }
     await funAwards();
@@ -342,7 +347,7 @@ export function runReveal(R, opt) {
       setTimeout(() => box.remove(), 600);
       await Promise.race([wait(450), skipped]);
       if (done) return;
-      host.querySelectorAll('.aw-winner').forEach(el => fly(el.querySelector('.aw-pts'), el.dataset.id, a.pts, 'solo'));
+      host.querySelectorAll('.aw-winner').forEach(el => fly(el.querySelector('.aw-pts'), el.dataset.id, a.pts, 'fun', a.title, `fun:${k}:${el.dataset.id}`));
       sfx.coin();
       await Promise.race([wait(1300), skipped]);
     }
@@ -421,7 +426,10 @@ export function runReveal(R, opt) {
     root.classList.add('final-state');
     if (teamBar) { teamBar.remove(); teamBar = null; }
     // Whatever didn't land yet (a skip), lay straight in.
-    for (const p of players) if (running[p.id] !== p.round) setScore(p.id, p.round, { instant: true });
+    for (const p of players) {
+      for (const it of itemsFor(p.id)) score(p.id, it.pts, it.label, { instant: true, cls: it.cls, key: it.key });
+      if (running[p.id] < p.round) score(p.id, p.round - running[p.id], 'bonus', { instant: true });
+    }
     const order = ranked();
     const top = order[0];
     const tied = order.filter(p => p.round === top.round);
@@ -583,6 +591,20 @@ export function runReveal(R, opt) {
       b.className = `bubble above ${kind}`;
       b.innerHTML = textHTML;
       row.appendChild(b);
+      // Keep the whole quote on screen: nudge it down over the tower or in from the edge if it would spill off.
+      b.style.animation = 'none';
+      const r = b.getBoundingClientRect(), pad = 10;
+      b.style.animation = '';
+      let dy = Math.max(0, pad - r.top);
+      const dx = Math.min(0, innerWidth - pad - r.right) + Math.max(0, pad - r.left);
+      // Someone else talking at the same moment: sit just below their bubble instead of on top of it.
+      for (const other of document.querySelectorAll('.reveal .bubble:not(.out)')) {
+        if (other === b) continue;
+        const o = other.getBoundingClientRect();
+        const top = r.top + dy, left = r.left + dx;
+        if (left < o.right && left + r.width > o.left && top < o.bottom && top + r.height > o.top) dy += o.bottom + 8 - top;
+      }
+      if (dy || dx) b.style.transform = `translate(${dx}px, ${dy}px)`;
       setTimeout(() => b.classList.add('out'), 8000);
       setTimeout(() => b.remove(), 8600);
       return;

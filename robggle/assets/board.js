@@ -1,7 +1,7 @@
 // The letter grid. Interactive boards let you trace a word by dragging across tiles.
 // Chaos events can change a tile's letter (Z's), pull tiles out (bananas) or block them (Set cards).
-import { sfx } from './sfx.js?v=5ac4f5c-1795227530';
-import { haptic } from './net.js?v=5ac4f5c-1795227530';
+import { sfx } from './sfx.js?v=0dabfef-1795241502';
+import { haptic } from './net.js?v=0dabfef-1795241502';
 
 export const tileText = t => (t === 'qu' ? 'Qu' : t.toUpperCase());
 const tileHTML = t => (t === 'qu' ? '<span class="qu">Qu</span>' : t.toUpperCase());
@@ -86,6 +86,7 @@ export function makeBoard(tiles, size, opts = {}) {
     el, tileEls, fx, size,
     enabled: !!opts.interactive,
     blocked: null,
+    stacked: false,
     letters: () => cur.slice(),
     original: tiles,
     clear() { el.classList.remove('ok', 'no', 'dupe', 'wait'); setPath([]); },
@@ -98,15 +99,49 @@ export function makeBoard(tiles, size, opts = {}) {
       clearTimeout(api._t);
       if (kind !== 'wait') api._t = setTimeout(() => api.clear(), kind === 'ok' ? 260 : 380);
     },
-    setLetter(i, l) {
+    setLetter(i, l, mark = 'zzz') {
       if (cur[i] === l) return;
       cur[i] = l;
       const t = tileEls[i];
-      t.classList.toggle('zzz', l !== tiles[i]);
+      t.classList.toggle('zzz', l !== tiles[i] && mark === 'zzz');
+      t.classList.toggle('swapped', l !== tiles[i] && mark === 'swapped');
       if (!hidden) {
         t.innerHTML = tileHTML(l);
         flip(t, [{ transform: 'scaleY(0.08)' }, { transform: 'scaleY(1.12)', offset: 0.65 }, { transform: 'none' }], 320);
       }
+    },
+    // Two touching tiles trade places: each slides over the other, and the letters land swapped. `la` is the
+    // letter that ends up at spot `a`. The letters count as swapped from the start of the slide.
+    swapLetters(a, b, la, lb) {
+      cur[a] = la; cur[b] = lb;
+      const ca = centerOf(a), cb = centerOf(b);
+      const dx = cb[0] - ca[0], dy = cb[1] - ca[1];
+      const land = () => {
+        [[a, la], [b, lb]].forEach(([i, l]) => {
+          const t = tileEls[i];
+          if (cur[i] !== l) return; // something newer happened to this tile
+          t.classList.toggle('swapped', l !== tiles[i]);
+          t.classList.remove('zzz');
+          if (!hidden) t.innerHTML = tileHTML(l);
+        });
+      };
+      if (hidden || !ca[0] && !cb[0]) return land();
+      const slide = (t, x, y, up) => {
+        if (t._flip) t._flip.cancel();
+        const an = t.animate([
+          { translate: '0 0', scale: '1' },
+          { translate: `${x / 2}px ${y / 2}px`, scale: up ? '1.22' : '0.86', offset: 0.5 },
+          { translate: `${x}px ${y}px`, scale: '1' },
+        ], { duration: 520, easing: 'ease-in-out' });
+        t._flip = an;
+        return an;
+      };
+      tileEls[a].style.zIndex = 2;
+      slide(tileEls[a], dx, dy, true);
+      slide(tileEls[b], -dx, -dy, false);
+      let done = false;
+      const finish = () => { if (done) return; done = true; tileEls[a].style.zIndex = ''; [a, b].forEach(i => { if (tileEls[i]._flip) { tileEls[i]._flip.cancel(); tileEls[i]._flip = null; } }); land(); };
+      setTimeout(finish, 520);
     },
     setHole(i, on) {
       if (on === holes.has(i)) return;
@@ -177,6 +212,22 @@ export function makeBoard(tiles, size, opts = {}) {
       });
     },
     centerOf,
+    // Someone is pointing at this tile (Pass the Pen): a ring in their color with their initial, for a moment.
+    point(i, who, color, label) {
+      const t = tileEls[i];
+      if (!t) return;
+      fx.querySelectorAll('.point-ring').forEach(x => { if (x.dataset.who === who) x.remove(); });
+      const r = document.createElement('div');
+      r.className = 'point-ring';
+      r.dataset.who = who;
+      r.style.setProperty('--c', color);
+      Object.assign(r.style, { left: `${t.offsetLeft}px`, top: `${t.offsetTop}px`, width: `${t.offsetWidth}px`, height: `${t.offsetHeight}px` });
+      const tag = document.createElement('span');
+      tag.textContent = label;
+      r.appendChild(tag);
+      fx.appendChild(r);
+      setTimeout(() => r.remove(), 2800);
+    },
     // Sleepover moods: 'drowsy' (about to nod off), 'wake' (just woke up) or null.
     mood(i, m) {
       const t = tileEls[i];
@@ -192,6 +243,15 @@ export function makeBoard(tiles, size, opts = {}) {
     let down = false;
     const hitTile = (x, y, loose) => {
       let best = -1, bestD = Infinity;
+      // When tiles are stacked up (Charlie), a taller tile in front covers the ones behind it: the finger
+      // gets the front-most tile whose face it's on.
+      if (api.stacked) {
+        const half = centers.cell * 0.46;
+        for (let i = centers.length - 1; i >= 0; i--) {
+          if (Math.abs(x - centers[i][0]) <= half && Math.abs(y - centers[i][1]) <= half) return i;
+        }
+        return -1;
+      }
       for (let i = 0; i < centers.length; i++) {
         const dx = x - centers[i][0], dy = y - centers[i][1], d = dx * dx + dy * dy;
         if (d < bestD) { bestD = d; best = i; }

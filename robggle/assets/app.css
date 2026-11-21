@@ -235,6 +235,7 @@ h3 { margin: 0; font-size: 17px; color: var(--muted); font-weight: 500; }
 }
 .stamp small { display: block; font-size: 0.6em; }
 .reveal.tv .stamp { font-size: 4vmin; }
+.reveal.tv .pts-row .stamp { position: static; font-size: 2.6vmin; padding: 0.4vmin 1.4vmin; border-width: 0.5vmin; transform: rotate(-3deg); animation-name: stampPhone; }
 @keyframes stamp { from { transform: rotate(30deg) scale(3); opacity: 0; } to { transform: rotate(12deg) scale(1); opacity: 1; } }
 .burst { position: absolute; inset: 0; pointer-events: none; }
 .burst i { position: absolute; left: 50%; top: 45%; width: 10px; height: 10px; border-radius: 3px; background: var(--c); animation: burst 0.8s ease-out forwards; }
@@ -851,17 +852,21 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 
 /* ---- score towers: letter tiles stacked on their edges ---- */
 .towers { display: flex; align-items: flex-end; justify-content: center; gap: 6px; padding-top: 26px; overflow-x: auto; }
-.tcol { flex: 1 1 0; min-width: 44px; max-width: 86px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; position: relative; }
+.tcol { flex: 1 1 0; min-width: 52px; max-width: 112px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; position: relative; }
 .tower { position: relative; width: 100%; height: var(--th); border-bottom: 3px solid rgba(255, 255, 255, 0.18); }
 .tower[style*="--ac"] { border-bottom-color: var(--ac); }
 .tiles { position: absolute; inset: 0; }
-.tiles i { position: absolute; left: 50%; width: 74%; border-radius: 2px; background: linear-gradient(180deg, #fff6e0 0%, #f3dfb6 55%, #d9b97f 100%); box-shadow: inset 0 -1px 0 rgba(120, 80, 30, 0.45); transform: translateX(-50%) translateX(var(--jx)) rotate(var(--rot)); }
+.tiles i { position: absolute; left: 50%; width: 92%; bottom: calc(var(--cum) * var(--ppx)); height: max(1.5px, calc(var(--pts) * var(--ppx) - 0.8px)); transition: bottom 0.45s ease, height 0.45s ease; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 3px; background: linear-gradient(180deg, #fff6e0 0%, #f3dfb6 55%, #d9b97f 100%); box-shadow: inset 0 -1px 0 rgba(120, 80, 30, 0.45); transform: translateX(-50%) translateX(var(--jx)) rotate(var(--rot)); }
 .tiles i:nth-child(7n) { background: linear-gradient(180deg, #fff1d2, #e6cc95); }
 .tiles i.solo { background: linear-gradient(180deg, #fff3a8, #ffd23f 60%, #c9a20a); }
+.tiles i span { font-style: normal; font-weight: 700; font-size: min(11px, calc(var(--pts) * var(--ppx) * 0.72)); line-height: 1; letter-spacing: 0.08em; color: rgba(95, 58, 16, 0.85); white-space: nowrap; text-overflow: clip; }
+.reveal.tv .tiles i span { font-size: min(1.7vmin, calc(var(--pts) * var(--ppx) * 0.72)); }
+.tiles i.fun { background: linear-gradient(180deg, #ffd0df, #ff5c8a 60%, #c23a63); }
+.tiles i.fun span { color: #fff; }
 .tiles i.stroke { background: linear-gradient(180deg, #b9f5e2, #3ee0b0 60%, #1f9c78); }
 .tiles i.drop { animation: tileDrop 0.5s cubic-bezier(0.3, 1.4, 0.55, 1) both; }
 @keyframes tileDrop { from { transform: translateX(-50%) translateY(-110px) rotate(25deg); opacity: 0; } 60% { opacity: 1; } }
-.tower .crown { position: absolute; left: 50%; bottom: calc(var(--h, 0px) + 6px); translate: -50% 0; top: auto; width: 26px; height: 19px; opacity: 0; transition: opacity 0.4s, bottom 0.3s; }
+.tower .crown { position: absolute; left: 50%; bottom: calc(var(--ct, 0) * var(--ppx) + 6px); translate: -50% 0; top: auto; width: 26px; height: 19px; opacity: 0; transition: opacity 0.4s, bottom 0.3s; }
 .tcol.winner .tower .crown { opacity: 1; animation: crown 1.4s 0.4s ease-in-out infinite; }
 .tsc { font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; line-height: 1; margin-top: 3px; }
 .tcol.hit .tsc { animation: bump 0.35s; }
@@ -869,10 +874,10 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .tname .hcp-tag { display: block; margin: 2px auto 0; width: max-content; }
 .reveal.tv .tsc { font-size: 3vmin; }
 .reveal.tv .tname { font-size: 1.8vmin; }
-.reveal.tv .tcol { max-width: 120px; }
-.bubble.above { right: auto; left: 50%; bottom: calc(var(--th) + 40px); translate: -50% 0; max-width: 220px; font-size: 13px; }
+.reveal.tv .tcol { max-width: 170px; }
+.bubble.above { right: auto; left: 50%; bottom: calc(100% - var(--th) + var(--ct, 0) * var(--ppx) + 16px); translate: -50% 0; max-width: 220px; font-size: 13px; }
 .bubble.above::after { right: auto; left: 50%; translate: -50% 0; }
-.reveal.tv .bubble.above { font-size: 2vmin; max-width: 28vw; }
+.reveal.tv .bubble.above { font-size: 2.3vmin; max-width: 30vw; width: max-content; }
 .wordpair { display: flex; gap: 14px; justify-content: center; align-items: flex-start; }
 .wordpair .wordcard .pts { font-size: 20px; }
 .tick-item .ic, .tick-item svg { width: 14px; }
@@ -991,3 +996,107 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .fun-list.tv { margin-bottom: 2vmin; }
 .fun-list.tv .fun-row b { font-size: 2.2vmin; }
 .fun-list.tv .fun-row small { font-size: 1.8vmin; }
+
+/* ---------- TV: score toasts and the sound prompt ---------- */
+.score-toasts { position: fixed; left: 2.5vmin; bottom: 2.5vmin; z-index: 40; display: flex; flex-direction: column; gap: 1vmin; pointer-events: none; }
+.score-toast { display: flex; align-items: center; gap: 1.2vmin; padding: 1vmin 1.8vmin; border-radius: 99px; background: rgba(20, 10, 40, 0.88); border: 0.35vmin solid var(--c); font-size: 2.2vmin; box-shadow: 0 1vmin 3vmin rgba(0, 0, 0, 0.4); animation: toastIn 0.3s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+.score-toast span { color: var(--muted); }
+.score-toast em { font-style: normal; font-weight: 700; color: var(--c); min-width: 2.4vmin; text-align: center; }
+.score-toast.out { animation: toastOut 0.4s forwards; }
+@keyframes toastIn { from { transform: translateX(-30%) scale(0.8); opacity: 0; } }
+@keyframes toastOut { to { transform: translateX(-20%); opacity: 0; } }
+.sound-prompt { position: fixed; right: 2.5vmin; bottom: 2.5vmin; z-index: 60; display: inline-flex; align-items: center; gap: 1vmin; padding: 1vmin 2.2vmin; border-radius: 99px; border: 0; background: var(--sun); color: #3a2a00; font: inherit; font-weight: 700; font-size: 2.2vmin; cursor: pointer; animation: pulse 1.6s ease-in-out infinite; }
+.sound-prompt svg { width: 2.8vmin; height: 2.8vmin; }
+
+/* ================= newer Family Chaos events ================= */
+.chaos-note { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 99px; background: color-mix(in srgb, var(--c, #fff) 22%, transparent); border: 2px solid var(--c, #fff); font-size: 14px; }
+.chaos-note svg { width: 18px; height: 18px; color: var(--c); }
+.chaos-note b { color: var(--c); }
+
+/* ---------- P-pa Monster ---------- */
+.board.monster-on .tile { translate: var(--fx, 0) var(--fy, 0); transition: translate 0.4s cubic-bezier(0.3, 1.5, 0.5, 1), transform 0.12s, background 0.12s, color 0.12s; }
+.board.monster-on .tile:not(.monster) { animation: quiver 0.16s ease-in-out var(--qd, 0ms) infinite alternate; }
+.board.monster-on .tile.sel { animation: none; }
+@keyframes quiver { from { rotate: calc(var(--q, 1deg) * -1); } to { rotate: var(--q, 1deg); } }
+.tile.monster { background: radial-gradient(circle at 50% 35%, #a4f0b0, #58c877 70%); color: #3b0764; border-radius: 30% 30% 24% 24%; box-shadow: 0 var(--edge, 6px) 0 #2f8f4c, 0 calc(var(--edge, 6px) + 4px) 14px rgba(0, 0, 0, 0.45); font-style: italic; -webkit-text-stroke: 0.045em #fff; paint-order: stroke fill; text-shadow: 0.05em 0.07em 0 #1d6b34; animation: monsterBob 0.9s ease-in-out infinite; z-index: 2; }
+.tile.monster.sel { background: var(--hot); }
+@keyframes monsterBob { 0%, 100% { scale: 1 1; } 50% { scale: 1.07 0.95; } }
+.monster-face { position: absolute; pointer-events: none; z-index: 3; transition: left 0.4s cubic-bezier(0.4, 0, 0.3, 1), top 0.4s cubic-bezier(0.4, 0, 0.3, 1); }
+.monster-face svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.monster-face.hop svg { animation: monsterHop 0.45s cubic-bezier(0.3, 1.4, 0.5, 1); }
+@keyframes monsterHop { 0% { transform: translateY(0) scale(1); } 40% { transform: translateY(-45%) scale(1.15, 0.9); } 100% { transform: none; } }
+.monster-face.poof { opacity: 0; scale: 1.6; transition: opacity 0.3s, scale 0.3s; }
+.mon-pupils { animation: monLook 2.2s ease-in-out infinite; }
+@keyframes monLook { 0%, 100% { transform: translate(-3px, 0); } 30% { transform: translate(3px, -1px); } 60% { transform: translate(2px, 3px); } }
+.mon-arm { transform-box: fill-box; }
+.mon-arm.l { transform-origin: 100% 100%; animation: monWave 0.5s ease-in-out infinite alternate; }
+.mon-arm.r { transform-origin: 0% 100%; animation: monWave 0.5s ease-in-out 0.25s infinite alternate-reverse; }
+@keyframes monWave { from { rotate: -12deg; } to { rotate: 14deg; } }
+
+/* ---------- Violet & Orin ---------- */
+.tile.swapped { background: #e3d0ff; color: #3b1a73; box-shadow: 0 var(--edge, 6px) 0 #a77fe6, 0 0 0 3px rgba(201, 160, 255, 0.55); }
+
+/* ---------- Charlie Climbing Count ---------- */
+.board.climbing { z-index: 5; }
+.board.climbing .tile { translate: 0 calc(var(--lvl, 0) * var(--climb-step, 20px) * -1); z-index: var(--z, 0); transition: translate 0.4s cubic-bezier(0.3, 1.6, 0.5, 1), transform 0.12s, background 0.12s, color 0.12s; }
+.board.climbing .tile.tall::before { content: ''; position: absolute; left: 0; right: 0; top: 82%; height: calc(var(--lvl) * var(--climb-step, 20px) + 18% + var(--edge, 6px)); z-index: -1; border-radius: 0 0 12% 12%; background: repeating-linear-gradient(180deg, #e2c58d 0 calc(var(--climb-step, 20px) - 2px), #a9834a calc(var(--climb-step, 20px) - 2px) var(--climb-step, 20px)); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); }
+.board.climbing .tile.tall { box-shadow: 0 2px 0 var(--tile-edge); }
+.board.climbing .tile.sel.tall { box-shadow: 0 2px 0 var(--hot-edge); }
+.board.climbing .tile.grew { animation: grew 0.4s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes grew { 0% { scale: 1 0.8; } 60% { scale: 0.96 1.12; } 100% { scale: 1; } }
+.board.climbing svg.path { z-index: 40; }
+
+/* ---------- Jess's Launchpad ---------- */
+.tile.ignite { animation: ignite 0.09s linear infinite alternate; box-shadow: 0 var(--edge, 6px) 0 #c2410c, 0 calc(var(--edge, 6px) + 6px) 18px 4px rgba(255, 138, 61, 0.9); }
+@keyframes ignite { from { translate: -2px 1px; } to { translate: 2px -1px; } }
+.tile.launched { background: rgba(0, 0, 0, 0.3) radial-gradient(circle at 50% 55%, rgba(255, 138, 61, 0.35) 0 22%, rgba(60, 40, 30, 0.6) 23% 40%, transparent 41%); }
+.tile.landing { animation: landing 0.5s cubic-bezier(0.3, 1.3, 0.5, 1); }
+@keyframes landing { from { translate: 0 -120vh; rotate: 20deg; } 70% { translate: 0 0; rotate: 0deg; scale: 1.15 0.85; } to { scale: 1; } }
+.flying-tile.rocket { overflow: visible; }
+.flying-tile.rocket .flame { position: absolute; left: 22%; right: 22%; top: 96%; height: 130%; border-radius: 40% 40% 50% 50% / 20% 20% 80% 80%; background: linear-gradient(180deg, #fff3a8, #ffb13d 35%, #ff5c3d 70%, transparent); animation: flame 0.08s linear infinite alternate; transform-origin: 50% 0; }
+@keyframes flame { from { transform: scaleY(0.8) scaleX(1.05); } to { transform: scaleY(1.15) scaleX(0.9); } }
+
+/* ---------- G-ma's Wordle Chat ---------- */
+.wordle-stage { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 12px; border-radius: 18px; background: rgba(106, 170, 100, 0.14); border: 2px solid rgba(106, 170, 100, 0.6); animation: popIn 0.45s both; }
+.wordle-stage.nudge .wd-slots { animation: nom 0.3s ease-out; }
+.wd-slots { display: flex; gap: 4px; flex: none; }
+.wd-slot { width: 30px; height: 34px; border-radius: 6px; border: 2px solid rgba(255, 255, 255, 0.35); display: grid; place-items: center; font-weight: 700; font-size: 19px; color: #fff; }
+.wd-slot.g { background: #6aaa64; border-color: #6aaa64; animation: popIn 0.3s both; }
+.wd-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.wd-info b { font-size: 14px; }
+.wd-sub { color: var(--muted); font-size: 12px; }
+.wd-last { display: flex; gap: 2px; min-height: 18px; }
+.wd-last i { font-style: normal; font-weight: 700; font-size: 11px; width: 16px; height: 18px; border-radius: 3px; display: grid; place-items: center; color: #fff; background: #5b5870; }
+.wd-last i.g { background: #6aaa64; } .wd-last i.y { background: #c9b458; color: #2b2400; }
+.wordle-stage.result { border-color: #6aaa64; background: rgba(106, 170, 100, 0.28); }
+.wordle-stage.result.won { box-shadow: 0 0 0 4px rgba(106, 170, 100, 0.25), 0 0 26px rgba(106, 170, 100, 0.5); }
+.wordle-stage.result .wd-info b { font-size: 16px; }
+.tile.wd-g { background: #6aaa64; color: #fff; box-shadow: 0 var(--edge, 6px) 0 #4a7d45; }
+.tile.wd-y { background: #c9b458; color: #2b2400; box-shadow: 0 var(--edge, 6px) 0 #94832f; }
+.tile.wd-x { background: #8f8ba3; color: #2a2740; box-shadow: 0 var(--edge, 6px) 0 #5f5b73; }
+.tile.wd-g.sel, .tile.wd-y.sel, .tile.wd-x.sel { background: var(--hot); color: #fff; box-shadow: 0 var(--edge, 6px) 0 var(--hot-edge); }
+
+/* ---------- Pass the Pen: pointing at a letter ---------- */
+.point-ring { position: absolute; border-radius: 20%; border: 4px solid var(--c); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.35), 0 0 22px 6px var(--c), inset 0 0 14px var(--c); pointer-events: none; z-index: 4; animation: pointPulse 0.7s ease-in-out infinite alternate, pointFade 2.8s linear forwards; }
+.point-ring span { position: absolute; top: -12%; right: -12%; min-width: 1.5em; height: 1.5em; padding: 0 0.25em; border-radius: 99px; background: var(--c); color: #1b1036; font-weight: 700; font-size: calc(var(--fs, 40px) * 0.34); display: grid; place-items: center; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+@keyframes pointPulse { from { scale: 1; } to { scale: 1.1; } }
+@keyframes pointFade { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- Thou Shalt Not Guess ---------- */
+.nuhuh { position: absolute; inset: -6px; z-index: 30; border-radius: 22px; background: rgba(27, 16, 54, 0.82); border: 3px solid var(--bad); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; animation: popIn 0.3s both; }
+.nuhuh b { font-size: 34px; color: var(--bad); text-shadow: 0 3px 0 rgba(0, 0, 0, 0.4); }
+.nuhuh span { color: var(--ink); font-size: 16px; }
+.nuhuh i { font-style: normal; font-weight: 700; color: var(--sun); font-variant-numeric: tabular-nums; }
+.nuhuh-hand { width: 92px; height: 126px; transform-origin: 50% 95%; animation: wag 0.44s ease-in-out infinite alternate; }
+.nuhuh-hand svg { width: 100%; height: 100%; }
+@keyframes wag { from { rotate: -22deg; } to { rotate: 22deg; } }
+
+/* ---------- the TV's chaos area: the active event, and the team's Wordle in Pass the Pen ---------- */
+.chaos-hud.tv { justify-content: center; margin-bottom: 1.5vmin; }
+.chaos-hud.tv .chaos-pill { font-size: 2.2vmin; padding: 0.8vmin 1.8vmin; }
+.chaos-hud.tv .wordle-stage { padding: 1.4vmin 1.8vmin; gap: 1.6vmin; }
+.chaos-hud.tv .wd-slot { width: 4.4vmin; height: 5vmin; font-size: 2.8vmin; border-radius: 0.8vmin; }
+.chaos-hud.tv .wd-info b { font-size: 2vmin; }
+.chaos-hud.tv .wd-sub { font-size: 1.7vmin; }
+.chaos-hud.tv .wd-last i { width: 2.2vmin; height: 2.5vmin; font-size: 1.5vmin; }
+.chaos-hud.tv .wordle-stage.result .wd-info b { font-size: 2.4vmin; }

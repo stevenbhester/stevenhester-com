@@ -1,8 +1,8 @@
 // Family Chaos Mode, client side. The server planned every event; this draws them in sync
 // (phones and the TV use the same server clock) and enforces the parts phones can check instantly.
-import { sfx } from './sfx.js?v=5ac4f5c-1795227530';
-import { haptic } from './net.js?v=5ac4f5c-1795227530';
-import { UI } from './icons.js?v=5ac4f5c-1795227530';
+import { sfx } from './sfx.js?v=0dabfef-1795241502';
+import { haptic } from './net.js?v=0dabfef-1795241502';
+import { UI } from './icons.js?v=0dabfef-1795241502';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const tutKey = t => (t === 'leak' || t === 'sleepover' ? t + '2' : t); // bump when a tutorial changes
@@ -48,6 +48,39 @@ export const INFO = {
     short: 'Letters you use leave the board and fill your banana!',
     tut: 'Every letter you use in a word pops off your board and into your banana. When time is up, the fullest banana wins the Banana Split badge: +10% on your score this round. The tiles come back afterward.',
   },
+  monster: {
+    blurb: 'A monster scares the tiles',
+    title: 'P-pa Monster!', color: '#7bd88f',
+    short: 'One tile turned into a monster. The others are terrified!',
+    tut: "P-pa Monster has taken over a tile, and the other tiles are scooting away from it and shaking. It's all for show: every tile still works, the monster's letter included. It hops to a new tile every few seconds.",
+  },
+  swap: {
+    blurb: 'Tiles trade places',
+    title: 'Violet & Orin Run Around Time', color: '#c9a0ff',
+    short: 'Tiles are swapping places. New words everywhere!',
+    tut: "Violet and Orin can't sit still. A few tiles swap places with a neighbour, stay there for a bit, then even more swap. The letters really move, so words that weren't possible a second ago are now. Everything runs back home when time is up.",
+  },
+  climb: {
+    blurb: 'Used tiles grow taller',
+    title: 'Charlie Climbing Count', color: '#ff8a3d',
+    short: 'Every tile you use gets taller. Tallest tile wins a badge!',
+    tvShort: "Everyone's tiles are growing taller with every word. Tallest tile wins a badge!",
+    tut: 'Charlie climbs everything. Each time you use a tile in a word it grows taller, and tall tiles get in the way of the ones behind them. Whoever builds the tallest tile before time is up gets a special badge.',
+  },
+  launch: {
+    blurb: 'Your favorite letter blasts off',
+    title: "Jess's Launchpad", color: '#5ab0ff',
+    short: 'Your most-used letter just blasted into space!',
+    tvShort: "Everyone's most-used letter just blasted into space!",
+    tut: "Jess is launching rockets. Whichever letter you've used the most this round blasts off into space, and you can't use it until it lands again. Everyone loses a different letter.",
+  },
+  wordle: {
+    blurb: 'Find the hidden 5-letter word',
+    title: "G-ma's Wordle Chat", color: '#6aaa64',
+    short: 'A 5-letter word is hidden on this board. Every word you trace is a clue!',
+    tvShort: 'G-ma hid a 5-letter word on this board. First to trace it wins!',
+    tut: "G-ma hid a 5-letter word that's somewhere on this board. Every word you trace is a guess: a letter turns green if it's in the hidden word in that spot, yellow if it's in the word somewhere else, and gray if it isn't in it at all. Tiles on the board light up to match. The first person to trace the hidden word ends the chat for everyone.",
+  },
 };
 
 // The caution tab slides in this long before an event's banner, counting down.
@@ -78,6 +111,10 @@ export class Chaos {
     this.bananaCount = round.banana ? round.banana.count : 0;
     this.bananaDone = !!(round.banana && round.banana.done);
     if (round.banana && round.banana.removed) round.banana.removed.forEach(i => board.setHole(i, true));
+    this.heights = (round.climb || []).slice();          // Charlie: how tall each of my tiles is
+    this.launchData = round.launch || null;               // Jess: { id, letter, tiles }
+    this.wd = { slots: [null, null, null, null, null], status: {}, n: 0, last: null, over: !!(round.wordle && round.wordle.winner) };
+    if (round.wordle) for (const g of round.wordle.guesses || []) this.wordleApply(g);
   }
 
   activeOf(type, ms) {
@@ -159,6 +196,17 @@ export class Chaos {
     if (e.type === 'set' && this.mode === 'phone') this.fx.set = new SetCards(b, ms => { this.onSetCleared && this.onSetCleared(ms); }, e.dur);
     if (e.type === 'sleepover') sfx.snore();
     if (e.type === 'sam') sfx.vroom();
+    if (e.type === 'monster') b.el.classList.add('monster-on');
+    if (e.type === 'swap') this.swapAt = null;
+    if (e.type === 'climb') {
+      b.el.classList.add('climbing');
+      b.el.style.setProperty('--climb-step', `${((b.el.clientWidth / b.size) * 0.32).toFixed(1)}px`);
+      b.stacked = true;
+      this.showHeights();
+    }
+    if (e.type === 'launch') { if (this.mode === 'phone' && this.launchData && this.launchData.id === e.id) this.blastOff(); else if (this.mode === 'tv') sfx.rocket(); }
+    // (In Pass the Pen the team shares the clues, so the TV shows the blanks too.)
+    if (e.type === 'wordle') { if ((this.mode === 'phone' || this.round.mode === 'coop') && !this.wd.over) this.showWordle(); }
   }
 
   during(e, rel) {
@@ -173,6 +221,16 @@ export class Chaos {
       }
     }
     if (e.type === 'sam' && this.fx.sam) this.fx.sam.frame(rel);
+    if (e.type === 'monster') {
+      let k = 0;
+      e.data.hops.forEach((h, i) => { if (rel >= h.at) k = i; });
+      if (this.monsterAt !== `${e.id}:${k}`) { this.monsterAt = `${e.id}:${k}`; this.moveMonster(e.data.hops[k].tile); }
+    }
+    if (e.type === 'swap') {
+      let k = -1;
+      e.data.waves.forEach((w, i) => { if (rel >= w.at) k = i; });
+      if (k >= 0 && this.swapAt !== `${e.id}:${k}`) this.runSwaps(e, k);
+    }
     const pill = this.pillEl;
     if (pill && pill.dataset.id === e.id) {
       const left = Math.ceil((e.dur - rel) / 1000);
@@ -199,7 +257,249 @@ export class Chaos {
       if (st && !this.bananaDone) { st.classList.add('done'); st.querySelector('.banana-sub').textContent = "Time's up for Nana's banana"; setTimeout(() => st.remove(), 3000); }
     }
     if (e.type === 'set' && this.fx.set) { this.fx.set.destroy(); this.fx.set = null; }
+    if (e.type === 'monster') {
+      b.el.classList.remove('monster-on');
+      b.tileEls.forEach(t => { t.classList.remove('monster'); t.style.removeProperty('--fx'); t.style.removeProperty('--fy'); });
+      if (this.fx.monster) { const f = this.fx.monster; this.fx.monster = null; f.classList.add('poof'); setTimeout(() => f.remove(), 350); }
+    }
+    if (e.type === 'swap') b.original.forEach((l, i) => b.setLetter(i, l, 'swapped')); // everyone runs back home
+    if (e.type === 'climb') {
+      b.el.classList.remove('climbing');
+      b.stacked = false;
+      this.heights = [];
+      this.note('climb', null);
+      b.tileEls.forEach(t => { t.classList.remove('tall', 'grew'); t.style.removeProperty('--lvl'); t.style.removeProperty('--z'); });
+    }
+    if (e.type === 'launch') this.touchDown(e);
+    if (e.type === 'wordle') {
+      this.wordleTiles(true);
+      const st = this.hud && this.hud.querySelector('.wordle-stage');
+      if (st && !st.classList.contains('result')) setTimeout(() => { if (!st.classList.contains('result')) st.remove(); }, 2500); // (the answer usually arrives first)
+    }
     if (this.pillEl && this.pillEl.dataset.id === e.id) { this.pillEl.remove(); this.pillEl = null; }
+  }
+
+  isActive(type) { return this.events.find(e => e.type === type && this.state.get(e.id) === 'active') || null; }
+
+  // ---------- P-pa Monster ----------
+  // The monster's face sits over its tile; every other tile leans away, the nearest ones most, and trembles.
+  moveMonster(tile) {
+    const b = this.board, n = b.size;
+    const el = b.tileEls[tile];
+    const cell = b.el.clientWidth / n;
+    const mr = Math.floor(tile / n), mc = tile % n;
+    b.tileEls.forEach((t, i) => {
+      t.classList.toggle('monster', i === tile);
+      if (i === tile) { t.style.setProperty('--fx', '0px'); t.style.setProperty('--fy', '0px'); return; }
+      const dr = Math.floor(i / n) - mr, dc = (i % n) - mc, d = Math.hypot(dr, dc);
+      const push = (cell * 0.14) / Math.pow(d, 0.9);
+      t.style.setProperty('--fx', `${((dc / d) * push).toFixed(1)}px`);
+      t.style.setProperty('--fy', `${((dr / d) * push).toFixed(1)}px`);
+      t.style.setProperty('--q', `${Math.max(0.4, 2.4 / d).toFixed(2)}deg`);
+      t.style.setProperty('--qd', `${(i * 53) % 180}ms`);
+    });
+    let f = this.fx.monster;
+    if (!f) {
+      f = document.createElement('div');
+      f.className = 'monster-face';
+      f.innerHTML = MONSTER_FACE;
+      b.fx.appendChild(f);
+      this.fx.monster = f;
+    }
+    Object.assign(f.style, { left: `${el.offsetLeft}px`, top: `${el.offsetTop}px`, width: `${el.offsetWidth}px`, height: `${el.offsetHeight}px` });
+    f.classList.remove('hop'); void f.offsetWidth; f.classList.add('hop');
+    sfx.growl();
+    if (this.mode === 'phone') haptic('warning');
+  }
+
+  // ---------- Violet & Orin ----------
+  // Wave `k` of swaps has started. Coming straight from the wave before, the pairs slide past each other;
+  // joining late, the letters are just put where they are by now.
+  runSwaps(e, k) {
+    const b = this.board, n = b.original.length;
+    const at = Array.from({ length: n }, (_, i) => i);
+    for (let w = 0; w <= k; w++) for (const [x, y] of e.data.waves[w].pairs) [at[x], at[y]] = [at[y], at[x]];
+    const stepped = this.swapAt === `${e.id}:${k - 1}` || (k === 0 && this.swapAt == null);
+    this.swapAt = `${e.id}:${k}`;
+    if (stepped) {
+      for (const [x, y] of e.data.waves[k].pairs) b.swapLetters(x, y, b.original[at[x]], b.original[at[y]]);
+      sfx.zoom();
+      if (this.mode === 'phone') haptic('tick');
+    } else at.forEach((from, i) => b.setLetter(i, b.original[from], 'swapped'));
+  }
+
+  // ---------- Charlie Climbing Count ----------
+  // A word of mine counted: while Charlie's climbing, every tile in it grows a level.
+  wordUsed(path) {
+    if (!path || this.mode !== 'phone' || !this.isActive('climb')) return;
+    let top = 0;
+    for (const i of path) { this.heights[i] = (this.heights[i] || 0) + 1; top = Math.max(top, this.heights[i]); }
+    this.showHeights(path);
+    sfx.step(top);
+  }
+
+  showHeights(grew) {
+    const b = this.board, n = b.size;
+    b.tileEls.forEach((t, i) => {
+      const h = this.heights[i] || 0;
+      t.style.setProperty('--lvl', h);
+      t.style.setProperty('--z', Math.floor(i / n) * 2 + (h ? 1 : 0)); // nearer rows in front, like looking down a street
+      t.classList.toggle('tall', h > 0);
+      if (grew && grew.includes(i)) { t.classList.remove('grew'); void t.offsetWidth; t.classList.add('grew'); }
+    });
+    const best = Math.max(0, ...Array.from(this.heights, h => h || 0)); // (the list has gaps: tiles not used yet)
+    const note = this.note('climb', best ? `Your tallest tile: <b>${best}</b> high` : 'Use a tile to make it grow');
+    if (note) note.style.setProperty('--c', INFO.climb.color);
+  }
+
+  // A one-line note in the phone's chaos area (replaced each time, removed when its event ends).
+  note(kind, html) {
+    if (!this.hud || this.mode !== 'phone') return null;
+    let el = this.hud.querySelector(`.chaos-note[data-kind="${kind}"]`);
+    if (html == null) { el && el.remove(); return null; }
+    if (!el) { el = document.createElement('div'); el.className = 'chaos-note pop-in'; el.dataset.kind = kind; this.hud.appendChild(el); }
+    el.innerHTML = html;
+    return el;
+  }
+
+  // ---------- Jess's Launchpad ----------
+  // Server: here's the letter of yours that's going up.
+  launch(m) {
+    this.launchData = m;
+    if (this.mode === 'phone' && this.events.some(e => e.id === m.id && this.state.get(e.id) === 'active')) this.blastOff();
+  }
+
+  blastOff() {
+    const d = this.launchData;
+    if (!d || d.gone) return;
+    d.gone = true;
+    const b = this.board;
+    const L = d.letter === 'qu' ? 'Qu' : d.letter.toUpperCase();
+    const note = this.note('launch', `${UI.launch}Your <b>${esc(L)}</b>${d.tiles.length === 1 ? ' is' : "'s are"} in space!`);
+    if (note) note.style.setProperty('--c', INFO.launch.color);
+    sfx.rocket();
+    haptic('warning');
+    d.tiles.forEach((i, k) => {
+      const t = b.tileEls[i];
+      t.classList.add('ignite');
+      setTimeout(() => {
+        if (!d.gone || d.landed) return;
+        const r = t.getBoundingClientRect();
+        t.classList.remove('ignite');
+        b.setHole(i, true);
+        t.classList.add('launched');
+        if (!r.width) return;
+        const fly = document.createElement('div');
+        fly.className = 'flying-tile rocket';
+        fly.innerHTML = `${esc(L)}<i class="flame"></i>`;
+        Object.assign(fly.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`, fontSize: `${r.width * 0.5}px` });
+        document.body.appendChild(fly);
+        const an = fly.animate([
+          { transform: 'translate(0, 0) rotate(0)' },
+          { transform: `translate(${k % 2 ? -8 : 8}px, -40px) rotate(${k % 2 ? -4 : 4}deg)`, offset: 0.25 },
+          { transform: `translate(${k % 2 ? 30 : -30}px, -${r.top + r.height + 80}px) rotate(${k % 2 ? 14 : -14}deg)` },
+        ], { duration: 1000, easing: 'cubic-bezier(.5,0,.9,.4)' });
+        an.onfinish = () => fly.remove();
+        setTimeout(() => fly.remove(), 1400);
+      }, 550 + k * 130);
+    });
+  }
+
+  touchDown(e) {
+    const d = this.launchData;
+    this.note('launch', null);
+    if (!d || d.id !== e.id) return;
+    d.landed = true;
+    this.launchData = null;
+    const b = this.board;
+    d.tiles.forEach((i, k) => {
+      const t = b.tileEls[i];
+      t.classList.remove('ignite');
+      setTimeout(() => {
+        b.setHole(i, false);
+        t.classList.remove('launched', 'landing'); void t.offsetWidth; t.classList.add('landing');
+        if (this.mode === 'phone') sfx.thud();
+      }, k * 110);
+    });
+  }
+
+  // ---------- G-ma's Wordle Chat ----------
+  showWordle() {
+    if (!this.hud) return;
+    this.hud.querySelector('.wordle-stage')?.remove();
+    const w = document.createElement('div');
+    w.className = 'wordle-stage';
+    w.innerHTML = `<div class="wd-slots">${'<span class="wd-slot"></span>'.repeat(5)}</div><div class="wd-info"><b>${this.round.mode === 'coop' ? "G-ma's hidden word (team clues)" : "G-ma's hidden word"}</b><div class="wd-last"></div><small class="wd-sub"></small></div>`;
+    this.hud.appendChild(w);
+    this.drawWordle();
+  }
+
+  drawWordle() {
+    const w = this.hud && this.hud.querySelector('.wordle-stage');
+    if (w && !w.classList.contains('result')) {
+      w.querySelectorAll('.wd-slot').forEach((el, i) => {
+        const c = this.wd.slots[i];
+        el.textContent = c ? c.toUpperCase() : '';
+        el.classList.toggle('g', !!c);
+      });
+      const last = this.wd.last;
+      w.querySelector('.wd-last').innerHTML = last ? [...last.w].map((c, i) => `<i class="${last.marks[i]}">${esc(c.toUpperCase())}</i>`).join('') : '';
+      const yellow = Object.keys(this.wd.status).filter(c => this.wd.status[c] === 'y').sort();
+      w.querySelector('.wd-sub').textContent = !this.wd.n ? (this.round.mode === 'coop' ? 'Every word the pen writes is a clue' : 'Trace any word for clues') : `${this.wd.n} guess${this.wd.n === 1 ? '' : 'es'}${yellow.length ? ` · somewhere: ${yellow.join(' ').toUpperCase()}` : ''}`;
+    }
+    this.wordleTiles();
+  }
+
+  // Tiles take the best that's known about their letter: green, yellow, or gray for "not in it".
+  wordleTiles(clear) {
+    const b = this.board;
+    const rank = { g: 3, y: 2, x: 1 };
+    b.tileEls.forEach((t, i) => {
+      let best = null;
+      if (!clear && !this.wd.over) for (const c of b.original[i]) { const s = this.wd.status[c]; if (s && (!best || rank[s] > rank[best])) best = s; }
+      t.classList.toggle('wd-g', best === 'g');
+      t.classList.toggle('wd-y', best === 'y');
+      t.classList.toggle('wd-x', best === 'x');
+    });
+  }
+
+  wordleApply(g) {
+    const rank = { g: 3, y: 2, x: 1 };
+    this.wd.n++;
+    this.wd.last = g;
+    [...g.w].forEach((c, i) => {
+      const s = g.marks[i];
+      if (s === 'g' && i < 5) this.wd.slots[i] = c;
+      if (!this.wd.status[c] || rank[s] > rank[this.wd.status[c]]) this.wd.status[c] = s;
+    });
+  }
+
+  // Server: the marks for the word I just traced.
+  wordleMark(m) {
+    if (this.wd.over) return;
+    this.wordleApply(m);
+    this.drawWordle();
+    sfx.clue(m.marks.includes('g') ? 2 : m.marks.includes('y') ? 1 : 0);
+    const w = this.hud && this.hud.querySelector('.wordle-stage');
+    if (w) { w.classList.remove('nudge'); void w.offsetWidth; w.classList.add('nudge'); }
+  }
+
+  // Somebody traced it (or time ran out): the chat is over for everyone, and the answer shows where the blanks were.
+  wordleOver(m) {
+    this.wd.over = true;
+    this.wordleTiles(true);
+    const e = this.isActive('wordle');
+    if (e && this.pillEl && this.pillEl.dataset.id === e.id) { this.pillEl.remove(); this.pillEl = null; }
+    if (e) this.state.set(e.id, 'done');
+    const st = this.hud && this.hud.querySelector('.wordle-stage');
+    if (!st) return;
+    const p = m.id ? this.member(m.id) : null;
+    const word = `<div class="wd-slots">${[...m.word].map(c => `<span class="wd-slot g">${esc(c.toUpperCase())}</span>`).join('')}</div>`;
+    st.classList.add('result');
+    st.classList.toggle('won', !!m.id);
+    st.innerHTML = `${word}<div class="wd-info"><b>${m.team ? `The team got the Wordle in ${m.n}!` : m.id ? `${m.id === this.me ? 'You' : esc(p ? p.name : 'Someone')} got the Wordle in ${m.n}!` : 'Nobody got the Wordle'}</b><small class="wd-sub">${m.id ? "G-ma's word was" : 'It was'} ${esc(m.word.toUpperCase())}</small></div>`;
+    if (m.id === this.me || m.team) { sfx.fanfare(); haptic('success'); } else sfx.solo();
+    setTimeout(() => st.remove(), 6000);
   }
 
   // Server confirmed a word during the banana: each tile peels off the board, arcs into the next spot in
@@ -375,7 +675,8 @@ export class Chaos {
     for (const e of this.events) if (this.state.get(e.id) === 'active') this.end(e, 'active');
     this.closeBanner();
     this.closeApproach();
-    document.querySelectorAll('.chaos-tut').forEach(x => x.remove());
+    document.querySelectorAll('.chaos-tut, .flying-tile.rocket').forEach(x => x.remove());
+    this.hud && this.hud.querySelectorAll('.chaos-note, .wordle-stage').forEach(x => x.remove());
   }
 
   // ---------- UI bits ----------
@@ -384,7 +685,7 @@ export class Chaos {
     const b = document.createElement('div');
     b.className = `chaos-banner ${this.mode}`;
     b.style.setProperty('--c', info.color);
-    b.innerHTML = `<div class="chaos-icon">${UI[type] || ''}</div><div class="chaos-kicker">Family Chaos</div><div class="chaos-title">${esc(info.title)}</div><div class="chaos-short">${esc(type === 'set' && this.mode === 'tv' ? "Everybody's letters are under cards. Watch them scramble!" : info.short)}</div>`;
+    b.innerHTML = `<div class="chaos-icon">${UI[type] || ''}</div><div class="chaos-kicker">Family Chaos</div><div class="chaos-title">${esc(info.title)}</div><div class="chaos-short">${esc(this.mode === 'tv' && type === 'set' ? "Everybody's letters are under cards. Watch them scramble!" : (this.mode === 'tv' && info.tvShort) || info.short)}</div>`;
     this.host.appendChild(b);
     this.bannerEl = b;
   }
@@ -445,6 +746,17 @@ export class Chaos {
     this.onBananaChange && this.onBananaChange(this.bananaCount);
   }
 }
+
+// ---------- P-pa Monster's face: horns, googly eyes, eyebrows and teeth, laid over the tile's letter ----------
+const MONSTER_FACE = `<svg viewBox="0 0 100 100" overflow="visible">
+  <path d="M10 6 L16 -20 L32 2 Z M90 6 L84 -20 L68 2 Z" fill="#fff3c4" stroke="#2f6b3c" stroke-width="4" stroke-linejoin="round"/>
+  <g class="mon-arm l"><path d="M2 58 C -14 54, -18 40, -10 30" fill="none" stroke="#4fb86a" stroke-width="9" stroke-linecap="round"/><path d="M-10 30 l-6 -5 M-10 30 l1 -8 M-10 30 l7 -4" stroke="#2f6b3c" stroke-width="3.5" stroke-linecap="round"/></g>
+  <g class="mon-arm r"><path d="M98 58 C 114 54, 118 40, 110 30" fill="none" stroke="#4fb86a" stroke-width="9" stroke-linecap="round"/><path d="M110 30 l6 -5 M110 30 l-1 -8 M110 30 l-7 -4" stroke="#2f6b3c" stroke-width="3.5" stroke-linecap="round"/></g>
+  <circle cx="27" cy="20" r="13" fill="#fff" stroke="#2f6b3c" stroke-width="3.5"/><circle cx="73" cy="20" r="10" fill="#fff" stroke="#2f6b3c" stroke-width="3.5"/>
+  <g class="mon-pupils"><circle cx="27" cy="21" r="5.5" fill="#1b1036"/><circle cx="73" cy="21" r="4.5" fill="#1b1036"/></g>
+  <path d="M12 6 L38 12 M88 8 L64 13" stroke="#2f6b3c" stroke-width="5" stroke-linecap="round"/>
+  <path d="M8 100 L8 88 L18 98 L28 86 L38 98 L50 86 L62 98 L72 86 L82 98 L92 88 L92 100 Z" fill="#fff" stroke="#2f6b3c" stroke-width="3" stroke-linejoin="round"/>
+</svg>`;
 
 // ---------- Nana's banana, as a sketch that fills with tiles ----------
 // The outline's center line runs from the tip (left) to the stem; tile n sits n steps along it.

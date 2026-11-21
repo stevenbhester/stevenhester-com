@@ -17,7 +17,13 @@ export function unlock() {
 window.addEventListener('pointerdown', unlock, { passive: true });
 window.addEventListener('keydown', unlock);
 
-export function setMuted(v) { muted = v; try { localStorage.setItem('rb:mute', v ? '1' : '0'); } catch {} }
+// True once the browser lets us play sound (it needs one click or tap on the page first).
+// The output the round music plays through (null until sound is allowed).
+export function audioOut() { return ctx ? { ctx, master } : null; }
+
+export function audioReady() { return !!ctx && ctx.state === 'running'; }
+
+export function setMuted(v) { muted = v; if (v) import('./music.js?v=0dabfef-1795241502').then(m => m.stopMusic(0.3)); try { localStorage.setItem('rb:mute', v ? '1' : '0'); } catch {} }
 export function isMuted() { return muted; }
 
 function tone(freq, { at = 0, dur = 0.12, type = 'sine', vol = 0.3, slide = 0, attack = 0.005 } = {}) {
@@ -87,6 +93,54 @@ export const sfx = {
   bridge() { [0, 4, 7, 11, 14].forEach((s, i) => tone(523 * 2 ** (s / 12), { at: i * 0.045, dur: 0.18, type: 'triangle', vol: 0.15 })); },
   gavel() { noise({ dur: 0.08, vol: 0.4, freq: 250 }); tone(140, { dur: 0.15, type: 'sine', vol: 0.4, slide: 0.6 }); },
   box() { noise({ dur: 0.5, vol: 0.3, freq: 1500 }); [0, 7, 12, 19].forEach((s, i) => tone(523 * 2 ** (s / 12), { at: 0.15 + i * 0.06, dur: 0.25, type: 'square', vol: 0.08 })); },
+  // Someone scored (heard on the TV): a bell that climbs a little with their word count.
+  ding(n = 0) {
+    const f = 1568 * 2 ** (Math.min(n, 24) / 48);
+    tone(f, { dur: 0.35, type: 'sine', vol: 0.13 });
+    tone(f * 2, { dur: 0.18, type: 'sine', vol: 0.04 });
+  },
+  // Bridging the board, big-screen size: a rising sweep into a bright chord.
+  bridgeBig() {
+    noise({ dur: 0.45, vol: 0.18, freq: 2200 });
+    [0, 4, 7, 11, 14, 19].forEach((s, i) => tone(523 * 2 ** (s / 12), { at: i * 0.05, dur: 0.3, type: 'triangle', vol: 0.16 }));
+    [0, 7, 12].forEach(s => tone(1047 * 2 ** (s / 12), { at: 0.34, dur: 0.6, type: 'square', vol: 0.06 }));
+  },
+  // P-pa Monster: a low wobbling growl.
+  growl() {
+    tone(95, { dur: 0.5, type: 'sawtooth', vol: 0.16, slide: 0.7, attack: 0.05 });
+    tone(101, { dur: 0.5, type: 'square', vol: 0.07, slide: 0.65, attack: 0.05 });
+    tone(140, { at: 0.42, dur: 0.22, type: 'sawtooth', vol: 0.1, slide: 1.5 });
+  },
+  // Violet & Orin: two quick giggly slides, one up and one down.
+  zoom() {
+    tone(500, { dur: 0.16, type: 'triangle', vol: 0.16, slide: 2.1 });
+    tone(1000, { at: 0.13, dur: 0.18, type: 'triangle', vol: 0.14, slide: 0.5 });
+    noise({ dur: 0.2, vol: 0.08, freq: 3000 });
+  },
+  // Charlie: one step up, higher the taller the tile.
+  step(n = 1) { tone(294 * 2 ** (Math.min(n, 24) / 12), { dur: 0.09, type: 'square', vol: 0.11 }); tone(294 * 2 ** ((Math.min(n, 24) + 5) / 12), { at: 0.07, dur: 0.12, type: 'triangle', vol: 0.14 }); },
+  // Jess: ignition and away.
+  rocket() {
+    noise({ dur: 1.2, vol: 0.3, freq: 500 });
+    tone(70, { dur: 1.3, type: 'sawtooth', vol: 0.16, slide: 6, attack: 0.1 });
+    tone(880, { at: 0.75, dur: 0.5, type: 'sine', vol: 0.07, slide: 3 });
+  },
+  thud() { noise({ dur: 0.12, vol: 0.3, freq: 220 }); tone(110, { dur: 0.18, type: 'sine', vol: 0.3, slide: 0.5 }); },
+  // G-ma's Wordle: a clue landed (2 = a green, 1 = a yellow, 0 = nothing).
+  clue(best) {
+    if (best === 2) { tone(784, { dur: 0.1, type: 'triangle', vol: 0.2 }); tone(1175, { at: 0.09, dur: 0.2, type: 'triangle', vol: 0.2 }); }
+    else if (best === 1) tone(659, { dur: 0.16, type: 'triangle', vol: 0.18 });
+    else tone(262, { dur: 0.14, type: 'triangle', vol: 0.12, slide: 0.85 });
+  },
+  // Thou Shalt Not Guess: three smug little "nuh"s.
+  nuhuh() {
+    [[262, 0], [262, 0.22], [208, 0.44]].forEach(([f, at], k) => {
+      tone(f, { at, dur: k === 2 ? 0.26 : 0.15, type: 'sawtooth', vol: 0.13, slide: 0.9, attack: 0.02 });
+      tone(f / 2, { at, dur: k === 2 ? 0.26 : 0.15, type: 'square', vol: 0.06, slide: 0.9, attack: 0.02 });
+    });
+  },
+  // Someone pointed at a letter.
+  point() { tone(988, { dur: 0.07, type: 'sine', vol: 0.16 }); tone(1319, { at: 0.06, dur: 0.12, type: 'sine', vol: 0.12 }); },
   // Ice cubes clinking.
   ice() {
     [[2637, 0], [3136, 0.09], [2349, 0.2], [2794, 0.34]].forEach(([f, at]) => tone(f, { at, dur: 0.09, type: 'sine', vol: 0.11 }));

@@ -46,6 +46,12 @@ export const ICONS = {
     <rect x="18.2" y="19" width="4.6" height="4.6" rx="1.1" transform="rotate(-14 20.5 21.3)" fill="#eaf8ff" fill-opacity=".92" stroke="#5aa9d6" stroke-width="1"/>
     <path d="M20.6 6.2l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5Z" fill="#fff" stroke="none"/>
   </svg>`,
+  // newer chaos events
+  monster: svg('<path d="M5 20V11a7 7 0 0 1 14 0v9l-2.3-1.6L14.3 20 12 18.4 9.7 20l-2.4-1.6Z" fill="currentColor" fill-opacity=".25"/><path d="M6 6 4 2.5M18 6l2-3.5"/><circle cx="9.3" cy="11" r="1.4" fill="currentColor"/><circle cx="14.7" cy="11" r="1.4" fill="currentColor"/><path d="M9 15l1.5 1.5L12 15l1.5 1.5L15 15"/>'),
+  swap: svg('<rect x="2.5" y="3" width="8" height="8" rx="2" fill="currentColor" fill-opacity=".25"/><rect x="13.5" y="13" width="8" height="8" rx="2" fill="currentColor" fill-opacity=".25"/><path d="M14 5h4a2 2 0 0 1 2 2v2M18 3l-4 2 4 2M10 19H6a2 2 0 0 1-2-2v-2M6 21l4-2-4-2"/>'),
+  climb: svg('<rect x="3" y="15" width="5" height="6" rx="1" fill="currentColor" fill-opacity=".25"/><rect x="9.5" y="10" width="5" height="11" rx="1" fill="currentColor" fill-opacity=".25"/><rect x="16" y="4" width="5" height="17" rx="1" fill="currentColor" fill-opacity=".25"/><path d="M4 11l3-3M7 8v2.5M7 8H4.5"/>'),
+  launch: svg('<path d="M12 2c3.5 3 4.5 7.5 3.5 12h-7C7.5 9.5 8.500 5 12 2Z" fill="currentColor" fill-opacity=".25"/><circle cx="12" cy="8.5" r="1.6"/><path d="M8.500 12 6 15.500l2.800-.5M15.500 12l2.500 3.500-2.800-.5M10.500 17.500 12 22l1.500-4.500"/>'),
+  wordle: svg('<rect x="2" y="8.500" width="5.600" height="7" rx="1.200" fill="currentColor" fill-opacity=".6"/><rect x="9.200" y="8.500" width="5.600" height="7" rx="1.200"/><rect x="16.400" y="8.500" width="5.600" height="7" rx="1.200" fill="currentColor" fill-opacity=".25"/><path d="M3.500 4.500h17M3.500 19.500h17" stroke-opacity=".5"/>'),
   sun: svg('<circle cx="12" cy="12" r="4" fill="currentColor" fill-opacity=".25"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'),
   moon: svg('<path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10Z" fill="currentColor" fill-opacity=".25"/>'),
   trophy: svg('<path d="M7 4h10v5a5 5 0 0 1-10 0Z" fill="currentColor" fill-opacity=".25"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8 21h8M9 18h6"/>'),
@@ -88,5 +94,10 @@ export const UI = {
   set: ICONS.cards,
   leak: svg('<circle cx="7" cy="8" r="3"/><circle cx="17" cy="8" r="3"/><path d="M2 20a5 5 0 0 1 10 0M12 20a5 5 0 0 1 10 0"/><path d="M12 4v5M10 7l2 2 2-2"/>'),
   banana: ICONS.banana,
+  monster: ICONS.monster,
+  swap: ICONS.swap,
+  climb: ICONS.climb,
+  launch: ICONS.launch,
+  wordle: ICONS.wordle,
 };
 export const icon = (name, cls = '') => `<span class="ic ${cls}">${UI[name] || ICONS[name] || ''}</span>`;
