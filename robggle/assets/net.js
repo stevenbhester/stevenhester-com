@@ -17,7 +17,7 @@ const WS_URL = SERVER.replace(/^http/, 'ws') + '/ws';
 // Build number of this copy of the game. tools/publish_site.sh stamps it (the robggle repo's commit count);
 // 0 means a local, unpublished copy, which never asks anyone to update. ?build=N fakes one on localhost.
 export const BUILD = (() => {
-  const stamped = 19;
+  const stamped = 20;
   const q = new URLSearchParams(location.search).get('build');
   return location.hostname === 'localhost' && q ? +q : stamped;
 })();

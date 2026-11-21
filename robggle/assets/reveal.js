@@ -1,10 +1,10 @@
 // End-of-round show: every found word gets its moment, points fly into a racing scoreboard,
 // words nobody else found get stamped x2. The host can change the speed live for everyone.
 // Then bonuses, heat maps, loot-box badges, and good/bad sport speech bubbles.
-import { makeBoard } from './board.js?v=dc43a80-1795243967';
-import { sfx } from './sfx.js?v=dc43a80-1795243967';
-import { haptic } from './net.js?v=dc43a80-1795243967';
-import { ICONS, UI } from './icons.js?v=dc43a80-1795243967';
+import { makeBoard } from './board.js?v=da58d22-1795245872';
+import { sfx } from './sfx.js?v=da58d22-1795245872';
+import { haptic } from './net.js?v=da58d22-1795245872';
+import { ICONS, UI } from './icons.js?v=da58d22-1795245872';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');

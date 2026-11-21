@@ -1,11 +1,11 @@
 // Robggle client. One file drives three pages: /robggle/ (home), /robggle/game/ (screen), /robggle/join/ (controller).
-import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=dc43a80-1795243967';
-import { makeBoard, tileText } from './board.js?v=dc43a80-1795243967';
-import { sfx, unlock, audioReady } from './sfx.js?v=dc43a80-1795243967';
-import { runReveal, chipHTML, confetti } from './reveal.js?v=dc43a80-1795243967';
-import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=dc43a80-1795243967';
-import { icon } from './icons.js?v=dc43a80-1795243967';
-import { startMusic, stopMusic, preloadMusic } from './music.js?v=dc43a80-1795243967';
+import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=da58d22-1795245872';
+import { makeBoard, tileText } from './board.js?v=da58d22-1795245872';
+import { sfx, unlock, audioReady } from './sfx.js?v=da58d22-1795245872';
+import { runReveal, chipHTML, confetti } from './reveal.js?v=da58d22-1795245872';
+import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=da58d22-1795245872';
+import { icon } from './icons.js?v=da58d22-1795245872';
+import { startMusic, stopMusic, preloadMusic, startLobbyMusic, startResultsMusic, musicPlaying } from './music.js?v=da58d22-1795245872';
 
 const MODE = document.body.dataset.mode; // home | screen | join
 const $root = document.getElementById('root');
@@ -225,6 +225,7 @@ function renderLanding() {
 let lobbyPoll;
 function renderHome() {
   S.view = 'home';
+  lobbyMusic();
   closeReveal();
   const name = store.get('rb:name', '');
   const last = store.get('rb:last');
@@ -422,6 +423,7 @@ function allianceHTML() {
 function renderLobby() {
   if (!S.st || !S.you) return;
   S.view = 'lobby';
+  lobbyMusic();
   S.play && S.play.board.destroy();
   S.play = null;
   if (MODE === 'screen') return renderScreenLobby();
@@ -638,13 +640,24 @@ function tickClock() {
   step();
 }
 
+// The lobby tune: on the home screen and in the lobby until a round starts. Same rule as the round music: the
+// TV plays it, and phones only do when there's no TV in their game. (Browsers hold it until the first tap.)
+function lobbyMusic() {
+  const tvHere = S.view === 'lobby' && S.st && S.st.members.some(m => m.role === 'screen' && m.connected);
+  if (MODE !== 'screen' && tvHere) { if (musicPlaying() === 'lobby') stopMusic(0.8); return; }
+  startLobbyMusic();
+}
+// The first tap or key press is what lets sound start, so try again right after it.
+['pointerdown', 'keydown'].forEach(n => addEventListener(n, () => setTimeout(() => { if (S.view === 'home' || S.view === 'lobby') lobbyMusic(); }, 60)));
+
 // Music plays on the TV, or on phones when there's no TV in the game (six phones playing it would be a lot).
 function scheduleMusic(r) {
   clearTimeout(S.musicTimer);
   stopMusic(0.3);
   const tvHere = S.st && S.st.members.some(m => m.role === 'screen' && m.connected);
   if (MODE !== 'screen' && tvHere) return;
-  preloadMusic();
+  preloadMusic('round');
+  preloadMusic('results');
   S.musicTimer = setTimeout(() => { if (S.round === r && !S.ended) startMusic(); }, Math.max(0, r.startAt - S.conn.now()));
 }
 
@@ -1296,7 +1309,9 @@ function closeVote() {
 // ---------------- RESULTS ----------------
 function showResults(R) {
   clearTimeout(S.musicTimer);
-  stopMusic(1.2);
+  // The post-game variant of the lobby tune, under the end card (TV, or phones when there's no TV in the game).
+  const tvHere = S.st && S.st.members.some(m => m.role === 'screen' && m.connected);
+  if (MODE === 'screen' || !tvHere) startResultsMusic(); else stopMusic(1.2);
   if (S.reveal && S.reveal.no === R.no) return;
   closeReveal();
   closeVote();
@@ -1344,7 +1359,7 @@ window.addEventListener('robggle:open', e => {
   if (!want) return;
   try { sessionStorage.setItem('rb:intro', '1'); } catch {}
   const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
-  import('./intro.js?v=dc43a80-1795243967').then(m => m.playIntro({ freezeAt })).catch(() => {});
+  import('./intro.js?v=da58d22-1795245872').then(m => m.playIntro({ freezeAt })).catch(() => {});
 })();
 
 if (MODE === 'home') renderLanding();
