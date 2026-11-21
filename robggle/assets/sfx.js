@@ -87,5 +87,10 @@ export const sfx = {
   bridge() { [0, 4, 7, 11, 14].forEach((s, i) => tone(523 * 2 ** (s / 12), { at: i * 0.045, dur: 0.18, type: 'triangle', vol: 0.15 })); },
   gavel() { noise({ dur: 0.08, vol: 0.4, freq: 250 }); tone(140, { dur: 0.15, type: 'sine', vol: 0.4, slide: 0.6 }); },
   box() { noise({ dur: 0.5, vol: 0.3, freq: 1500 }); [0, 7, 12, 19].forEach((s, i) => tone(523 * 2 ** (s / 12), { at: 0.15 + i * 0.06, dur: 0.25, type: 'square', vol: 0.08 })); },
+  // Ice cubes clinking.
+  ice() {
+    [[2637, 0], [3136, 0.09], [2349, 0.2], [2794, 0.34]].forEach(([f, at]) => tone(f, { at, dur: 0.09, type: 'sine', vol: 0.11 }));
+    noise({ at: 0.02, dur: 0.12, vol: 0.06, freq: 6000 });
+  },
   join() { tone(660, { dur: 0.08, type: 'triangle', vol: 0.2 }); tone(990, { at: 0.08, dur: 0.14, type: 'triangle', vol: 0.2 }); },
 };

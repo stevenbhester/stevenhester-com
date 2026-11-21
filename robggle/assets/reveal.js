@@ -1,15 +1,18 @@
 // End-of-round show: every found word gets its moment, points fly into a racing scoreboard,
 // words nobody else found get stamped x2. The host can change the speed live for everyone.
 // Then bonuses, heat maps, loot-box badges, and good/bad sport speech bubbles.
-import { makeBoard } from './board.js?v=fd261f1-1795140523';
-import { sfx } from './sfx.js?v=fd261f1-1795140523';
-import { haptic } from './net.js?v=fd261f1-1795140523';
-import { ICONS, UI } from './icons.js?v=fd261f1-1795140523';
+import { makeBoard } from './board.js?v=5ac4f5c-1795227530';
+import { sfx } from './sfx.js?v=5ac4f5c-1795227530';
+import { haptic } from './net.js?v=5ac4f5c-1795227530';
+import { ICONS, UI } from './icons.js?v=5ac4f5c-1795227530';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');
 const CROWN = '<svg class="crown" viewBox="0 0 28 20"><path d="M2 18 L4 5 L10 11 L14 2 L18 11 L24 5 L26 18 Z" fill="#ffd23f" stroke="#b38f10" stroke-width="1.5" stroke-linejoin="round"/></svg>';
 const SPEEDS = [0.5, 1, 2, 4];
+// Two words shown together each get a color, on their letters and on the little board.
+const PAIR_A = '#3ee0b0', PAIR_B = '#5ab0ff';
+const awardIcon = ic => ICONS[ic] || UI[ic] || ICONS.trophy;
 
 export function chipHTML(p, cls = '') {
   return `<span class="chip ${cls}" style="--c:${p.color}">${initial(p.name)}</span>`;
@@ -134,9 +137,14 @@ export function runReveal(R, opt) {
     const pair = document.createElement('div');
     pair.className = 'wordpair';
     stage.appendChild(pair);
-    const cards = beat.map(wd => showCard(wd, i, pair, 2));
-    // Light both words' tiles on the little board.
-    mini.light([...new Set(beat.flatMap(wd => wd.path || []))], { color: 'var(--mint)', step: 40 / pace() });
+    const cards = beat.map((wd, j) => {
+      if (j) pair.insertAdjacentHTML('beforeend', '<div class="pair-div"></div>');
+      const c = showCard(wd, i, pair, 2);
+      c.classList.add(j ? 'pb' : 'pa');
+      return c;
+    });
+    // Each word lights in its own color on the little board; shared tiles get stripes of both.
+    mini.lightPair(beat[0].path || [], beat[1].path || [], { ca: PAIR_A, cb: PAIR_B, step: 40 / pace() });
     return cards;
   }
 
@@ -144,7 +152,7 @@ export function runReveal(R, opt) {
   // lined up: big enough for the longest word (up to eight letters) and for the widest pair shown side by
   // side. Only a word longer than that shrinks to fit.
   let tileSize = 0;
-  const GAP = 5, PAIR_GAP = 14;
+  const GAP = 5, PAIR_GAP = 31; // 14px either side of a 3px divider
   const fitRow = (letters, cards = 1) => ((stage.clientWidth || 300) - 12 - (cards - 1) * PAIR_GAP - (letters - cards) * GAP) / letters;
   function sizeTiles(beats) {
     const longest = Math.min(8, Math.max(3, ...beats.flat().map(wd => wd.w.length)));
@@ -166,7 +174,7 @@ export function runReveal(R, opt) {
     if (vias.includes('challenge')) tags.push('<span class="wtag vote">voted in</span>');
     if (vias.includes('leak')) tags.push('<span class="wtag leak">leaked</span>');
     if (vias.includes('copy')) tags.push('<span class="wtag copy">ally copy</span>');
-    const finders = wd.finders.map((id, k) => byId[id] ? chipHTML(byId[id], wd.via && wd.via[id] === 'leak' ? 'leaked' : '').replace('class="chip ', `style="--i:${k}" class="chip `) : '').join('');
+    const finders = wd.finders.map((id, k) => byId[id] ? chipHTML(byId[id], wd.via && wd.via[id] === 'leak' ? 'leaked' : '').replace('style="--c:', `style="--i:${k};--c:`) : '').join('');
     // Every row is always there (tags may be empty) so the letters never move between words.
     card.innerHTML = `<div class="letters">${letters}</div><div class="pts-row"><div class="pts">${pts}</div></div><div class="wtags">${tags.join('')}</div><div class="finders">${finders}</div>`;
     host.appendChild(card);
@@ -235,7 +243,9 @@ export function runReveal(R, opt) {
     }
     sfx.stamp();
     await Promise.race([wait(1100), skipped]);
-    const words = R.words;
+    // Words several people found come first, then the ones only one person (or alliance) found,
+    // each group short to long, so the x2 stamps build to the end.
+    const words = R.words.slice().sort((a, b) => (a.solo - b.solo) || a.w.length - b.w.length || b.finders.length - a.finders.length || a.w.localeCompare(b.w));
     if (!words.length) {
       stage.innerHTML = `<div class="title-stamp" style="font-size:32px">Nobody found a single word?!</div>`;
       await Promise.race([wait(1600), skipped]);
@@ -289,6 +299,52 @@ export function runReveal(R, opt) {
       await Promise.race([wait(600), skipped]);
       strokes.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.strokes, 'stroke'));
       await Promise.race([wait(1600), skipped]);
+    }
+    await funAwards();
+  }
+
+  // ---------- for-fun awards: each one is a box that shakes, then bursts open on the winner ----------
+  async function funAwards() {
+    const fun = R.fun || [];
+    if (!fun.length || done) return;
+    mini.unlight();
+    ticker.innerHTML = '';
+    stage.innerHTML = `<div class="title-stamp fun-stamp">BONUS AWARDS!</div>`;
+    sfx.stamp();
+    await Promise.race([wait(900), skipped]);
+    for (let k = 0; k < fun.length; k++) {
+      if (done) return;
+      const a = fun[k];
+      stage.innerHTML = `<div class="award-reveal">
+        <div class="aw-count">Award ${k + 1} of ${fun.length}</div>
+        <div class="aw-title"><span class="aw-ic">${awardIcon(a.icon)}</span>${esc(a.title)}</div>
+        <div class="aw-blurb">${esc(a.blurb)}</div>
+        <div class="aw-stage"><div class="loot-box aw-box shaking" style="--c:var(--hot)"><div class="lid"></div><div class="body"></div><div class="ribbon"></div></div><div class="aw-winners"></div></div>
+      </div>`;
+      const box = stage.querySelector('.aw-box');
+      // Drumroll: ticks that climb while the box rattles harder.
+      for (let t = 0; t < 7; t++) {
+        if (done) return;
+        sfx.tick(t + 2);
+        if (t === 4) box.classList.add('frantic');
+        await Promise.race([wait(t < 4 ? 150 : 100), skipped]);
+      }
+      if (done) return;
+      box.classList.add('open');
+      sfx.box();
+      burst(stage.querySelector('.aw-stage'), 40);
+      const host = stage.querySelector('.aw-winners');
+      host.innerHTML = a.winners.map((wnr, j) => {
+        const p = byId[wnr.id];
+        return p ? `<div class="aw-winner" style="--c:${p.color};--i:${j}" data-id="${p.id}">${chipHTML(p, 'big')}<div><div class="aw-name">${esc(p.name)}${wnr.id === me ? ' (you!)' : ''}</div><div class="aw-detail">${esc(wnr.detail)}</div></div><div class="aw-pts">+${a.pts}</div></div>` : '';
+      }).join('');
+      if (a.winners.some(wnr => wnr.id === me)) haptic('success');
+      setTimeout(() => box.remove(), 600);
+      await Promise.race([wait(450), skipped]);
+      if (done) return;
+      host.querySelectorAll('.aw-winner').forEach(el => fly(el.querySelector('.aw-pts'), el.dataset.id, a.pts, 'solo'));
+      sfx.coin();
+      await Promise.race([wait(1300), skipped]);
     }
   }
 
@@ -386,6 +442,7 @@ export function runReveal(R, opt) {
     }
     if (R.best) facts.push(`${UI.star}Best: <b>${esc(R.best.w.toUpperCase())}</b>`);
     if (!coop && R.no > 1) facts.push(`${UI.crown}Totals: ${players.slice().sort((a, b) => b.total - a.total).slice(0, 3).map(p => `${esc(p.name)} <b>${p.total}</b>`).join(', ')}`);
+    if ((R.fun || []).length) facts.push(`${ICONS.trophy}${R.fun.length} bonus awards`);
     if (R.handicap && !coop) facts.push(`${UI.flag}Next HCP: ${players.map(p => `${esc(p.name)} <b>${p.nextHcp || 0}</b>`).join(', ')}`);
     (R.alliances || []).forEach(a => facts.push(`<span style="color:${a.color}">${UI.handshake}</span>${esc(a.name)} <b>${a.round}</b>`));
     stage.innerHTML = `<div class="pg-top"><div class="pg-title">${title}</div><div class="fact-chips">${facts.map(f => `<span class="fact">${f}</span>`).join('')}</div></div>`;
@@ -400,21 +457,49 @@ export function runReveal(R, opt) {
     scoreCol.insertAdjacentHTML('beforeend', `<div class="tap-hint">${UI.eye}Tap a player to see their round</div>`);
 
     if (tv) {
-      extra.innerHTML = `${marqueeHTML()}<div class="tv-badges">${players.map(p => `<div class="tv-badge-row">${chipHTML(p, 'tiny')}<b>${esc(p.name)}</b>${(R.badges[p.id] || []).map(b => `<span class="mini-badge ${b.tone}">${ICONS[b.icon] || ''}${esc(b.title)}</span>`).join('')}</div>`).join('')}</div>`;
+      extra.innerHTML = `${marqueeHTML()}${funListHTML('tv')}<div class="tv-badges">${players.map(p => `<div class="tv-badge-row">${chipHTML(p, 'tiny')}<b>${esc(p.name)}</b>${(R.badges[p.id] || []).map(b => `<span class="mini-badge ${b.tone}">${ICONS[b.icon] || ''}${esc(b.title)}</span>`).join('')}</div>`).join('')}</div>`;
     } else {
       const mine = byId[me];
       const sections = [];
       if (mine) sections.push(sectionHTML('badges', 'Your badges', 'ribbon', '<div class="loot-host"></div>', true, `<span class="count-pill">${(R.badges[me] || []).length}</span>`));
+      if ((R.fun || []).length) sections.push(sectionHTML('fun', 'Bonus awards', 'trophy', funListHTML('phone'), true, `<span class="count-pill">${R.fun.length}</span>`));
       if (mine && !coop) sections.push(sectionHTML('react', 'Your reaction', 'chat', attitudeHTML(), true));
-      if (!coop) sections.push(sectionHTML('talk', 'Trash talk', 'chat', '<div class="banter-feed"><div class="empty-line">Nobody has said anything yet…</div></div>', true));
+      sections.push(sectionHTML('talk', coop ? 'Team chatter' : 'Trash talk', 'chat', '<div class="banter-feed"><div class="empty-line">Nobody has said anything yet…</div></div>', true));
+      const myWords = mine ? ownWords(me) : [];
+      if (mine) sections.push(sectionHTML('mywords', 'Your words', 'list', myWords.length ? `<div class="hint-line">Tap a word to brag about it</div><div class="sheet-words brag-words">${myWords.map(w => `<button class="word ${w.solo ? 'solo' : ''}" data-brag="${esc(w.w)}">${esc(w.w)}<small>+${w.pts}</small></button>`).join('')}</div>` : '<div class="empty-line">No words this round.</div>', true, `<span class="count-pill">${myWords.length}</span>`));
       if (mine) sections.push(sectionHTML('heat', 'Your letters', 'grid', '<div class="heat-host"></div>', false));
       extra.innerHTML = marqueeHTML() + sections.join('');
       wireSections(extra);
       wireHeat(extra, me);
       wireAttitude();
+      wireBrag();
       setTimeout(() => openLoot(extra.querySelector('.loot-host'), me), 900);
     }
     renderActions();
+  }
+
+  // A player's own words (not ones leaked to them), longest first.
+  function ownWords(id) {
+    return R.words.filter(w => w.finders.includes(id) && (!w.via || w.via[id] !== 'leak')).sort((a, b) => b.w.length - a.w.length || (b.solo - a.solo) || a.w.localeCompare(b.w));
+  }
+  function wireBrag() {
+    extra.querySelectorAll('[data-brag]').forEach(b => {
+      b.onclick = () => {
+        if (b.classList.contains('bragged')) return;
+        b.classList.add('bragged');
+        opt.brag && opt.brag(b.dataset.brag);
+        haptic('tick');
+        // Bring the trash talk into view so you see it land.
+        const talk = extra.querySelector('[data-sec="talk"]');
+        if (talk && !talk.classList.contains('open')) talk.querySelector('.pg-head').click();
+        talk && talk.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+    });
+  }
+  function funListHTML(where) {
+    const fun = R.fun || [];
+    if (!fun.length) return '';
+    return `<div class="fun-list ${where}">${fun.map(a => `<div class="fun-row"><span class="aw-ic">${awardIcon(a.icon)}</span><div class="grow"><b>${esc(a.title)}</b><small>${a.winners.map(wnr => `${esc(byId[wnr.id] ? byId[wnr.id].name : '?')}: ${esc(wnr.detail)}`).join(' · ')}</small></div><span class="fun-who">${a.winners.map(wnr => (byId[wnr.id] ? chipHTML(byId[wnr.id], 'tiny') : '')).join('')}</span><b class="fun-pts">+${a.pts}</b></div>`).join('')}</div>`;
   }
 
   async function openLoot(host, id) {
@@ -433,6 +518,7 @@ export function runReveal(R, opt) {
       burst(box, 30);
       haptic('success');
       box.querySelector('.loot-cards').innerHTML = list.map(badgeCard).join('');
+      if (list.some(b => b.key === 'kitkat')) setTimeout(() => sfx.ice(), 450);
       setTimeout(() => lb.remove(), 600);
     };
     lb.classList.add('shaking');
@@ -483,7 +569,10 @@ export function runReveal(R, opt) {
   // Phones get one-line entries in the Trash talk section; the TV pops a small bubble beside the row.
   function banter(m) {
     const p = byId[m.id];
-    const kind = m.role.startsWith('bad') ? 'bad' : 'good';
+    const kind = m.role === 'brag' ? 'brag' : m.role.startsWith('bad') ? 'bad' : 'good';
+    // A brag shows the word it's about in bold.
+    const W = m.word ? String(m.word).toUpperCase() : '';
+    const textHTML = W ? esc(m.text).split(esc(W)).join(`<b>${esc(W)}</b>`) : esc(m.text);
     sfx.pop();
     const row = rows[m.id];
     if (row) { row.classList.remove('talking'); void row.offsetWidth; row.classList.add('talking'); }
@@ -492,7 +581,7 @@ export function runReveal(R, opt) {
       row.querySelector('.bubble')?.remove();
       const b = document.createElement('div');
       b.className = `bubble above ${kind}`;
-      b.textContent = m.text;
+      b.innerHTML = textHTML;
       row.appendChild(b);
       setTimeout(() => b.classList.add('out'), 8000);
       setTimeout(() => b.remove(), 8600);
@@ -503,9 +592,9 @@ export function runReveal(R, opt) {
     feed.querySelector('.empty-line')?.remove();
     const line = document.createElement('div');
     line.className = `talk-line ${kind}`;
-    line.innerHTML = `${p ? chipHTML(p, 'tiny') : ''}<span>${esc(m.text)}</span>`;
+    line.innerHTML = `${p ? chipHTML(p, 'tiny') : ''}<span>${textHTML}</span>`;
     feed.prepend(line);
-    [...feed.querySelectorAll('.talk-line')].slice(4).forEach(x => x.remove());
+    [...feed.querySelectorAll('.talk-line')].slice(6).forEach(x => x.remove());
   }
 
   function renderActions() {

@@ -1,7 +1,7 @@
 // The letter grid. Interactive boards let you trace a word by dragging across tiles.
 // Chaos events can change a tile's letter (Z's), pull tiles out (bananas) or block them (Set cards).
-import { sfx } from './sfx.js?v=fd261f1-1795140523';
-import { haptic } from './net.js?v=fd261f1-1795140523';
+import { sfx } from './sfx.js?v=5ac4f5c-1795227530';
+import { haptic } from './net.js?v=5ac4f5c-1795227530';
 
 export const tileText = t => (t === 'qu' ? 'Qu' : t.toUpperCase());
 const tileHTML = t => (t === 'qu' ? '<span class="qu">Qu</span>' : t.toUpperCase());
@@ -123,8 +123,22 @@ export function makeBoard(tiles, size, opts = {}) {
         tileEls[i].classList.add(cls);
       }, n * step));
     },
+    // Two words at once, each in its own color; tiles both words use get stripes of both.
+    lightPair(pa, pb, { ca, cb, step = 60 } = {}) {
+      api.unlight();
+      const gen = api._gen;
+      const both = new Set(pa.filter(i => pb.includes(i)));
+      const go = (p, color) => p.forEach((i, n) => setTimeout(() => {
+        if (gen !== api._gen) return;
+        const t = tileEls[i];
+        if (both.has(i)) { t.style.setProperty('--lit', ca); t.style.setProperty('--lit2', cb); t.classList.add('striped'); }
+        else t.style.setProperty('--lit', color);
+        t.classList.add('lit');
+      }, n * step));
+      go(pa, ca); go(pb, cb);
+    },
     _gen: 0,
-    unlight() { api._gen++; tileEls.forEach(t => t.classList.remove('lit')); },
+    unlight() { api._gen++; tileEls.forEach(t => t.classList.remove('lit', 'striped')); },
     hint(p, color) {
       p.forEach((i, n) => setTimeout(() => {
         const t = tileEls[i];

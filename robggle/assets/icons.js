@@ -26,6 +26,29 @@ export const ICONS = {
   cards: svg('<rect x="3" y="6" width="9" height="13" rx="1.5" transform="rotate(-10 7 12)"/><rect x="11" y="5" width="9" height="13" rx="1.5" transform="rotate(8 15 11)"/>'),
   three: svg('<path d="M8 5h7l-4 5a4 4 0 1 1-4 5"/>'),
   drop: svg('<path d="M12 3 C 8 9, 6 12, 6 15 a6 6 0 0 0 12 0 c0-3-2-6-6-12Z"/>'),
+  // The winner's treat: a KitKat in a pile of ice, in full color.
+  kitkat: `<svg viewBox="0 0 24 24" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="1.2" y="12.5" width="7" height="7" rx="1.6" transform="rotate(-16 4.7 16)" fill="#e3f6ff" stroke="#5aa9d6" stroke-width="1"/>
+    <path d="M3 14.6l1.6-.5" stroke="#fff" stroke-width="1.1"/>
+    <rect x="1.4" y="4.2" width="5.4" height="5.4" rx="1.3" transform="rotate(12 4.1 6.9)" fill="#e3f6ff" stroke="#5aa9d6" stroke-width="1"/>
+    <path d="M2.9 5.8l1.3.3" stroke="#fff" stroke-width="1"/>
+    <g transform="rotate(-18 12 12)">
+      <rect x="7.5" y="1.8" width="9" height="16" rx="1.4" fill="#7a4520" stroke="#3f220c" stroke-width="1"/>
+      <path d="M10.5 2.4v8.4M13.5 2.4v8.4" stroke="#3f220c" stroke-width="0.9"/>
+      <path d="M8.3 3.2h1.4M11.3 3.2h1.4M14.3 3.2h1.4" stroke="#a9693c" stroke-width="0.8"/>
+      <path d="M7 10.6h10l-.4 1.3.4 1.2v6.4a1.3 1.3 0 0 1-1.3 1.3H8.3A1.3 1.3 0 0 1 7 19.5v-6.4l.4-1.2Z" fill="#e0182b" stroke="#8f0c18" stroke-width="1"/>
+      <path d="M9.3 15.2h5.4" stroke="#fff" stroke-width="1.7"/>
+    </g>
+    <rect x="14.6" y="12.2" width="7.2" height="7.2" rx="1.6" transform="rotate(14 18.2 15.8)" fill="#eaf8ff" fill-opacity=".92" stroke="#5aa9d6" stroke-width="1"/>
+    <path d="M16.3 13.9l1.8.4" stroke="#fff" stroke-width="1.1"/>
+    <rect x="9.6" y="16.8" width="6" height="6" rx="1.4" transform="rotate(-9 12.6 19.8)" fill="#eaf8ff" fill-opacity=".92" stroke="#5aa9d6" stroke-width="1"/>
+    <path d="M11 18.4l1.4-.2" stroke="#fff" stroke-width="1.1"/>
+    <rect x="18.2" y="19" width="4.6" height="4.6" rx="1.1" transform="rotate(-14 20.5 21.3)" fill="#eaf8ff" fill-opacity=".92" stroke="#5aa9d6" stroke-width="1"/>
+    <path d="M20.6 6.2l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5Z" fill="#fff" stroke="none"/>
+  </svg>`,
+  sun: svg('<circle cx="12" cy="12" r="4" fill="currentColor" fill-opacity=".25"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'),
+  moon: svg('<path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10Z" fill="currentColor" fill-opacity=".25"/>'),
+  trophy: svg('<path d="M7 4h10v5a5 5 0 0 1-10 0Z" fill="currentColor" fill-opacity=".25"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8 21h8M9 18h6"/>'),
   gift: svg('<rect x="3" y="9" width="18" height="12" rx="1"/><path d="M3 13h18M12 9v12M12 9c-3 0-5-1-5-3s3-2 5 3c2-5 5-5 5-3s-2 3-5 3"/>'),
 };
 

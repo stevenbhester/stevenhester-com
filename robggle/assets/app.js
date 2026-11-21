@@ -1,10 +1,10 @@
 // Robggle client. One file drives three pages: /robggle/ (home), /robggle/game/ (screen), /robggle/join/ (controller).
-import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=fd261f1-1795140523';
-import { makeBoard, tileText } from './board.js?v=fd261f1-1795140523';
-import { sfx, unlock } from './sfx.js?v=fd261f1-1795140523';
-import { runReveal, chipHTML } from './reveal.js?v=fd261f1-1795140523';
-import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=fd261f1-1795140523';
-import { icon } from './icons.js?v=fd261f1-1795140523';
+import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=5ac4f5c-1795227530';
+import { makeBoard, tileText } from './board.js?v=5ac4f5c-1795227530';
+import { sfx, unlock } from './sfx.js?v=5ac4f5c-1795227530';
+import { runReveal, chipHTML } from './reveal.js?v=5ac4f5c-1795227530';
+import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=5ac4f5c-1795227530';
+import { icon } from './icons.js?v=5ac4f5c-1795227530';
 
 const MODE = document.body.dataset.mode; // home | screen | join
 const $root = document.getElementById('root');
@@ -326,6 +326,7 @@ function settingsHTML() {
       `<span class="info-chip">${icon('letters', 'sm')}${s.minLen}+ letters</span>`,
       s.mode === 'coop' ? `<span class="info-chip">${icon('clock', 'sm')}${s.penTime}s turns</span>` : `<span class="info-chip">${icon('clock', 'sm')}${fmtTime(s.time)}</span>`,
       s.handicap && s.mode !== 'coop' ? `<span class="info-chip mint">${icon('flag', 'sm')}Handicap</span>` : '',
+      s.funAwards && s.mode !== 'coop' ? `<span class="info-chip mint">${icon('star', 'sm')}For-fun awards</span>` : '',
       s.chaos ? `<span class="info-chip hot">${icon('bolt', 'sm')}Family Chaos</span>` : '',
     ].join('');
     const chaosList = s.chaos ? `<div class="chaos-chips">${types.filter(t => s.mode !== 'coop' || t !== 'leak').map(t => `<span class="chaos-chip" style="--c:${INFO[t].color}">${icon(t, 'sm')}${esc(INFO[t].title)}</span>`).join('')}</div>` : '';
@@ -349,6 +350,7 @@ function settingsHTML() {
     : `<div class="setting-block"><div class="setting-label">${icon('clock')}Round length</div>${seg('time', TIME_OPTS)}</div>`}
     <div class="divider"></div>
     ${coop ? '' : toggleHTML('handicap', !!s.handicap, 'Handicap', 'Golf-style: after a couple of rounds, whoever usually trails gets bonus strokes.', 'flag')}
+    ${coop ? '' : toggleHTML('funAwards', !!s.funAwards, 'For-fun awards', 'Silly bonus categories after every round, each worth real points. Totally unfair, on purpose.', 'star')}
     ${toggleHTML('chaos', !!s.chaos, 'Family Chaos', 'Surprise events from the family drop in mid-round.', 'bolt')}
     ${chaosGrid}
   </div>`;
@@ -788,11 +790,16 @@ function challenge(w) {
 
 function renderWords() {
   if (!S.play || MODE === 'screen') return;
+  // The list is rebuilt whenever anything changes (a server confirm, an ally's word, a rejection), so the
+  // newest word only pops in the first time it's drawn; after that it just keeps its tint.
+  const popNow = S.play.lastNew && S.play.popped !== S.play.lastNew;
+  S.play.popped = S.play.lastNew;
+  const newCls = w => (w === S.play.lastNew ? (popNow ? ' new pop' : ' new') : '');
   const box = S.play.words;
   if (S.coop) {
     const team = [...S.team.values()].reverse();
     let html = team.length ? `<div class="list-head">${icon('users', 'sm')}Team words <small>${team.length} found</small></div>` : `<div class="empty-note">${icon('sparkle')}${S.pen && S.pen.holder === S.you.id ? 'Trace the words your family calls out' : 'Spot words and shout them to whoever has the pen'}</div>`;
-    html += team.map(x => { const p = member(x.by); return `<span class="word team${x.w === S.play.lastNew ? ' new' : ''}">${p ? chipHTML(p, 'tiny') : ''}${esc(x.w)}</span>`; }).join('');
+    html += team.map(x => { const p = member(x.by); return `<span class="word team${newCls(x.w)}">${p ? chipHTML(p, 'tiny') : ''}${esc(x.w)}</span>`; }).join('');
     const rej = [...S.rejected].filter(([w]) => !S.team.has(w)).reverse().slice(0, 6);
     if (rej.length) {
       const left = 3 - [...S.rejected.values()].filter(y => y.challenged).length;
@@ -809,7 +816,7 @@ function renderWords() {
   let html = mine.length ? `<div class="list-head">${icon('list', 'sm')}Your words</div>` : `<div class="empty-note">${icon('sparkle')}Drag across touching letters to make words</div>`;
   html += mine.map(w => {
     const x = S.mine.get(w);
-    const isNew = w === S.play.lastNew ? ' new' : '';
+    const isNew = newCls(w);
     if (x.via === 'leak') { const p = member(x.from); return `<span class="word leak${isNew}" style="--c:${p ? p.color : '#b48cff'}">${esc(w)}</span>`; }
     const a = S.ally.get(w);
     const p = a && member(a.by);
@@ -1083,6 +1090,7 @@ function showResults(R) {
     onLobby: () => S.conn.send({ t: 'lobby' }),
     control: msg => S.conn.send({ t: 'revealCtl', ...msg }),
     attitude: kind => S.conn.send({ t: 'attitude', kind }),
+    brag: w => S.conn.send({ t: 'brag', w }),
   });
   rv.no = R.no;
   S.reveal = rv;
@@ -1114,7 +1122,7 @@ window.addEventListener('robggle:open', e => {
   if (!want) return;
   try { sessionStorage.setItem('rb:intro', '1'); } catch {}
   const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
-  import('./intro.js?v=fd261f1-1795140523').then(m => m.playIntro({ freezeAt })).catch(() => {});
+  import('./intro.js?v=5ac4f5c-1795227530').then(m => m.playIntro({ freezeAt })).catch(() => {});
 })();
 
 if (MODE === 'home') renderLanding();

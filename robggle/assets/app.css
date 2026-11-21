@@ -169,7 +169,8 @@ h3 { margin: 0; font-size: 17px; color: var(--muted); font-weight: 500; }
   padding: 5px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.1); font-weight: 600;
   text-transform: uppercase; font-size: 15px; letter-spacing: 0.04em; border: 0; color: var(--ink);
 }
-.word.new { animation: popIn 0.35s both; background: rgba(62, 224, 176, 0.25); }
+.word.new { background: rgba(62, 224, 176, 0.25); }
+.word.pop { animation: popIn 0.35s both; }
 .word.ally { background: transparent; border: 2px dashed var(--c); color: var(--c); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .word.ally.got { border-style: solid; background: color-mix(in srgb, var(--c) 22%, transparent); color: var(--ink); }
 
@@ -471,6 +472,9 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .badge-card.good { --bc: var(--mint); }
 .badge-card.bad { --bc: var(--bad); }
 .badge-card.funny { --bc: var(--sun); }
+.badge-card.treat { --bc: #9ad8f5; background: linear-gradient(135deg, rgba(154, 216, 245, 0.16), rgba(224, 24, 43, 0.14)); }
+.badge-card.treat .badge-icon { background: linear-gradient(160deg, #d9f3ff, #9ad8f5); }
+.badge-card.treat .badge-icon svg { width: 34px; height: 34px; }
 .badge-icon { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 12px; background: var(--bc); color: #1b1036; }
 .badge-icon svg { width: 26px; height: 26px; }
 .badge-title { font-weight: 700; font-size: 17px; }
@@ -479,6 +483,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .others-badges { display: flex; flex-direction: column; gap: 6px; }
 .other-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 14px; }
 .mini-badge { padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; background: rgba(255, 255, 255, 0.1); }
+.mini-badge.treat { color: #9ad8f5; }
 .mini-badge.good { color: var(--mint); } .mini-badge.bad { color: #ff8fa5; } .mini-badge.funny { color: var(--sun); }
 .attitude .btn.picked { outline: 3px solid #fff; }
 
@@ -923,3 +928,66 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .reveal.tv .build-line, .screen-lobby .build-line { font-size: 1.6vmin; }
 .tag.old { background: rgba(255, 138, 61, 0.2); color: #ffb37a; }
 .btn.app-update { background: var(--sun); color: #3a2a00; box-shadow: 0 5px 0 #b38f10; text-decoration: none; justify-content: center; }
+
+/* ---------- word pairs: one color each, a divider between, stripes where they share tiles ---------- */
+.wordpair { --pa: #3ee0b0; --pb: #5ab0ff; gap: 14px; align-items: stretch; }
+.wordpair .pair-div { flex: none; width: 3px; margin: 2px 0 10px; border-radius: 3px; background: linear-gradient(var(--pa), var(--pb)); opacity: 0.85; }
+.wordpair .wordcard.pa .letters span { background: var(--pa); color: #12352b; box-shadow: 0 4px 0 #1f9b78; }
+.wordpair .wordcard.pb .letters span { background: var(--pb); color: #10213d; box-shadow: 0 4px 0 #2f6fb0; }
+.wordpair .wordcard.pa .pts { color: var(--pa); }
+.wordpair .wordcard.pb .pts { color: var(--pb); }
+.tile.lit.striped { background: repeating-linear-gradient(135deg, var(--lit) 0 12.5%, var(--lit2) 12.5% 25%); text-shadow: 0 0 5px rgba(255, 255, 255, 0.8); }
+
+/* ---------- your words: tap to brag ---------- */
+.brag-words { margin-top: 8px; }
+.brag-words .word { border: 0; font: inherit; color: inherit; cursor: pointer; display: inline-flex; gap: 5px; align-items: baseline; background: rgba(255, 255, 255, 0.08); transition: transform 0.12s, background 0.2s; }
+.brag-words .word small { font-size: 11px; opacity: 0.6; }
+.brag-words .word.solo { background: rgba(255, 210, 63, 0.2); color: var(--sun); }
+.brag-words .word:active { transform: scale(0.93); }
+.brag-words .word.bragged { background: var(--hot); color: #fff; }
+.talk-line.brag { background: rgba(255, 138, 61, 0.16); }
+.talk-line b, .bubble b { color: var(--sun); }
+.bubble.brag { background: var(--hot); color: #fff; border-color: var(--hot); }
+.bubble.brag::after { border-top-color: var(--hot); }
+.bubble.brag b { color: #3a1a00; }
+
+/* ---------- for-fun awards ---------- */
+.fun-stamp { color: var(--sun); text-shadow: 0 6px 0 #b38f10; }
+.award-reveal { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; width: 100%; animation: fadeIn 0.25s both; }
+.aw-count { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.aw-title { display: inline-flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 700; color: var(--sun); }
+.aw-ic { display: inline-grid; place-items: center; width: 1.2em; height: 1.2em; }
+.aw-ic svg { width: 100%; height: 100%; }
+.aw-blurb { color: var(--muted); font-size: 15px; }
+.aw-stage { position: relative; display: grid; place-items: center; min-height: 96px; width: 100%; margin-top: 6px; }
+.aw-box { grid-area: 1 / 1; width: 96px; height: 84px; }
+.aw-box .body { height: 58px; }
+.aw-box .lid { height: 22px; }
+.aw-box .ribbon { width: 16px; }
+.aw-box.frantic { animation-duration: 0.12s; }
+.aw-winners { grid-area: 1 / 1; display: flex; flex-direction: column; gap: 8px; width: min(100%, 360px); }
+.aw-winner { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 16px; background: color-mix(in srgb, var(--c) 22%, transparent); border: 2px solid var(--c); text-align: left; animation: badgeIn 0.55s cubic-bezier(0.2, 1.5, 0.4, 1) both; animation-delay: calc(var(--i) * 0.12s); }
+.aw-winner > div { flex: 1; min-width: 0; }
+.aw-name { font-weight: 700; font-size: 19px; }
+.aw-detail { color: var(--muted); font-size: 14px; }
+.aw-pts { font-weight: 700; font-size: 24px; color: var(--sun); }
+.reveal.tv .aw-title { font-size: 6vmin; }
+.reveal.tv .aw-blurb, .reveal.tv .aw-count { font-size: 2.6vmin; }
+.reveal.tv .aw-stage { min-height: 22vmin; }
+.reveal.tv .aw-box { width: 18vmin; height: 16vmin; }
+.reveal.tv .aw-box .body { height: 11vmin; }
+.reveal.tv .aw-box .lid { height: 4vmin; }
+.reveal.tv .aw-winners { width: min(100%, 60vmin); }
+.reveal.tv .aw-name { font-size: 3.6vmin; }
+.reveal.tv .aw-detail { font-size: 2.4vmin; }
+.reveal.tv .aw-pts { font-size: 4.4vmin; }
+.fun-list { display: flex; flex-direction: column; gap: 6px; }
+.fun-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 12px; background: rgba(255, 210, 63, 0.09); }
+.fun-row .aw-ic { color: var(--sun); width: 22px; height: 22px; flex: none; }
+.fun-row b { display: block; font-size: 14px; }
+.fun-row small { display: block; color: var(--muted); font-size: 12px; }
+.fun-row .fun-who { display: flex; gap: 3px; }
+.fun-row .fun-pts { color: var(--sun); font-size: 16px; }
+.fun-list.tv { margin-bottom: 2vmin; }
+.fun-list.tv .fun-row b { font-size: 2.2vmin; }
+.fun-list.tv .fun-row small { font-size: 1.8vmin; }
