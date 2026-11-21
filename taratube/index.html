@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#fff7f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1430" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TaraTube">
+<title>TaraTube</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff7aa2' d='M12 1.8l2.9 6.4 6.9.7-5.2 4.6 1.5 6.8L12 16.8l-6.1 3.5 1.5-6.8L2.2 8.9l6.9-.7z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400..700&family=Nunito:wght@400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tt.css">
+<style>
+  .timers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .timer { padding: 14px 14px 12px; margin: 0; position: relative; overflow: hidden; }
+  .timer.new { background: linear-gradient(160deg, var(--blush-soft), var(--surface) 70%); }
+  .timer.drop { background: linear-gradient(160deg, var(--lilac-soft), var(--surface) 70%); }
+  .timer .label { margin-bottom: 6px; }
+  .timer .big { font: 600 30px/1.05 var(--display); letter-spacing: -.02em; white-space: nowrap; }
+  .timer .big small { font-size: .55em; color: var(--muted); font-weight: 500; margin: 0 3px 0 1px; }
+  .timer.new .big { color: var(--blush-deep); }
+  .timer.drop .big { color: var(--lilac-deep); }
+  .timer .sub { font-size: 13px; color: var(--muted); margin-top: 6px; font-weight: 600; }
+  .timer .badge { display: inline-block; margin-top: 6px; background: var(--sun); color: #3b2a00; font: 700 11px/1 var(--body); padding: 4px 8px; border-radius: 999px; }
+  .empty-big { font: 600 22px/1.1 var(--display); color: var(--muted); }
+
+  .when { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .when-btn { border: 0; background: none; padding: 0; text-align: left; }
+  .when-day { font: 700 14px/1.2 var(--body); color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .when-time { font: 600 40px/1.05 var(--display); letter-spacing: -.02em; display: flex; align-items: center; gap: 8px; }
+  .when-time svg { width: 20px; height: 20px; color: var(--muted); }
+  .live { display: inline-flex; align-items: center; gap: 5px; background: var(--blush-soft); color: var(--blush-deep); border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 800; }
+  .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .now-btn { border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; font: 700 14px/1 var(--body); color: var(--blush-deep); min-height: 44px; }
+  .nudges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+  .nudges button {
+    border: 0; border-radius: 14px; background: var(--surface-2); min-height: 48px;
+    font: 600 16px/1 var(--display); color: var(--ink);
+  }
+  .nudges button:active { background: var(--blush-soft); }
+  .nudges button.plus { background: var(--lilac-soft); }
+  .nudges button:disabled { opacity: .35; }
+  #picker { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+
+  .kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kind {
+    border: 2.5px solid var(--line); background: var(--surface); border-radius: 20px; padding: 14px 10px 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 104px; transition: .15s;
+  }
+  .kind svg { width: 38px; height: 38px; }
+  .kind b { font: 600 19px/1 var(--display); }
+  .kind span { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+  .kind.new svg { color: var(--blush); }
+  .kind.same svg { color: var(--lilac); }
+  .kind.new[aria-pressed="true"] { border-color: var(--blush); background: var(--blush-soft); transform: scale(1.02); }
+  .kind.same[aria-pressed="true"] { border-color: var(--lilac); background: var(--lilac-soft); transform: scale(1.02); }
+
+  .row2 { display: flex; align-items: baseline; justify-content: space-between; }
+  .hint { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border-radius: 18px; padding: 5px; gap: 5px; }
+  .seg button { border: 0; background: none; border-radius: 14px; min-height: 50px; font: 600 18px/1 var(--display); color: var(--muted); }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+  .seg button[aria-pressed="true"]::before { content: "✦ "; color: var(--sun); }
+
+  .len-val { font: 600 26px/1 var(--display); }
+  .len-val.blank { color: var(--muted); font-size: 18px; }
+  .len-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+  .len-row button { border: 0; background: var(--surface-2); border-radius: 12px; min-width: 44px; min-height: 44px; font: 600 20px/1 var(--display); }
+  input[type=range] { flex: 1; -webkit-appearance: none; appearance: none; height: 44px; background: none; margin: 0; }
+  input[type=range]::-webkit-slider-runnable-track { height: 10px; border-radius: 999px; background: linear-gradient(90deg, var(--peach), var(--blush)); }
+  input[type=range]::-moz-range-track { height: 10px; border-radius: 999px; background: linear-gradient(90deg, var(--peach), var(--blush)); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -10px; border-radius: 50%; background: var(--surface); border: 4px solid var(--blush); box-shadow: var(--shadow); }
+  input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--surface); border: 4px solid var(--blush); }
+  input[type=range].blank::-webkit-slider-runnable-track { background: var(--line); }
+  input[type=range].blank::-moz-range-track { background: var(--line); }
+  input[type=range].blank::-webkit-slider-thumb { border-color: var(--muted); }
+  .clear-len { font-size: 14px !important; font-family: var(--body) !important; font-weight: 700 !important; color: var(--muted); padding: 0 12px; }
+
+  .recent { list-style: none; margin: 0; padding: 0; }
+  .recent li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .recent li:first-child { border-top: 0; padding-top: 0; }
+  .recent .t { flex: 1; font-weight: 700; }
+  .recent .t small { display: block; color: var(--muted); font-weight: 600; font-size: 12.5px; }
+  .recent .ago { color: var(--muted); font-size: 13px; font-weight: 700; }
+
+  .dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(transparent, var(--bg) 28%);
+  }
+  .dock .big-btn { display: block; width: 100%; max-width: 488px; margin: 0 auto; }
+  .dock .big-btn.same { background: var(--lilac); box-shadow: 0 4px 0 var(--lilac-deep); }
+  .dock .big-btn.same:active { box-shadow: 0 1px 0 var(--lilac-deep); }
+  .err-line { color: var(--blush-deep); font-weight: 700; font-size: 14px; text-align: center; margin: 4px 0 12px; }
+  @media (max-width: 360px) { .timer .big { font-size: 25px; } .when-time { font-size: 34px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./">
+      <span id="brandStar"></span>
+      <div><h1>Tara<b>Tube</b></h1><small>for our little star</small></div>
+    </a>
+    <a class="pill-btn" href="stats/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>Stats</a>
+  </header>
+
+  <section class="timers" aria-live="polite">
+    <div class="card timer new"><p class="label">Since new tube</p><div class="big" id="tNew"><span class="empty-big">—</span></div><div class="sub" id="sNew">&nbsp;</div></div>
+    <div class="card timer drop"><p class="label">Since last drop</p><div class="big" id="tDrop"><span class="empty-big">—</span></div><div class="sub" id="sDrop">&nbsp;</div></div>
+  </section>
+  <p class="err-line" id="loadErr" hidden></p>
+
+  <section class="card">
+    <div class="when">
+      <button class="when-btn" id="whenBtn" type="button" aria-label="Pick a date and time">
+        <div class="when-day" id="whenDay">Today</div>
+        <div class="when-time"><span id="whenTime">--:--</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg></div>
+      </button>
+      <button class="now-btn" id="nowBtn" type="button" hidden>Back to now</button>
+    </div>
+    <input type="datetime-local" id="picker" tabindex="-1" aria-hidden="true">
+    <div class="nudges">
+      <button type="button" data-n="-60">−1h</button>
+      <button type="button" data-n="-15">−15m</button>
+      <button type="button" data-n="-5">−5m</button>
+      <button type="button" data-n="-1">−1m</button>
+      <button type="button" class="plus" data-n="1">+1m</button>
+      <button type="button" class="plus" data-n="5">+5m</button>
+      <button type="button" class="plus" data-n="15">+15m</button>
+      <button type="button" class="plus" data-n="60">+1h</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <p class="label">Which tube?</p>
+    <div class="kinds">
+      <button type="button" class="kind new" data-kind="new" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 5.6L20 9.5l-4.6 3.8 1.5 6L12 16l-4.9 3.3 1.5-6L4 9.5l5.8-1.9z"/><circle cx="20" cy="3.5" r="1.4"/><circle cx="4" cy="20" r="1.1"/></svg>
+        <b>New tube</b><span>a fresh one</span></button>
+      <button type="button" class="kind same" data-kind="same" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-13.7 5.7M4 12a8 8 0 0 1 13.7-5.7"/><path d="M18 2.5v4.2h-4.2M6 21.5v-4.2h4.2"/></svg>
+        <b>Same tube</b><span>re-dropped it</span></button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row2"><p class="label">Side</p><span class="hint" id="sideHint"></span></div>
+    <div class="seg" role="group" aria-label="Side">
+      <button type="button" data-side="L" aria-pressed="false">Left</button>
+      <button type="button" data-side="R" aria-pressed="false">Right</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row2"><p class="label">Inserted to <span style="text-transform:none;letter-spacing:0">(optional)</span></p><span class="hint" id="lenHint"></span></div>
+    <div class="row2" style="align-items:center">
+      <span class="len-val blank" id="lenVal">Not set</span>
+      <button type="button" class="pill-btn clear-len" id="lenClear" hidden>Clear</button>
+    </div>
+    <div class="len-row">
+      <button type="button" id="lenMinus" aria-label="Half a centimeter less">−</button>
+      <input type="range" id="len" min="10" max="40" step="0.5" value="20" class="blank" aria-label="Length inserted in centimeters">
+      <button type="button" id="lenPlus" aria-label="Half a centimeter more">+</button>
+    </div>
+  </section>
+
+  <section class="card" id="recentCard" hidden>
+    <p class="label">Lately</p>
+    <ul class="recent" id="recent"></ul>
+  </section>
+</div>
+
+<div class="dock"><button class="big-btn" id="logBtn" type="button" disabled>Pick new or same</button></div>
+
+<script src="tt.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  TT.sky();
+  $('brandStar').outerHTML = TT.STAR;
+
+  let evs = TT.cached();
+  const st = { at: null, kind: null, side: null, len: null, saving: false };
+
+  // ----- timers -----
+  function timerHTML(ms) {
+    return TT.durParts(ms).map(([n, u]) => `${n}<small>${u}</small>`).join('');
+  }
+  function renderTimers() {
+    const s = TT.stats(evs);
+    if (s.lastNew) {
+      $('tNew').innerHTML = timerHTML(s.sinceNew);
+      $('sNew').textContent = `${TT.when(s.lastNew.at)} · ${s.lastNew.side}`;
+    }
+    if (s.last) {
+      $('tDrop').innerHTML = timerHTML(s.sinceLast) + (s.onRecord ? '<br><span class="badge">✦ record stretch!</span>' : '');
+      $('sDrop').textContent = `${TT.when(s.last.at)} · ${s.last.side}${s.last.kind === 'new' ? ' · new' : ''}`;
+    }
+    renderRecent();
+  }
+
+  function renderRecent() {
+    const last = evs.slice(-3).reverse();
+    $('recentCard').hidden = !last.length;
+    $('recent').innerHTML = last.map(e => `<li>
+      <span class="kind-pill ${e.kind}">${e.kind === 'new' ? 'New' : 'Same'}</span>
+      <span class="t">${TT.esc(TT.when(e.at))}<small>${TT.sideName(e.side)}${e.length_cm != null ? ' · ' + TT.cm(e.length_cm) : ''}</small></span>
+      <span class="ago">${TT.dur(Date.now() - e.at, { short: true })} ago</span></li>`).join('');
+  }
+
+  // ----- when -----
+  const current = () => st.at || new Date();
+  function renderWhen() {
+    const d = current();
+    $('whenTime').textContent = TT.time(d);
+    $('whenDay').innerHTML = st.at ? TT.esc(TT.dayName(d)) : `${TT.esc(TT.dayName(d))} <span class="live">now</span>`;
+    $('nowBtn').hidden = !st.at;
+    const room = Date.now() - d.getTime();
+    document.querySelectorAll('.nudges .plus').forEach(b => { b.disabled = !st.at || room < 60e3 * 0.5; });
+  }
+  function setAt(d) {
+    const now = new Date();
+    if (d >= now - 30e3) st.at = null; // caught up with now: go back to live
+    else st.at = d;
+    renderWhen();
+  }
+  document.querySelectorAll('.nudges button').forEach(b => b.onclick = () => {
+    const d = new Date(current().getTime() + Number(b.dataset.n) * 60e3);
+    d.setSeconds(0, 0);
+    setAt(new Date(Math.min(d, Date.now())));
+    if (navigator.vibrate) navigator.vibrate(8);
+  });
+  $('nowBtn').onclick = () => setAt(new Date());
+  $('whenBtn').onclick = () => {
+    const p = $('picker');
+    p.max = TT.toInput(new Date());
+    p.value = TT.toInput(current());
+    try { p.showPicker(); } catch { p.focus(); p.click(); }
+  };
+  $('picker').onchange = e => {
+    if (!e.target.value) return;
+    const d = new Date(e.target.value);
+    if (!isNaN(d)) setAt(new Date(Math.min(d, Date.now())));
+  };
+
+  // ----- kind & side -----
+  function renderChoices() {
+    document.querySelectorAll('.kind').forEach(b => b.setAttribute('aria-pressed', b.dataset.kind === st.kind));
+    document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.side === st.side));
+    const last = evs[evs.length - 1];
+    $('sideHint').textContent = last ? (st.side === last.side ? 'same as last time' : `last time: ${TT.sideName(last.side).toLowerCase()}`) : '';
+    const btn = $('logBtn');
+    btn.disabled = !st.kind || !st.side || st.saving;
+    btn.className = 'big-btn' + (st.kind === 'same' ? ' same' : '');
+    btn.textContent = st.saving ? 'Saving…' : !st.kind ? 'Pick new or same' : !st.side ? 'Pick a side' : st.kind === 'new' ? '✦ Log new tube' : '✦ Log re-drop';
+  }
+  document.querySelectorAll('.kind').forEach(b => b.onclick = () => { st.kind = st.kind === b.dataset.kind ? null : b.dataset.kind; renderChoices(); });
+  document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { st.side = b.dataset.side; renderChoices(); });
+
+  // ----- length -----
+  function renderLen() {
+    const r = $('len');
+    r.classList.toggle('blank', st.len == null);
+    $('lenVal').textContent = st.len == null ? 'Not set' : TT.cm(st.len);
+    $('lenVal').classList.toggle('blank', st.len == null);
+    $('lenClear').hidden = st.len == null;
+    if (st.len != null) r.value = st.len;
+    const lastLen = [...evs].reverse().find(e => e.length_cm != null);
+    $('lenHint').textContent = lastLen ? `last: ${TT.cm(lastLen.length_cm)}` : '';
+  }
+  // When blank, the slider sits at the last length used, so one nudge gets you close.
+  function lenStart() { const l = [...evs].reverse().find(e => e.length_cm != null); return l ? l.length_cm : 20; }
+  $('len').oninput = e => { st.len = Number(e.target.value); renderLen(); };
+  $('lenMinus').onclick = () => { st.len = Math.max(10, (st.len ?? lenStart() + 0.5) - 0.5); renderLen(); };
+  $('lenPlus').onclick = () => { st.len = Math.min(40, (st.len ?? lenStart() - 0.5) + 0.5); renderLen(); };
+  $('lenClear').onclick = () => { st.len = null; $('len').value = lenStart(); renderLen(); };
+
+  // ----- log -----
+  $('logBtn').onclick = async () => {
+    if (!st.kind || !st.side || st.saving) return;
+    st.saving = true; renderChoices();
+    const body = { at: current().toISOString(), kind: st.kind, side: st.side, length_cm: st.len };
+    try {
+      const { event } = await TT.api('/events', { method: 'POST', body });
+      evs.push(TT.parse(event)); evs.sort((a, b) => a.at - b.at || a.id - b.id);
+      TT.remember(evs);
+      const wasNew = st.kind === 'new';
+      st.at = null; st.kind = null; st.len = null; $('len').value = lenStart();
+      if (navigator.vibrate) navigator.vibrate([15, 40, 15]);
+      TT.toast(wasNew ? 'New tube logged ✦' : 'Re-drop logged ✦', {
+        action: 'Undo', ms: 9000, onAction: async () => {
+          try {
+            await TT.api('/events/' + event.id, { method: 'DELETE' });
+            evs = evs.filter(e => e.id !== event.id); TT.remember(evs);
+            st.kind = event.kind; st.side = event.side; st.len = event.length_cm;
+            const at = new Date(event.at); st.at = Date.now() - at > 60e3 ? at : null;
+            renderAll(); TT.toast('Undone');
+          } catch (err) { TT.toast(err.message, { err: true }); }
+        },
+      });
+    } catch (err) {
+      TT.toast("Didn't save: " + err.message, { err: true });
+    }
+    st.saving = false;
+    renderAll();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  function renderAll() { renderTimers(); renderWhen(); renderChoices(); renderLen(); }
+
+  function defaults() {
+    const last = evs[evs.length - 1];
+    if (!st.side && last) st.side = last.side;
+    $('len').value = lenStart();
+  }
+
+  async function load() {
+    try {
+      evs = await TT.events();
+      $('loadErr').hidden = true;
+      defaults(); renderAll();
+    } catch (err) {
+      $('loadErr').textContent = "Couldn't load the log: " + err.message;
+      $('loadErr').hidden = false;
+    }
+  }
+
+  defaults(); renderAll();
+  load();
+  setInterval(() => { renderTimers(); renderWhen(); }, 15e3);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+})();
+</script>
+</body>
+</html>

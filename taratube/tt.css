@@ -1,0 +1,126 @@
+/* TaraTube: shared look for /taratube and /taratube/stats.
+   Day is cream and blush; night (dark mode, for 3am re-drops) is a soft plum sky. */
+:root {
+  --bg: #fff7f0;
+  --surface: #ffffff;
+  --surface-2: #fff0f3;
+  --ink: #3b2140;
+  --muted: #8a6f8c;
+  --line: #f3dbe3;
+  --blush: #ff7aa2;
+  --blush-deep: #e8507f;
+  --blush-soft: #ffe1ea;
+  --lilac: #9a7cf0;
+  --lilac-deep: #7a5bd6;
+  --lilac-soft: #ece6ff;
+  --peach: #ffb38a;
+  --sun: #ffd166;
+  --on-accent: #ffffff;
+  --shadow: 0 6px 20px rgba(150, 70, 110, .10), 0 1px 3px rgba(150, 70, 110, .08);
+  --radius: 22px;
+  --display: "Fredoka", "Nunito", system-ui, sans-serif;
+  --body: "Nunito", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1430;
+    --surface: #251d42;
+    --surface-2: #2e2452;
+    --ink: #fbeef6;
+    --muted: #b8a6cc;
+    --line: #3a2f62;
+    --blush: #ff8fb1;
+    --blush-deep: #ffa9c3;
+    --blush-soft: #4a2c55;
+    --lilac: #b6a0ff;
+    --lilac-deep: #c9b8ff;
+    --lilac-soft: #352a63;
+    --peach: #ffbf9c;
+    --sun: #ffe08a;
+    --on-accent: #2a1430;
+    --shadow: 0 6px 24px rgba(0, 0, 0, .35);
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.4 var(--body);
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+
+.sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.sky i {
+  position: absolute; color: var(--sun); opacity: .55; font-style: normal;
+  font-size: var(--s, 12px); animation: twinkle var(--d, 4s) ease-in-out infinite;
+}
+@keyframes twinkle { 50% { opacity: .15; transform: scale(.8) rotate(20deg); } }
+@media (prefers-reduced-motion: reduce) { .sky i { animation: none; } }
+
+.wrap { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; padding: 14px 16px 140px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 2px 14px; }
+.brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
+.brand h1, .brand .h1 { font: 600 28px/1 var(--display); margin: 0; letter-spacing: -.01em; }
+.brand h1 b, .brand .h1 b { color: var(--blush); font-weight: 600; }
+.brand .star { width: 30px; height: 30px; color: var(--sun); filter: drop-shadow(0 2px 0 var(--blush-soft)); }
+.brand small { display: block; font: 600 12px/1.2 var(--body); color: var(--muted); margin-top: 3px; }
+.pill-btn {
+  display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px;
+  background: var(--lilac-soft); color: var(--lilac-deep); padding: 10px 16px;
+  font: 600 15px/1 var(--display); text-decoration: none; min-height: 44px;
+}
+.pill-btn svg { width: 18px; height: 18px; }
+
+.card {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 16px; margin-bottom: 14px; border: 1px solid var(--line);
+}
+.label { font: 700 12px/1 var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(110px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px);
+  background: var(--ink); color: var(--bg); border-radius: 999px; padding: 10px 10px 10px 18px;
+  display: flex; align-items: center; gap: 12px; font-weight: 700; opacity: 0; pointer-events: none;
+  transition: .25s; z-index: 20; white-space: nowrap; box-shadow: var(--shadow);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast button { border: 0; background: var(--blush); color: var(--on-accent); border-radius: 999px; padding: 8px 14px; font-weight: 800; }
+.toast.err { background: var(--blush-deep); color: #fff; }
+
+/* Passcode gate */
+.gate {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(6px);
+}
+.gate form { background: var(--surface); border-radius: 28px; padding: 26px 22px; width: min(360px, 100%); box-shadow: var(--shadow); text-align: center; border: 1px solid var(--line); }
+.gate .star { width: 54px; height: 54px; color: var(--sun); }
+.gate h2 { font: 600 24px/1.1 var(--display); margin: 8px 0 4px; }
+.gate p { color: var(--muted); margin: 0 0 16px; font-size: 15px; }
+.gate input {
+  width: 100%; border: 2px solid var(--line); background: var(--surface-2); border-radius: 16px;
+  padding: 14px 16px; font-size: 18px; text-align: center; outline: none;
+}
+.gate input:focus { border-color: var(--blush); }
+.gate button { margin-top: 12px; width: 100%; }
+.gate .oops { color: var(--blush-deep); font-weight: 700; min-height: 20px; margin: 10px 0 0; font-size: 14px; }
+
+.big-btn {
+  border: 0; border-radius: 20px; background: var(--blush); color: var(--on-accent);
+  font: 600 20px/1 var(--display); padding: 18px; min-height: 60px;
+  box-shadow: 0 4px 0 var(--blush-deep); transition: transform .08s, box-shadow .08s, opacity .2s;
+}
+.big-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--blush-deep); }
+.big-btn:disabled { opacity: .45; box-shadow: none; transform: none; }
+
+.kind-pill { display: inline-block; border-radius: 999px; padding: 3px 9px; font: 700 12px/1.3 var(--body); }
+.kind-pill.new { background: var(--blush-soft); color: var(--blush-deep); }
+.kind-pill.same { background: var(--lilac-soft); color: var(--lilac-deep); }
