@@ -23,7 +23,7 @@ export function audioOut() { return ctx ? { ctx, master } : null; }
 
 export function audioReady() { return !!ctx && ctx.state === 'running'; }
 
-export function setMuted(v) { muted = v; if (v) import('./music.js?v=da58d22-1795245872').then(m => m.stopMusic(0.3)); try { localStorage.setItem('rb:mute', v ? '1' : '0'); } catch {} }
+export function setMuted(v) { muted = v; if (v) import('./music.js?v=dc68fa1-1795297650').then(m => m.stopMusic(0.3)); try { localStorage.setItem('rb:mute', v ? '1' : '0'); } catch {} }
 export function isMuted() { return muted; }
 
 function tone(freq, { at = 0, dur = 0.12, type = 'sine', vol = 0.3, slide = 0, attack = 0.005 } = {}) {
@@ -54,6 +54,42 @@ function noise({ at = 0, dur = 0.2, vol = 0.2, freq = 1200 } = {}) {
   s.start(t);
 }
 
+// A warm, lo-fi pluck: two slightly detuned triangle waves and a soft octave, through a low-pass filter that
+// closes as the note fades, with a slow tape-style wobble in pitch.
+function pluck(freq, { at = 0, vol = 0.16, dur = 0.9 } = {}) {
+  if (!ctx || muted) return;
+  const t = ctx.currentTime + at;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.Q.value = 0.8;
+  lp.frequency.setValueAtTime(Math.min(3200, freq * 6), t);
+  lp.frequency.exponentialRampToValueAtTime(Math.max(500, freq * 1.5), t + dur);
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 4.6;
+  const depth = ctx.createGain(); depth.gain.value = 9; // cents of wobble
+  lfo.connect(depth);
+  [[-8, 'triangle', 1, 0.5], [8, 'triangle', 1, 0.5], [0, 'sine', 2, 0.16]].forEach(([cents, type, mult, level]) => {
+    const o = ctx.createOscillator();
+    o.type = type; o.frequency.value = freq * mult; o.detune.value = cents;
+    depth.connect(o.detune);
+    const og = ctx.createGain(); og.gain.value = level;
+    o.connect(og).connect(lp);
+    o.start(t); o.stop(t + dur + 0.05);
+  });
+  lp.connect(g).connect(master);
+  lfo.start(t); lfo.stop(t + dur + 0.05);
+}
+// A wind-chime glint, high and very quiet.
+function chime(freq, at = 0) {
+  while (freq > 2400) freq /= 2;
+  tone(freq, { at, dur: 0.5, type: 'sine', vol: 0.052, attack: 0.004 });
+  tone(freq * 1.5, { at: at + 0.05, dur: 0.35, type: 'sine', vol: 0.027, attack: 0.004 });
+}
+// A brush of tambourine.
+function shake(at = 0, dur = 0.08, vol = 0.04) { noise({ at, dur, vol, freq: 6500 }); }
+
 const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31];
 const note = (i, base = 392) => base * 2 ** (SCALE[Math.min(i, SCALE.length - 1)] / 12);
 
@@ -73,6 +109,36 @@ export const sfx = {
   solo() {
     noise({ dur: 0.25, vol: 0.25, freq: 900 });
     [0, 4, 7, 12, 16].forEach((s, i) => tone(523 * 2 ** (s / 12), { at: 0.05 + i * 0.05, dur: 0.22, type: 'square', vol: 0.11 }));
+  },
+  // A word only one person found (end card). A little flower-power moment, kept soft and lo-fi: a warm,
+  // slightly wobbly electric-piano pluck, answered by a quieter note a third up, with a wind-chime glint
+  // and a brush of tambourine. They come in runs, so each one is the next step of a tune that skips up the
+  // major pentatonic scale in thirds and wanders back down; every eighth one is a full strummed chord, and
+  // each time the tune comes round it sits a whole step higher (then drifts back).
+  unique(n = 0) {
+    const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19];
+    const TUNE = [0, 2, 1, 3, 2, 4, 3, 5, 4, 6, 5, 3, 4, 2, 3, 1];
+    const KEYS = [0, 2, 4, 2];
+    const key = KEYS[Math.floor(n / TUNE.length) % KEYS.length];
+    const at = d => 293.66 * 2 ** ((PENTA[Math.min(d, PENTA.length - 1)] + key) / 12);
+    const d = TUNE[n % TUNE.length];
+    if (n % 8 === 7) {
+      // The strum: four notes of the chord rolled upward, and a longer shake.
+      [0, 2, 3, 5].forEach((k, i) => pluck(at(k), { at: i * 0.055, vol: 0.2, dur: 1.1 }));
+      chime(at(5) * 2, 0.24);
+      shake(0.0, 0.16, 0.075); shake(0.13, 0.1, 0.06);
+      return;
+    }
+    pluck(at(d), { vol: 0.26, dur: 0.95 });
+    pluck(at(d + 2), { at: 0.085, vol: 0.13, dur: 0.8 });
+    chime(at(d) * 4, 0.13);
+    shake(0.0, 0.07, 0.052);
+  },
+  // A minus handicap knocks pieces off a tower: a whack, then each piece clatters down a step lower.
+  chop(n = 1) {
+    noise({ dur: 0.1, vol: 0.32, freq: 1600 });
+    tone(180, { dur: 0.16, type: 'sine', vol: 0.3, slide: 0.5 });
+    for (let k = 0; k < Math.min(n, 8); k++) tone(660 * 2 ** (-k * 2 / 12), { at: 0.08 + k * 0.07, dur: 0.12, type: 'triangle', vol: 0.13, slide: 0.8 });
   },
   whoosh() { noise({ dur: 0.3, vol: 0.15, freq: 2500 }); },
   stamp() { noise({ dur: 0.15, vol: 0.35, freq: 300 }); tone(90, { dur: 0.2, type: 'sine', vol: 0.4, slide: 0.5 }); },

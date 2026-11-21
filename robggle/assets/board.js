@@ -1,7 +1,7 @@
 // The letter grid. Interactive boards let you trace a word by dragging across tiles.
 // Chaos events can change a tile's letter (Z's), pull tiles out (bananas) or block them (Set cards).
-import { sfx } from './sfx.js?v=da58d22-1795245872';
-import { haptic } from './net.js?v=da58d22-1795245872';
+import { sfx } from './sfx.js?v=dc68fa1-1795297650';
+import { haptic } from './net.js?v=dc68fa1-1795297650';
 
 export const tileText = t => (t === 'qu' ? 'Qu' : t.toUpperCase());
 const tileHTML = t => (t === 'qu' ? '<span class="qu">Qu</span>' : t.toUpperCase());
@@ -37,6 +37,10 @@ export function makeBoard(tiles, size, opts = {}) {
   svg.setAttribute('class', 'path');
   const line = document.createElementNS(svgNS, 'polyline');
   svg.appendChild(line);
+  // A second, thinner line for hints (where an ally's word is), under the player's own trace.
+  const hintLine = document.createElementNS(svgNS, 'polyline');
+  hintLine.setAttribute('class', 'hint-line');
+  svg.insertBefore(hintLine, line);
   el.appendChild(svg);
   // Layer for chaos effects (cards, smoke, the race car). Children choose their own pointer events.
   const fx = document.createElement('div');
@@ -51,6 +55,8 @@ export function makeBoard(tiles, size, opts = {}) {
     el.style.setProperty('--edge', `${Math.max(2, cell * 0.07)}px`);
     svg.setAttribute('viewBox', `0 0 ${w} ${w}`);
     line.setAttribute('stroke-width', Math.max(6, cell * 0.22));
+    hintLine.setAttribute('stroke-width', Math.max(3, cell * 0.08));
+    drawHint();
     drawLine();
     api.onResize && api.onResize();
   });
@@ -69,6 +75,8 @@ export function makeBoard(tiles, size, opts = {}) {
     line.setAttribute('points', path.map(i => (centers && dragging ? centers[i] : centerOf(i)).join(',')).join(' '));
   }
   let dragging = false;
+  let hintPath = []; // the part of a hint that's showing
+  function drawHint() { hintLine.setAttribute('points', hintPath.map(i => centerOf(i).join(',')).join(' ')); }
   function word() { return path.map(i => cur[i]).join(''); }
   function adjacent(a, b) {
     const ra = Math.floor(a / size), ca = a % size, rb = Math.floor(b / size), cb = b % size;
@@ -174,13 +182,32 @@ export function makeBoard(tiles, size, opts = {}) {
     },
     _gen: 0,
     unlight() { api._gen++; tileEls.forEach(t => t.classList.remove('lit', 'striped')); },
+    // Show where a word is: its tiles glow one after another, with a thin line joining them, then it all
+    // fades. A newer hint (or the player starting to trace) replaces whatever was still showing.
     hint(p, color) {
+      api.unhint();
+      const gen = api._hgen;
+      p = p.filter(i => tileEls[i]);
+      const step = Math.min(120, 900 / Math.max(1, p.length));
+      drawHint();
+      hintLine.style.opacity = '1';
       p.forEach((i, n) => setTimeout(() => {
+        if (gen !== api._hgen) return;
         const t = tileEls[i];
-        t.classList.remove('hint'); void t.offsetWidth;
         t.style.setProperty('--hc', color);
         t.classList.add('hint');
-      }, n * 120));
+        hintPath = p.slice(0, n + 1);
+        drawHint();
+      }, n * step));
+      api._ht = setTimeout(() => { if (gen === api._hgen) api.unhint(); }, p.length * step + 1500);
+    },
+    _hgen: 0,
+    unhint() {
+      api._hgen++;
+      clearTimeout(api._ht);
+      tileEls.forEach(t => t.classList.remove('hint'));
+      hintPath = []; // the line itself is left to fade out
+      hintLine.style.opacity = '0';
     },
     // Color tiles by how often they were used (end-of-round heat map).
     heat(counts, hue = 'hot') {
@@ -267,6 +294,7 @@ export function makeBoard(tiles, size, opts = {}) {
       centers.cell = b.width / size;
       down = true;
       dragging = true;
+      api.unhint();
       el.setPointerCapture(e.pointerId);
       clearTimeout(api._t);
       el.classList.remove('ok', 'no', 'dupe', 'wait');

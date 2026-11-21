@@ -3,7 +3,7 @@
 //     the game so the sound effects stay on top.
 //   lobby.m4a (tools/make_lobby.py): plays on the home screen and in the lobby, quietly, until a round starts.
 //   results.m4a (tools/make_lobby.py too): the lobby tune's post-game variant, under the end-of-round show.
-import { audioOut, isMuted } from './sfx.js?v=da58d22-1795245872';
+import { audioOut, isMuted } from './sfx.js?v=dc68fa1-1795297650';
 
 // loopStart/loopLen are printed by the tools. The round's 4-bar intro plays once, then it loops from the end
 // of the last theme back to the first; the lobby loops whole. (Looping on exact lengths, not the file's end,

@@ -1,10 +1,10 @@
 // End-of-round show: every found word gets its moment, points fly into a racing scoreboard,
 // words nobody else found get stamped x2. The host can change the speed live for everyone.
 // Then bonuses, heat maps, loot-box badges, and good/bad sport speech bubbles.
-import { makeBoard } from './board.js?v=da58d22-1795245872';
-import { sfx } from './sfx.js?v=da58d22-1795245872';
-import { haptic } from './net.js?v=da58d22-1795245872';
-import { ICONS, UI } from './icons.js?v=da58d22-1795245872';
+import { makeBoard } from './board.js?v=dc68fa1-1795297650';
+import { sfx } from './sfx.js?v=dc68fa1-1795297650';
+import { haptic } from './net.js?v=dc68fa1-1795297650';
+import { ICONS, UI } from './icons.js?v=dc68fa1-1795297650';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initial = n => esc((n || '?').trim().charAt(0).toUpperCase() || '?');
@@ -15,7 +15,8 @@ const PAIR_A = '#3ee0b0', PAIR_B = '#5ab0ff';
 const awardIcon = ic => ICONS[ic] || UI[ic] || ICONS.trophy;
 
 export function chipHTML(p, cls = '') {
-  return `<span class="chip ${cls}" style="--c:${p.color}">${initial(p.name)}</span>`;
+  // A player's tile: the emoji they picked, or their initial.
+  return `<span class="chip ${cls}${p.emoji ? ' emo' : ''}" style="--c:${p.color}">${p.emoji ? esc(p.emoji) : initial(p.name)}</span>`;
 }
 
 export function runReveal(R, opt) {
@@ -26,6 +27,7 @@ export function runReveal(R, opt) {
   const byId = Object.fromEntries(players.map(p => [p.id, p]));
   const alliances = Object.fromEntries((R.alliances || []).map(a => [a.id, a]));
   const me = opt.me;
+  const coop = R.mode === 'coop';
   let speed = 1;
   // 1x plays at what used to be half speed; the host's buttons scale from there.
   const BASE_PACE = 0.5;
@@ -34,8 +36,7 @@ export function runReveal(R, opt) {
 
   const stageCol = document.createElement('div'); stageCol.className = 'stage-col';
   const stage = document.createElement('div'); stage.className = 'stage';
-  const ticker = document.createElement('div'); ticker.className = 'ticker';
-  stageCol.append(stage, ticker);
+  stageCol.append(stage);
   const miniWrap = document.createElement('div'); miniWrap.className = 'mini';
   const mini = makeBoard(R.tiles, R.size);
   const miniLabel = document.createElement('div'); miniLabel.className = 'mini-label';
@@ -67,19 +68,23 @@ export function runReveal(R, opt) {
   // Towers are scaled to whoever is ahead right now (at least 10 points' worth), so as someone pulls away
   // you watch the gap open up. Every word is its own piece, as thick as its points, with the word on its edge.
   const running = Object.fromEntries(players.map(p => [p.id, 0]));
-  const TOWER_H = tv ? Math.max(160, Math.min(380, innerHeight * 0.5)) : Math.max(90, Math.min(140, innerHeight - 640));
+  // A handicap as people read it: 12 means points added, −12 means points taken off.
+  const hcpText = v => (v < 0 ? `−${Math.abs(v)}` : `${v}`);
+  const signed = v => (v < 0 ? `−${Math.abs(v)}` : `+${v}`);
+  const TOWER_H = tv ? Math.max(180, Math.min(620, innerHeight * 0.6)) : Math.max(110, Math.min(250, innerHeight - 596));
   const MIN_TOP = 10;
   scores.className = 'towers';
   scores.style.setProperty('--th', `${TOWER_H}px`);
-  const rescale = () => scores.style.setProperty('--ppx', `${(TOWER_H / Math.max(MIN_TOP, ...Object.values(running))).toFixed(3)}px`);
-  rescale();
+  // (Scaled to the tallest stack, which is the top score unless a minus handicap crossed some of it out.)
+  const rescale = () => scores.style.setProperty('--ppx', `${(TOWER_H / Math.max(MIN_TOP, ...Object.values(rows).map(c => c._cum || 0))).toFixed(3)}px`);
   const rows = {};
+  rescale();
   const jitter = (id, i) => { const h = Math.sin(i * 12.9898 + id.charCodeAt(0) * 78.233) * 43758.5453; return h - Math.floor(h); };
   for (const p of players) {
     const col = document.createElement('div');
     col.className = 'tcol';
     const a = p.alliance && alliances[p.alliance];
-    col.innerHTML = `<div class="tower" ${a ? `style="--ac:${a.color}"` : ''}>${CROWN}<div class="tiles"></div></div><div class="tsc">0</div>${chipHTML(p, 'tiny')}<div class="tname">${esc(p.name)}${R.handicap && p.hcp ? `<span class="hcp-tag">HCP ${p.hcp}</span>` : ''}</div>`;
+    col.innerHTML = `<div class="tower" ${a ? `style="--ac:${a.color}"` : ''}>${CROWN}<div class="tiles"></div></div><div class="tsc">0</div>${chipHTML(p, 'tiny')}<div class="tname">${esc(p.name)}</div>${R.handicap && !coop ? `<div class="thcp ${p.hcp ? (p.hcp < 0 ? 'minus' : '') : 'none'}">HCP ${hcpText(p.hcp || 0)}</div>` : ''}`;
     col.onclick = () => openPlayer(p.id);
     col.title = p.name;
     scores.appendChild(col);
@@ -89,22 +94,65 @@ export function runReveal(R, opt) {
     col._cum = 0;
   }
   // Every scoring item, in the order the show plays them, so a skip can lay in whatever hadn't landed yet.
-  const order = R.words.slice().sort((a, b) => (a.solo - b.solo) || a.w.length - b.w.length || b.finders.length - a.finders.length || a.w.localeCompare(b.w));
+  // Short words first; at each length the words several people found, then the ones only one person (or
+  // alliance) found. So it goes shared threes, unique threes, shared fours, unique fours, and so on.
+  const order = R.words.slice().sort((a, b) => a.w.length - b.w.length || (a.solo - b.solo) || b.finders.length - a.finders.length || a.w.localeCompare(b.w));
   const laid = new Set();
   function itemsFor(id) {
     const p = byId[id];
     const out = [];
     for (const wd of order) if (wd.finders.includes(id)) out.push({ key: `w:${wd.w}:${id}`, pts: wd.pts + ((wd.bonus || {})[id] || 0), label: wd.w, cls: wd.solo ? 'solo' : '' });
     if (p.bananaBonus) out.push({ key: `banana:${id}`, pts: p.bananaBonus, label: 'banana', cls: 'solo' });
-    if (p.strokes) out.push({ key: `stroke:${id}`, pts: p.strokes, label: 'handicap', cls: 'stroke' });
+    if (p.strokes) out.push({ key: `stroke:${id}`, pts: p.strokes, label: 'handicap', cls: p.strokes < 0 ? 'minus' : 'stroke' });
     (R.fun || []).forEach((a, k) => { if (a.winners.some(w => w.id === id)) out.push({ key: `fun:${k}:${id}`, pts: a.pts, label: a.title, cls: 'fun' }); });
     return out;
   }
   // Adds one piece to a tower and its points to the score.
   function score(id, pts, label, { instant = false, cls = '', key } = {}) {
     const col = rows[id];
-    if (!col || pts <= 0 || (key && laid.has(key))) return;
+    if (!col || !pts || (key && laid.has(key))) return;
     if (key) laid.add(key);
+    if (pts < 0) {
+      // Points taken off (a minus handicap): the top of the stack gets knocked off. The pieces on top turn
+      // red and tumble away, the tower drops to what's left, and a red cut line marks how much went.
+      const total = Math.min(-pts, running[id]);
+      if (total <= 0) return;
+      let take = total;
+      const gone = [];
+      const pieces = [...col._tiles.children].filter(x => !x.classList.contains('cut'));
+      for (let k = pieces.length - 1; k >= 0 && take > 0; k--) {
+        const x = pieces[k];
+        const p = +x.style.getPropertyValue('--pts') || 0;
+        if (p <= take) { take -= p; gone.push(x); }
+        else { x.style.setProperty('--pts', p - take); take = 0; } // a piece cut part-way just gets thinner
+      }
+      col._cum -= total;
+      running[id] -= total;
+      const settle = () => {
+        gone.forEach(x => x.remove());
+        const cut = document.createElement('i');
+        cut.className = 'cut';
+        cut.style.cssText = `--cum:${col._cum};--pts:0`;
+        cut.innerHTML = `<span>HCP −${total}</span>`;
+        col._tiles.appendChild(cut);
+        col.style.setProperty('--ct', col._cum);
+        col.classList.add('docked');
+        col._sc.textContent = running[id];
+        rescale();
+        col.classList.remove('hit'); void col.offsetWidth; col.classList.add('hit');
+      };
+      if (instant) return settle();
+      gone.forEach((x, n) => {
+        x.classList.remove('drop');
+        x.style.setProperty('--dir', n % 2 ? 1 : -1);
+        x.style.animationDelay = `${n * 70}ms`;
+        x.classList.add('knocked');
+      });
+      col.classList.add('chopping');
+      sfx.chop(gone.length);
+      setTimeout(() => { col.classList.remove('chopping'); settle(); }, 480 + gone.length * 70);
+      return;
+    }
     const i = col._tiles.children.length;
     const t = document.createElement('i');
     t.style.cssText = `--cum:${col._cum};--pts:${pts};--jx:${((jitter(id, i) - 0.5) * 4).toFixed(1)}px;--rot:${((jitter(id, i + 99) - 0.5) * 3).toFixed(1)}deg`;
@@ -196,19 +244,9 @@ export function runReveal(R, opt) {
     host.appendChild(card);
     const color = wd.solo ? 'var(--sun)' : wd.finders.length === 1 && byId[wd.finders[0]] ? byId[wd.finders[0]].color : 'var(--mint)';
     if (wd.path && share === 1) mini.light(wd.path, { color, step: Math.min(70, 300 / wd.path.length) / pace() });
-    sfx.blip(i);
+    if (!wd.solo) sfx.blip(i); // a word only one person found gets its own note when the stamp lands
     if (bonusIds.length) setTimeout(() => sfx.bridge(), 200);
     return card;
-  }
-
-  function pushTicker(wd) {
-    const item = document.createElement('div');
-    item.className = 'tick-item' + (wd.solo ? ' solo' : '');
-    item.innerHTML = `<b>${esc(wd.w.toUpperCase())}</b><span class="tick-chips">${wd.finders.map(id => byId[id] ? chipHTML(byId[id], 'tiny') : '').join('')}</span><span class="tick-pts">+${wd.pts}</span>`;
-    ticker.prepend(item);
-    const items = [...ticker.children];
-    items.forEach((el, k) => { el.style.setProperty('--k', k); el.classList.toggle('fading', k >= 3); });
-    items.slice(5).forEach(el => el.remove());
   }
 
   function fly(fromEl, id, amount, cls = '', label = '', key = '') {
@@ -218,7 +256,7 @@ export function runReveal(R, opt) {
     const to = row._sc.getBoundingClientRect();
     const f = document.createElement('div');
     f.className = 'flyer ' + cls;
-    f.textContent = `+${amount}`;
+    f.textContent = signed(amount);
     f.style.left = `${from.left + from.width / 2 - 16}px`;
     f.style.top = `${from.top}px`;
     document.body.appendChild(f);
@@ -230,6 +268,7 @@ export function runReveal(R, opt) {
     setTimeout(() => { f.remove(); if (!done) score(id, amount, label, { cls, key }); }, 560 / Math.min(pace(), 2));
   }
 
+  let uniques = 0;
   function soloStamp(wd, dur, card) {
     const by = wd.soloBy || {};
     let who;
@@ -243,7 +282,7 @@ export function runReveal(R, opt) {
     // It lands beside the points, in a row that's always there, so it never covers the word.
     (card ? card.querySelector('.pts-row') : stage).appendChild(s);
     burst(stage, 26);
-    sfx.solo();
+    sfx.unique(uniques++);
     if (wd.finders.includes(me)) haptic('success');
     setTimeout(() => s.remove(), Math.min(2800, dur / pace()));
   }
@@ -259,8 +298,6 @@ export function runReveal(R, opt) {
     }
     sfx.stamp();
     await Promise.race([wait(1100), skipped]);
-    // Words several people found come first, then the ones only one person (or alliance) found,
-    // each group short to long, so the x2 stamps build to the end.
     const words = order;
     if (!words.length) {
       stage.innerHTML = `<div class="title-stamp" style="font-size:32px">Nobody found a single word?!</div>`;
@@ -295,7 +332,6 @@ export function runReveal(R, opt) {
       await Promise.race([wait(dur - lead), skipped]);
       if (done) return;
       cards.forEach(c => c.classList.add('out'));
-      beat.forEach(wd => pushTicker(wd));
       if (teamBar) { teamFound += beat.length; teamBar.querySelector('i').style.transform = `scaleX(${teamFound / Math.max(1, R.coop.possible)})`; teamBar.querySelector('b').textContent = teamFound; }
     }
     await Promise.race([wait(500), skipped]);
@@ -310,10 +346,10 @@ export function runReveal(R, opt) {
     }
     const strokes = players.filter(p => p.strokes);
     if (strokes.length && !done) {
-      stage.innerHTML = `<div class="bonus-card pop-in"><div class="bonus-title">Handicap strokes</div><div class="muted">Golf rules: everyone gets their usual gap back</div><div class="stroke-list">${strokes.map(p => `<div class="row">${chipHTML(p, 'tiny')}<span class="grow">${esc(p.name)}</span><span class="muted small">HCP ${p.hcp}</span><b>+${p.strokes}</b></div>`).join('')}</div></div>`;
+      stage.innerHTML = `<div class="bonus-card pop-in"><div class="bonus-title">Handicap strokes</div><div class="muted">${strokes.some(p => p.strokes < 0) ? 'Golf rules: points back if you usually trail, points off if you usually run away with it' : 'Golf rules: everyone gets their usual gap back'}</div><div class="stroke-list">${strokes.map(p => `<div class="row">${chipHTML(p, 'tiny')}<span class="grow">${esc(p.name)}</span><span class="muted small">HCP ${hcpText(p.hcp)}</span><b class="${p.strokes < 0 ? 'minus' : ''}">${signed(p.strokes)}</b></div>`).join('')}</div></div>`;
       sfx.coin();
       await Promise.race([wait(600), skipped]);
-      strokes.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.strokes, 'stroke', 'handicap', `stroke:${p.id}`));
+      strokes.forEach(p => fly(stage.querySelector('.bonus-card'), p.id, p.strokes, p.strokes < 0 ? 'minus' : 'stroke', 'handicap', `stroke:${p.id}`));
       await Promise.race([wait(1600), skipped]);
     }
     await funAwards();
@@ -324,7 +360,6 @@ export function runReveal(R, opt) {
     const fun = R.fun || [];
     if (!fun.length || done) return;
     mini.unlight();
-    ticker.innerHTML = '';
     stage.innerHTML = `<div class="title-stamp fun-stamp">BONUS AWARDS!</div>`;
     sfx.stamp();
     await Promise.race([wait(900), skipped]);
@@ -418,7 +453,6 @@ export function runReveal(R, opt) {
     return `<div class="marquee"><span class="mq-label">${UI.eye}Nobody found</span><div class="mq-track"><div class="mq-inner">${items}<i>·</i>${items}<i>·</i></div></div></div>`;
   }
 
-  const coop = R.mode === 'coop';
   function coopRating(pct) {
     if (pct >= 75) return 'Legendary word nerds!';
     if (pct >= 50) return 'Dictionary dream team!';
@@ -433,7 +467,6 @@ export function runReveal(R, opt) {
     renderCtl();
     mini.unlight();
     document.querySelectorAll('.flyer').forEach(f => f.remove());
-    ticker.innerHTML = '';
     root.classList.add('final-state');
     if (teamBar) { teamBar.remove(); teamBar = null; }
     // Whatever didn't land yet (a skip), lay straight in.
@@ -462,9 +495,11 @@ export function runReveal(R, opt) {
     if (R.best) facts.push(`${UI.star}Best: <b>${esc(R.best.w.toUpperCase())}</b>`);
     if (!coop && R.no > 1) facts.push(`${UI.crown}Totals: ${players.slice().sort((a, b) => b.total - a.total).slice(0, 3).map(p => `${esc(p.name)} <b>${p.total}</b>`).join(', ')}`);
     if ((R.fun || []).length) facts.push(`${ICONS.trophy}${R.fun.length} bonus awards`);
-    if (R.handicap && !coop) facts.push(`${UI.flag}Next HCP: ${players.map(p => `${esc(p.name)} <b>${p.nextHcp || 0}</b>`).join(', ')}`);
     (R.alliances || []).forEach(a => facts.push(`<span style="color:${a.color}">${UI.handshake}</span>${esc(a.name)} <b>${a.round}</b>`));
-    stage.innerHTML = `<div class="pg-top"><div class="pg-title">${title}</div><div class="fact-chips">${facts.map(f => `<span class="fact">${f}</span>`).join('')}</div></div>`;
+    const nextHcp = R.handicap && !coop
+      ? `<div class="hcp-next"><div class="hcp-next-head">${UI.flag}Handicap next round</div><div class="hcp-next-list">${players.slice().sort((a, b) => (b.nextHcp || 0) - (a.nextHcp || 0) || a.name.localeCompare(b.name)).map(p => `<span class="hcp-next-item ${p.nextHcp ? (p.nextHcp < 0 ? 'minus' : '') : 'none'}">${chipHTML(p, 'tiny')}<span class="hn-name">${esc(p.name)}</span><b>${hcpText(p.nextHcp || 0)}</b></span>`).join('')}</div></div>`
+      : '';
+    stage.innerHTML = `<div class="pg-top"><div class="pg-title">${title}</div><div class="fact-chips">${facts.map(f => `<span class="fact">${f}</span>`).join('')}</div>${nextHcp}</div>`;
     sfx.fanfare();
     confetti(!coop && top && tied.length === 1 ? top.color : null);
     if (!coop && tied.some(p => p.id === me)) haptic('success');

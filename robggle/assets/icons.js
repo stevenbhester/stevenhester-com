@@ -81,6 +81,7 @@ export const UI = {
   crown: svg('<path d="M3 18 L5 7 L10 12 L12 5 L14 12 L19 7 L21 18 Z" fill="currentColor" fill-opacity=".25"/>'),
   list: svg('<path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/>'),
   x: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
+  bell: svg('<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z" fill="currentColor" fill-opacity=".2"/><path d="M10 20a2 2 0 0 0 4 0"/><path d="M12 3v2"/>'),
   chev: svg('<path d="M6 9l6 6 6-6"/>'),
   chat: svg('<path d="M4 5h16v11H9l-5 4Z"/>'),
   eye: svg('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>'),

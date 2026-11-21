@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/app.css?v=da58d22-1795245872">
+<link rel="stylesheet" href="../assets/app.css?v=dc68fa1-1795297650">
 <style>
   body { -webkit-user-select: text; user-select: text; }
   .policy { max-width: 680px; margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) 16px 48px; display: flex; flex-direction: column; gap: 16px; line-height: 1.5; }
@@ -26,7 +26,7 @@
 <main class="policy">
   <div class="logo small" aria-label="Robggle"><span style="--i:0;--r:-6deg">R</span><span style="--i:1;--r:4deg">O</span><span style="--i:2;--r:-3deg">B</span><span class="hot" style="--i:3;--r:5deg">G</span><span class="hot" style="--i:4;--r:-4deg">G</span><span style="--i:5;--r:3deg">L</span><span style="--i:6;--r:-5deg">E</span></div>
   <h1>Privacy</h1>
-  <p class="dated">Last updated November 19, 2026</p>
+  <p class="dated">Last updated November 21, 2026</p>
 
   <section class="panel short">
     <h2>The short version</h2>
@@ -34,6 +34,7 @@
       <li>No accounts, no ads, no analytics, no tracking.</li>
       <li>The only thing you type in is a name for other players to see.</li>
       <li>Games live in the game server's memory while you play and are gone about 20 minutes after everyone leaves.</li>
+      <li>So friends can tell you a game is on, the server remembers which devices have played together. It knows a device by a random id, not by who you are.</li>
       <li>Nothing is sold or shared.</li>
     </ul>
   </section>
@@ -43,6 +44,8 @@
     <ul>
       <li><b>Your name.</b> Whatever you type, shown to the other people in your game and in the list of open games. Names with offensive words are replaced with "Player".</li>
       <li><b>Your game.</b> The words you trace, scores, votes, alliances and badges, so everyone's screen can show the game. This is kept in memory on the game server, not in a database, and is deleted once a game has sat empty for about 20 minutes.</li>
+      <li><b>Who you've played with.</b> Your device makes up a long random id the first time it opens the game. When a round starts, the game server writes down that the devices in it have played together, with the name each player was using. That list is what lets someone you've played with send you a "game on!" notification, and it is kept in the game server's database. Other players only ever see your name, never the id.</li>
+      <li><b>Notifications (iPhone app).</b> If you allow notifications, the app gives the game server the address Apple uses to deliver them to your phone. It is used for one thing: a "game on!" message when someone you've played with sets up a game and chooses to tell you. Turn notifications off for Robggle in the Settings app to stop them.</li>
       <li><b>On your device.</b> Your name, the last game you joined (so you can rejoin it), and display choices like which sections you collapsed are saved on your own phone or browser. Deleting the app or clearing the browser's site data removes them.</li>
     </ul>
   </section>
@@ -52,6 +55,7 @@
     <ul>
       <li><b>Heroku</b> runs the game server. Like any web server it briefly logs requests, which include your IP address.</li>
       <li><b>GitHub Pages</b> hosts this website and the game's pages, and sees standard web request details such as your IP address.</li>
+      <li><b>Apple</b> delivers the app's notifications. The game server sends Apple the notification's text (the name of the person inviting you and the game's code) and your phone's notification address.</li>
       <li><b>Google Fonts</b> supplies the game's typeface, so your device asks Google for it when the game loads.</li>
     </ul>
     <p>Robggle doesn't send these services anything about you beyond what any web page request includes.</p>

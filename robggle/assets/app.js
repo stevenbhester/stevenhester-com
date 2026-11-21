@@ -1,11 +1,11 @@
 // Robggle client. One file drives three pages: /robggle/ (home), /robggle/game/ (screen), /robggle/join/ (controller).
-import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, fetchLatest } from './net.js?v=da58d22-1795245872';
-import { makeBoard, tileText } from './board.js?v=da58d22-1795245872';
-import { sfx, unlock, audioReady } from './sfx.js?v=da58d22-1795245872';
-import { runReveal, chipHTML, confetti } from './reveal.js?v=da58d22-1795245872';
-import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=da58d22-1795245872';
-import { icon } from './icons.js?v=da58d22-1795245872';
-import { startMusic, stopMusic, preloadMusic, startLobbyMusic, startResultsMusic, musicPlaying } from './music.js?v=da58d22-1795245872';
+import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, PID, fetchLatest } from './net.js?v=dc68fa1-1795297650';
+import { makeBoard, tileText } from './board.js?v=dc68fa1-1795297650';
+import { sfx, unlock, audioReady } from './sfx.js?v=dc68fa1-1795297650';
+import { runReveal, chipHTML, confetti } from './reveal.js?v=dc68fa1-1795297650';
+import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=dc68fa1-1795297650';
+import { icon } from './icons.js?v=dc68fa1-1795297650';
+import { startMusic, stopMusic, preloadMusic, startLobbyMusic, startResultsMusic, musicPlaying } from './music.js?v=dc68fa1-1795297650';
 
 const MODE = document.body.dataset.mode; // home | screen | join
 const $root = document.getElementById('root');
@@ -59,6 +59,9 @@ const S = {
   view: null,
   play: null,       // play view handles
   wantRole: MODE === 'screen' ? 'screen' : 'player',
+  past: null,           // people you've played with before: { ready, list } from the server
+  pastOff: new Set(),   // the ones you've unticked for a "game on!" notification
+  inviteNote: '',
 };
 const member = id => S.st && S.st.members.find(m => m.id === id);
 const isHost = () => S.st && S.you && S.st.hostId === S.you.id;
@@ -66,9 +69,11 @@ const players = () => (S.st ? S.st.members.filter(m => m.role === 'player') : []
 
 function connect(hello) {
   if (!S.conn) S.conn = new Conn(onMsg, onStatus);
+  // A new player arrives with the icon they picked last time (a rejoin by token keeps what the lobby has).
+  if (MODE !== 'screen' && !hello.token && store.get('rb:emoji')) hello = { ...hello, emoji: store.get('rb:emoji') };
   S.conn.hello = hello;
   S.conn.open();
-  if (S.conn.ws && S.conn.ws.readyState === 1) S.conn.ws.send(JSON.stringify({ ...hello, build: BUILD, app: APP_BUILD }));
+  if (S.conn.ws && S.conn.ws.readyState === 1) S.conn.ws.send(JSON.stringify({ ...hello, build: BUILD, app: APP_BUILD, pid: PID }));
 }
 
 // ---------------- builds ----------------
@@ -150,6 +155,12 @@ function onMsg(m) {
       if (MODE === 'join' && params.get('c') !== m.code) history.replaceState(null, '', `?c=${m.code}${IN_APP ? '&app=1' : ''}`);
       if (firstJoin) sfx.join();
       native({ inLobby: m.code });
+      if (MODE !== 'screen') {
+        // The app asks to send notifications the first time you join a game (iOS shows that once).
+        if (firstJoin) { S.past = null; S.pastOff = new Set(); S.inviteNote = ''; native({ push: 'ask' }); }
+        sendDevice();
+        S.conn.send({ t: 'past' });
+      }
       break;
     }
     case 'state': {
@@ -199,7 +210,16 @@ function onMsg(m) {
     case 'revealCtl': S.reveal && S.reveal.control(m); break;
     case 'banter': S.reveal && S.reveal.banter(m); break;
     case 'results': showResults(m); break;
+    case 'past': S.past = m; if (S.view === 'lobby' && MODE !== 'screen') renderLobby(); break;
+    case 'invited':
+      S.inviteNote = m.sent ? `Sent to ${m.sent} ${m.sent === 1 ? 'person' : 'people'}${m.failed ? ` (${m.failed} didn't go through)` : ''}` : "That didn't go through. Try again in a bit.";
+      S.inviting = false;
+      if (m.sent) { sfx.like(); haptic('success'); }
+      if (S.view === 'lobby' && MODE !== 'screen') renderLobby();
+      break;
+    case 'kicked': leftGame(`${m.by || 'The host'} removed you from the game`); break;
     case 'error':
+      if (m.code === 'kicked') { leftGame(m.msg); break; }
       if (m.code === 'nolobby') {
         if (MODE === 'screen') { store.del('rb:screen'); S.conn.hello = null; connect({ t: 'create', role: 'screen' }); return; }
         store.del('rb:last');
@@ -314,6 +334,132 @@ function botsHTML() {
 function wireBots(scope) {
   scope.querySelectorAll('[data-bot]').forEach(b => { b.onclick = () => { S.conn.send({ t: 'addBot', level: b.dataset.bot }); haptic('tick'); sfx.join(); }; });
   scope.querySelectorAll('[data-unbot]').forEach(b => { b.onclick = e => { e.stopPropagation(); S.conn.send({ t: 'removeBot', id: b.dataset.unbot }); haptic('tick'); }; });
+  // The host can remove a player (they're kept out of this game after that).
+  scope.querySelectorAll('[data-kick]').forEach(b => {
+    b.onclick = e => {
+      e.stopPropagation();
+      if (!confirm(`Remove ${b.dataset.name} from this game?`)) return;
+      S.conn.send({ t: 'kick', id: b.dataset.kick });
+      haptic('warning');
+    };
+  });
+}
+
+// ---------------- PLAYER ICONS ----------------
+// A deliberately odd bunch: monsters, sea creatures, snacks and things that have no business being an icon.
+// All plain single emoji from Emoji 14 (2021) or older, so every phone and TV in the family can draw them.
+const EMOJI = [
+  '🗿', '🧌', '👽', '👾', '🤖', '👻', '💀', '🤡', '👹', '👺', '🧟', '🧛',
+  '🧙', '🧜', '🧞', '🦄', '🐲', '🦖', '🦕', '🫠', '🥸', '🤠', '🥴', '🤪',
+  '🤯', '🥶', '😈', '🤓', '😼', '🙈', '🦑', '🐙', '🦞', '🦀', '🐡', '🦈',
+  '🐊', '🦥', '🦦', '🦔', '🦩', '🦚', '🦜', '🦤', '🦭', '🦫', '🐌', '🪲',
+  '🦋', '🐝', '🦇', '🐸', '🐧', '🦉', '🐓', '🦙', '🪩', '🧿', '🔮', '🪄',
+  '🪅', '🪆', '🛸', '🚀', '🪐', '🌋', '🌈', '🍄', '🌵', '🌻', '🪷', '🧨',
+  '🎃', '🪗', '🪕', '🎷', '🥁', '🛼', '🧲', '🦷', '🧠', '👀', '🦴', '🧦',
+  '🩴', '🧀', '🥑', '🌮', '🍕', '🌭', '🥨', '🧇', '🥞', '🍩', '🧁', '🍣',
+  '🥟', '🧋', '🫖', '🧃', '🥥', '🍍', '🫑', '🥦', '🧄', '🧅', '🥒', '🍌',
+];
+function openEmojiPicker(me) {
+  document.querySelector('.emoji-sheet')?.remove();
+  const sheet = document.createElement('div');
+  sheet.className = 'emoji-sheet';
+  const cur = me.emoji || '';
+  const letter = esc((me.name || '?').trim().charAt(0).toUpperCase() || '?');
+  sheet.innerHTML = `<div class="emoji-card pop-in" style="--c:${me.color}">
+    <div class="panel-head">${icon('sparkle')}<h3>Pick your icon</h3><span class="grow"></span><button class="icon-btn" data-close aria-label="Close">${icon('x')}</button></div>
+    <div class="emoji-grid">
+      <button class="emoji-opt letter ${cur ? '' : 'on'}" data-e="">${letter}</button>
+      ${EMOJI.map(e => `<button class="emoji-opt ${e === cur ? 'on' : ''}" data-e="${e}">${e}</button>`).join('')}
+    </div></div>`;
+  document.body.appendChild(sheet);
+  const close = () => sheet.remove();
+  sheet.onclick = e => { if (e.target === sheet) close(); };
+  sheet.querySelector('[data-close]').onclick = close;
+  sheet.querySelectorAll('[data-e]').forEach(b => {
+    b.onclick = () => {
+      const e = b.dataset.e || null;
+      if (e) store.set('rb:emoji', e); else store.del('rb:emoji');
+      S.conn.send({ t: 'emoji', e });
+      haptic('tick'); sfx.pop();
+      close();
+    };
+  });
+}
+
+// A handicap as people read it: 12 means points added, −12 means points taken off.
+const hcpText = v => (v < 0 ? `−${Math.abs(v)}` : `${v}`);
+
+// Out of the game (removed by the host, or the lobby wouldn't take us back): tidy up and go home.
+function leftGame(msg) {
+  store.del('rb:last');
+  S.code = null; S.you = null; S.st = null; S.round = null;
+  if (S.conn) S.conn.hello = null;
+  closeVote();
+  closeReveal();
+  S.chaos && S.chaos.destroy();
+  cancelAnimationFrame(clockRAF);
+  clearTimeout(S.musicTimer);
+  document.querySelectorAll('.countdown, .chaos-tut, .chaos-banner').forEach(x => x.remove());
+  if (S.play) { S.play.board.destroy(); S.play = null; }
+  native({ inLobby: null });
+  history.replaceState(null, '', IN_APP ? '?app=1' : location.pathname);
+  renderHome();
+  toast(msg, 4000);
+}
+
+// ---------------- "GAME ON!" INVITES ----------------
+// The iPhone app (build 4 and up) hands over this phone's push address; the server keeps it against this
+// device's id, so people you've played with can tell you a game is on.
+let pushInfo = null;
+S.pushState = null; // 'on' | 'off' (turned down in Settings) | 'ask' (not asked yet) | null (browser, or an older app)
+window.addEventListener('robggle:push', e => {
+  const d = e.detail || {};
+  S.pushState = d.state || null;
+  if (d.token) { pushInfo = { token: String(d.token), env: d.env === 'sandbox' ? 'sandbox' : 'production' }; sendDevice(); }
+});
+function sendDevice() { if (pushInfo && S.conn && S.you && MODE !== 'screen') S.conn.send({ t: 'device', ...pushInfo }); }
+native({ push: 'status' });
+
+// People you've played with before who aren't here. Everyone starts ticked; tap a name to leave them out.
+const pastKey = x => `${x.name}|${x.lastAt}`;
+function inviteHTML() {
+  const P = S.past;
+  if (!P || !P.ready || !P.list.length) return '';
+  const can = P.list.filter(x => x.can);
+  const cant = P.list.length - can.length;
+  const fresh = can.filter(x => !x.wait);
+  const picked = fresh.filter(x => !S.pastOff.has(pastKey(x)));
+  const chip = x => `<button class="invite-chip ${x.wait ? 'sent' : S.pastOff.has(pastKey(x)) ? '' : 'on'}" data-inv="${x.i}" ${x.wait ? 'disabled' : ''}>${x.wait ? icon('check', 'sm') : ''}${esc(x.name)}</button>`;
+  return `<section class="panel invite-panel">
+    <div class="panel-head">${icon('bell')}<h3>Game on!</h3></div>
+    ${can.length ? `<div class="hint-line">Send a notification to people you've played with. Tapping it brings them straight here.</div>
+    <div class="invite-chips">${can.map(chip).join('')}</div>
+    <button class="btn small wide with-ic" id="inviteSend" ${picked.length && !S.inviting ? '' : 'disabled'}>${icon('bell', 'sm')}${S.inviting ? 'Sending…' : picked.length ? `Notify ${picked.length === fresh.length && picked.length > 1 ? `all ${picked.length}` : picked.length === 1 ? esc(picked[0].name) : `${picked.length} people`}` : fresh.length ? 'Pick someone to notify' : 'Everyone has been told'}</button>` : `<div class="hint-line">Nobody you've played with has notifications on yet. They need the newest Robggle app, with notifications allowed.</div>`}
+    ${S.inviteNote ? `<div class="invite-note">${esc(S.inviteNote)}</div>` : ''}
+    ${can.length && cant ? `<div class="hint-line small">${cant} other${cant === 1 ? '' : 's'} can't get notifications yet (they need the newest app with notifications allowed).</div>` : ''}
+  </section>`;
+}
+function wireInvite(scope) {
+  scope.querySelectorAll('[data-inv]').forEach(b => {
+    b.onclick = () => {
+      const x = S.past.list.find(y => y.i === +b.dataset.inv);
+      if (!x) return;
+      const k = pastKey(x);
+      if (S.pastOff.has(k)) S.pastOff.delete(k); else S.pastOff.add(k);
+      haptic('tick');
+      renderLobby();
+    };
+  });
+  const send = scope.querySelector('#inviteSend');
+  if (send) send.onclick = () => {
+    const picks = S.past.list.filter(x => x.can && !x.wait && !S.pastOff.has(pastKey(x))).map(x => x.i);
+    if (!picks.length) return;
+    S.inviting = true; S.inviteNote = '';
+    S.conn.send({ t: 'invite', picks });
+    haptic('tick');
+    renderLobby();
+    setTimeout(() => { if (S.inviting) { S.inviting = false; if (S.view === 'lobby') renderLobby(); } }, 12000);
+  };
 }
 
 function toggleHTML(key, on, label, desc, ic) {
@@ -359,7 +505,7 @@ function settingsHTML() {
     <div class="hint-line">The game ends when the pen gets passed twice in a row with no words written.</div>`
     : `<div class="setting-block"><div class="setting-label">${icon('clock')}Round length</div>${seg('time', TIME_OPTS)}</div>`}
     <div class="divider"></div>
-    ${coop ? '' : toggleHTML('handicap', !!s.handicap, 'Handicap', 'Golf-style: after a couple of rounds, whoever usually trails gets bonus strokes.', 'flag')}
+    ${coop ? '' : toggleHTML('handicap', !!s.handicap, 'Handicap', 'Golf-style: after a couple of rounds, whoever usually trails gets points back, and whoever keeps running away with it gives some up.', 'flag')}
     ${coop ? '' : toggleHTML('funAwards', !!s.funAwards, 'For-fun awards', 'Silly bonus categories after every round, each worth real points. Totally unfair, on purpose.', 'star')}
     ${toggleHTML('noGuess', !!s.noGuess, 'Thou Shalt Not Guess', 'Two wrong words in a row and you sit out for 5 seconds. Nuh-uh-uh!', 'book')}
     ${toggleHTML('chaos', !!s.chaos, 'Family Chaos', 'Surprise events from the family drop in mid-round.', 'bolt')}
@@ -391,7 +537,7 @@ function wireSettings(scope) {
 function playersHTML({ big } = {}) {
   const ps = players();
   if (!ps.length) return `<div class="empty-note">${icon('users')}Waiting for players to join…</div>`;
-  const row = p => `<div class="player-row pop-in ${p.bot ? 'is-bot' : ''}" data-id="${p.id}">${chipHTML(p, p.connected ? '' : 'off')}<span class="name grow" style="${big ? 'font-size:24px' : ''}">${esc(p.name)}</span>${p.bot ? `<span class="tag bot" style="--c:${botLevel(p.bot).color}">${icon('bot', 'sm')}${botLevel(p.bot).label}</span>${isHost() ? `<button class="icon-btn tiny" data-unbot="${p.id}" aria-label="Remove bot">${icon('x', 'sm')}</button>` : ''}` : ''}${p.id === S.st.hostId ? `<span class="tag host">${icon('crown', 'sm')}host</span>` : ''}${S.you && p.id === S.you.id ? '<span class="tag">you</span>' : ''}${S.st.settings.handicap && p.hcp ? `<span class="tag hcp">${icon('flag', 'sm')}${p.hcp}</span>` : ''}${S.st.roundNo && p.total ? `<span class="tag">${p.total} pts</span>` : ''}${buildTag(p)}</div>`;
+  const row = p => `<div class="player-row pop-in ${p.bot ? 'is-bot' : ''}" data-id="${p.id}">${chipHTML(p, p.connected ? '' : 'off')}<span class="name grow" style="${big ? 'font-size:24px' : ''}">${esc(p.name)}</span>${p.bot ? `<span class="tag bot" style="--c:${botLevel(p.bot).color}">${icon('bot', 'sm')}${botLevel(p.bot).label}</span>${isHost() ? `<button class="icon-btn tiny" data-unbot="${p.id}" aria-label="Remove bot">${icon('x', 'sm')}</button>` : ''}` : ''}${p.id === S.st.hostId ? `<span class="tag host">${icon('crown', 'sm')}host</span>` : ''}${S.you && p.id === S.you.id ? '<span class="tag">you</span>' : ''}${S.st.settings.handicap && p.hcp ? `<span class="tag hcp ${p.hcp < 0 ? 'minus' : ''}">${icon('flag', 'sm')}${hcpText(p.hcp)}</span>` : ''}${S.st.roundNo && p.total ? `<span class="tag">${p.total} pts</span>` : ''}${buildTag(p)}${isHost() && !p.bot && S.you && p.id !== S.you.id ? `<button class="icon-btn tiny" data-kick="${p.id}" data-name="${esc(p.name)}" aria-label="Remove ${esc(p.name)}">${icon('x', 'sm')}</button>` : ''}</div>`;
   let html = '';
   for (const a of S.st.alliances) {
     const mem = ps.filter(p => p.alliance === a.id);
@@ -435,12 +581,13 @@ function renderLobby() {
       <button class="code-badge" id="share">${icon('share', 'sm')}<span>${esc(S.code)}</span></button>
     </header>
     <section class="panel me-card">
-      ${me ? chipHTML(me, 'big') : ''}
-      <div class="grow"><div class="me-name">${esc(me ? me.name : '')}</div><div class="hint-line">Tap the code above to invite people</div></div>
+      ${me ? `<button class="me-icon" id="pickIcon" aria-label="Pick your icon">${chipHTML(me, 'big')}<span class="me-icon-edit">${icon('pencil', 'sm')}</span></button>` : ''}
+      <div class="grow"><div class="me-name">${esc(me ? me.name : '')}</div><div class="hint-line">Tap your tile to pick an icon. Tap the code above to invite people.</div></div>
       <button class="icon-btn" id="rename" aria-label="Rename">${icon('pencil')}</button>
     </section>
     ${allianceHTML()}
     <section class="panel"><div class="panel-head">${icon('users')}<h3>Players</h3><span class="count-pill">${players().length}</span></div>${playersHTML()}</section>
+    ${inviteHTML()}
     ${botsHTML()}
     <section class="panel"><div class="panel-head">${icon('sparkle')}<h3>${isHost() ? 'Game settings' : 'This game'}</h3></div>${settingsHTML()}</section>
     <div class="sticky-start">
@@ -456,6 +603,7 @@ function renderLobby() {
   document.scrollingElement.scrollTop = keepScroll;
   wireSettings($root);
   wireBots($root);
+  wireInvite($root);
   $root.querySelectorAll('[data-ally]').forEach(b => { b.onclick = () => { S.conn.send({ t: 'alliance', id: b.dataset.ally || null }); haptic('tick'); }; });
   const st = $root.querySelector('#start');
   if (st) st.onclick = () => { unlock(); S.conn.send({ t: 'start' }); };
@@ -469,6 +617,8 @@ function renderLobby() {
     history.replaceState(null, '', IN_APP ? '?app=1' : location.pathname);
     renderHome();
   };
+  const pick = $root.querySelector('#pickIcon');
+  if (pick) pick.onclick = () => openEmojiPicker(me);
   $root.querySelector('#rename').onclick = () => {
     const n = prompt('Your name', me ? me.name : '');
     if (n && n.trim()) { store.set('rb:name', n.trim()); S.conn.send({ t: 'rename', name: n.trim() }); }
@@ -692,7 +842,7 @@ function renderPlay() {
   const board = makeBoard(r.tiles, r.size, {
     interactive: true,
     blank: r.startAt > S.conn.now(),
-    onChange: w => { cur.textContent = w.toUpperCase(); },
+    onChange: w => { cur.textContent = w.toUpperCase(); cur.style.setProperty('--len', Math.max(1, w.length)); },
     onWord: (w, path) => submit(w, path),
   });
   board.enabled = false;
@@ -977,6 +1127,29 @@ function challenge(w) {
   renderWords();
 }
 
+// Tapping an ally's word shows where it is. Ally words arrive all the time and each one redraws the list, so
+// the tap is read from the list itself (finger down on a word, finger up close by) and not from the button,
+// which may have been replaced in between.
+function wireAllyTaps(box) {
+  if (box._allyTaps) return;
+  box._allyTaps = true;
+  let down = null;
+  box.addEventListener('pointerdown', e => {
+    const b = e.target.closest && e.target.closest('.word.ally[data-w]');
+    down = b ? { w: b.dataset.w, x: e.clientX, y: e.clientY, at: performance.now() } : null;
+  });
+  box.addEventListener('pointerup', e => {
+    const d = down; down = null;
+    if (!d || performance.now() - d.at > 700 || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 12) return;
+    const a = S.ally.get(d.w);
+    if (!a || !a.path || !S.play || S.mine.has(d.w)) return;
+    const p = member(a.by);
+    S.play.board.hint(a.path, p ? p.color : 'var(--mint)');
+    haptic('tick');
+  });
+  box.addEventListener('pointercancel', () => { down = null; });
+}
+
 function renderWords() {
   if (!S.play || MODE === 'screen') return;
   // The list is rebuilt whenever anything changes (a server confirm, an ally's word, a rejection), so the
@@ -993,7 +1166,7 @@ function renderWords() {
     if (rej.length) {
       const left = 3 - [...S.rejected.values()].filter(y => y.challenged).length;
       html += `<div class="list-head">${icon('gavel', 'sm')}Not in our dictionary <small>challenge it (${left} left) and everyone votes at the end</small></div>`;
-      html += rej.map(([w, x]) => `<span class="word rejected">${esc(w)}${x.challenged ? '<em>challenged</em>' : x.challengeable && left > 0 ? `<button class="challenge-btn" data-c="${esc(w)}">Challenge</button>` : ''}</span>`).join('');
+      html += rej.map(([w, x]) => `<span class="word rejected"><s>${esc(w)}</s>${x.challenged ? '<em>challenged</em>' : x.challengeable && left > 0 ? `<button class="challenge-btn" data-c="${esc(w)}">Challenge</button>` : ''}</span>`).join('');
     }
     box.innerHTML = html;
     box.querySelectorAll('[data-c]').forEach(b => { b.onclick = () => challenge(b.dataset.c); });
@@ -1022,16 +1195,10 @@ function renderWords() {
   if (rej.length) {
     const left = 3 - [...S.rejected.values()].filter(y => y.challenged).length;
     html += `<div class="list-head">${icon('gavel', 'sm')}Not in our dictionary <small>challenge it (${left} left) and the family votes after the round</small></div>`;
-    html += rej.map(([w, x]) => `<span class="word rejected">${esc(w)}${x.challenged ? '<em>challenged</em>' : x.challengeable && left > 0 ? `<button class="challenge-btn" data-c="${esc(w)}">Challenge</button>` : ''}</span>`).join('');
+    html += rej.map(([w, x]) => `<span class="word rejected"><s>${esc(w)}</s>${x.challenged ? '<em>challenged</em>' : x.challengeable && left > 0 ? `<button class="challenge-btn" data-c="${esc(w)}">Challenge</button>` : ''}</span>`).join('');
   }
-  box.innerHTML = html;
-  box.querySelectorAll('.word.ally[data-w]').forEach(b => {
-    b.onclick = () => {
-      const a = S.ally.get(b.dataset.w);
-      const p = member(a.by);
-      if (a && a.path) S.play.board.hint(a.path, p ? p.color : 'var(--mint)');
-    };
-  });
+  if (html !== box._html) { box.innerHTML = html; box._html = html; }
+  wireAllyTaps(box);
   box.querySelectorAll('[data-c]').forEach(b => { b.onclick = () => challenge(b.dataset.c); });
   S.play.count.textContent = `${S.mine.size} word${S.mine.size === 1 ? '' : 's'}`;
 }
@@ -1240,6 +1407,8 @@ function screenBridge(m) {
 
 // ---------------- CHALLENGE VOTES ----------------
 let voteEl = null, voteTimer = null;
+// A very long challenged word goes on two or three even rows, and its tiles shrink to fit the card.
+const voteCols = n => Math.ceil(n / Math.ceil(n / 12));
 function showVote(v) {
   closeVote();
   S.chaos && S.chaos.destroy();
@@ -1255,7 +1424,7 @@ function showVote(v) {
   voteEl.innerHTML = `<div class="vote-card pop-in">
     <div class="chaos-kicker">Challenge ${v.index + 1} of ${v.total}</div>
     <div class="vote-who">${names.map(p => chipHTML(p)).join('')}<span>${esc(names.map(p => p.name).join(' & '))} say${names.length === 1 ? 's' : ''}</span></div>
-    <div class="vote-word">${v.w.toUpperCase().split('').map(c => `<span>${c}</span>`).join('')}</div>
+    <div class="vote-word" style="--n:${voteCols(v.w.length)}">${v.w.toUpperCase().split('').map(c => `<span>${c}</span>`).join('')}</div>
     <div class="muted">is a real word. Should it count?</div>
     <div class="vote-board"></div>
     <div class="vote-bar"><i></i></div>
@@ -1359,7 +1528,7 @@ window.addEventListener('robggle:open', e => {
   if (!want) return;
   try { sessionStorage.setItem('rb:intro', '1'); } catch {}
   const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
-  import('./intro.js?v=da58d22-1795245872').then(m => m.playIntro({ freezeAt })).catch(() => {});
+  import('./intro.js?v=dc68fa1-1795297650').then(m => m.playIntro({ freezeAt })).catch(() => {});
 })();
 
 if (MODE === 'home') renderLanding();

@@ -1,8 +1,8 @@
 // Family Chaos Mode, client side. The server planned every event; this draws them in sync
 // (phones and the TV use the same server clock) and enforces the parts phones can check instantly.
-import { sfx } from './sfx.js?v=da58d22-1795245872';
-import { haptic } from './net.js?v=da58d22-1795245872';
-import { UI } from './icons.js?v=da58d22-1795245872';
+import { sfx } from './sfx.js?v=dc68fa1-1795297650';
+import { haptic } from './net.js?v=dc68fa1-1795297650';
+import { UI } from './icons.js?v=dc68fa1-1795297650';
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const tutKey = t => (t === 'leak' || t === 'sleepover' ? t + '2' : t); // bump when a tutorial changes

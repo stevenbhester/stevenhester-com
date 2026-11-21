@@ -12,12 +12,25 @@ export const SERVER = (() => {
   return PROD_SERVER;
 })();
 
+// This device's own id: long, random, kept in the phone's storage and only ever sent to the game server.
+// It's how the server knows who has played together (for "game on!" invites) and who a host removed.
+export const PID = (() => {
+  try {
+    let p = localStorage.getItem('rb:pid');
+    if (!/^[a-f0-9]{32}$/.test(p || '')) {
+      p = [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('');
+      localStorage.setItem('rb:pid', p);
+    }
+    return p;
+  } catch { return null; }
+})();
+
 const WS_URL = SERVER.replace(/^http/, 'ws') + '/ws';
 
 // Build number of this copy of the game. tools/publish_site.sh stamps it (the robggle repo's commit count);
 // 0 means a local, unpublished copy, which never asks anyone to update. ?build=N fakes one on localhost.
 export const BUILD = (() => {
-  const stamped = 20;
+  const stamped = 22;
   const q = new URLSearchParams(location.search).get('build');
   return location.hostname === 'localhost' && q ? +q : stamped;
 })();
@@ -76,7 +89,7 @@ export class Conn {
     ws.onopen = () => {
       this.retry = 0;
       this.onStatus('open');
-      if (this.hello) ws.send(JSON.stringify({ ...this.hello, build: BUILD, app: APP_BUILD }));
+      if (this.hello) ws.send(JSON.stringify({ ...this.hello, build: BUILD, app: APP_BUILD, pid: PID }));
       for (const m of this.queue.splice(0)) ws.send(JSON.stringify(m));
       this.pingBurst();
     };
