@@ -23,7 +23,7 @@ export function audioOut() { return ctx ? { ctx, master } : null; }
 
 export function audioReady() { return !!ctx && ctx.state === 'running'; }
 
-export function setMuted(v) { muted = v; if (v) import('./music.js?v=dc68fa1-1795297650').then(m => m.stopMusic(0.3)); try { localStorage.setItem('rb:mute', v ? '1' : '0'); } catch {} }
+export function setMuted(v) { muted = v; if (v) import('./music.js?v=cdcfe2c-1795303748').then(m => m.stopMusic(0.3)); try { localStorage.setItem('rb:mute', v ? '1' : '0'); } catch {} }
 export function isMuted() { return muted; }
 
 function tone(freq, { at = 0, dur = 0.12, type = 'sine', vol = 0.3, slide = 0, attack = 0.005 } = {}) {

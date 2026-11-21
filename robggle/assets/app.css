@@ -1193,3 +1193,11 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 .emoji-opt.letter { font-family: inherit; font-weight: 700; color: var(--ink); }
 .emoji-opt.on { background: var(--c, var(--hot)); box-shadow: 0 0 0 2px #fff inset; }
 .emoji-opt:active { transform: scale(0.9); }
+
+/* ---- "a new app is ready" pop-up (iPhone app only) ---- */
+.app-popup { position: fixed; inset: 0; z-index: 65; display: grid; place-items: center; padding: 20px; background: rgba(15, 8, 32, 0.82); }
+.app-popup-card { width: min(100%, 380px); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 22px 18px 14px; border-radius: 24px; background: #2a1651; border: 3px solid var(--sun); }
+.app-popup-card h3 { margin: 0; font-size: 22px; }
+.app-popup-card p { margin: 0; color: var(--muted); line-height: 1.4; }
+.app-popup-ic { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; background: var(--sun); color: #3a2a00; box-shadow: 0 4px 0 #b38f10; }
+.app-popup-ic .ic, .app-popup-ic svg { width: 30px; height: 30px; }

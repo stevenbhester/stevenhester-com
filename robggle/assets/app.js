@@ -1,11 +1,11 @@
 // Robggle client. One file drives three pages: /robggle/ (home), /robggle/game/ (screen), /robggle/join/ (controller).
-import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, PID, fetchLatest } from './net.js?v=dc68fa1-1795297650';
-import { makeBoard, tileText } from './board.js?v=dc68fa1-1795297650';
-import { sfx, unlock, audioReady } from './sfx.js?v=dc68fa1-1795297650';
-import { runReveal, chipHTML, confetti } from './reveal.js?v=dc68fa1-1795297650';
-import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=dc68fa1-1795297650';
-import { icon } from './icons.js?v=dc68fa1-1795297650';
-import { startMusic, stopMusic, preloadMusic, startLobbyMusic, startResultsMusic, musicPlaying } from './music.js?v=dc68fa1-1795297650';
+import { Conn, fnv, fetchLobbies, haptic, native, IN_APP, SERVER, BUILD, APP_BUILD, PID, fetchLatest } from './net.js?v=cdcfe2c-1795303748';
+import { makeBoard, tileText } from './board.js?v=cdcfe2c-1795303748';
+import { sfx, unlock, audioReady } from './sfx.js?v=cdcfe2c-1795303748';
+import { runReveal, chipHTML, confetti } from './reveal.js?v=cdcfe2c-1795303748';
+import { Chaos, INFO, bananaSVG, setBananaFill } from './chaos.js?v=cdcfe2c-1795303748';
+import { icon } from './icons.js?v=cdcfe2c-1795303748';
+import { startMusic, stopMusic, preloadMusic, startLobbyMusic, startResultsMusic, musicPlaying } from './music.js?v=cdcfe2c-1795303748';
 
 const MODE = document.body.dataset.mode; // home | screen | join
 const $root = document.getElementById('root');
@@ -93,7 +93,32 @@ async function refreshLatest(force) {
   if (!BUILD || (!force && Date.now() - latestAt < 60000)) return;
   latestAt = Date.now();
   const v = await fetchLatest();
-  if (v && v.build) { S.latest = v; checkBuild(); }
+  if (v && v.build) { S.latest = v; checkBuild(); appPopup(); }
+}
+// An old iPhone app gets one pop-up per launch saying a new one is ready (version.json's "minApp" is the
+// oldest build that's still fine, "appNote" says what the new one adds). It only shows on the home screen
+// or in the lobby, never over a round, and the yellow button stays on those screens afterwards.
+function appPopup() {
+  if (!appBehind() || MODE === 'screen' || (S.view !== 'home' && S.view !== 'lobby')) return;
+  // The studio card plays first when the app opens: wait for it to finish.
+  if (document.querySelector('.studio-card')) { setTimeout(appPopup, 600); return; }
+  try { if (sessionStorage.getItem('rb:appPopup') === '1') return; sessionStorage.setItem('rb:appPopup', '1'); } catch {}
+  if (document.querySelector('.app-popup')) return;
+  const el = document.createElement('div');
+  el.className = 'app-popup';
+  el.innerHTML = `<div class="app-popup-card pop-in">
+    <div class="app-popup-ic">${icon('refresh')}</div>
+    <h3>A new Robggle app is ready</h3>
+    <p>${esc(S.latest.appNote || 'Update to get the newest features and fixes.')}</p>
+    <a class="btn wide with-ic app-update" href="${TESTFLIGHT}">${icon('refresh')}Update in TestFlight</a>
+    <button class="link-btn" data-later>Later</button>
+  </div>`;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.querySelector('[data-later]').onclick = close;
+  el.querySelector('.app-update').addEventListener('click', () => setTimeout(close, 300));
+  el.onclick = e => { if (e.target === el) close(); };
+  haptic('tick');
 }
 function checkBuild() {
   if (!BUILD) return;
@@ -1528,7 +1553,7 @@ window.addEventListener('robggle:open', e => {
   if (!want) return;
   try { sessionStorage.setItem('rb:intro', '1'); } catch {}
   const freezeAt = location.hostname === 'localhost' && params.has('introAt') ? +params.get('introAt') : undefined;
-  import('./intro.js?v=dc68fa1-1795297650').then(m => m.playIntro({ freezeAt })).catch(() => {});
+  import('./intro.js?v=cdcfe2c-1795303748').then(m => m.playIntro({ freezeAt })).catch(() => {});
 })();
 
 if (MODE === 'home') renderLanding();
