@@ -1,3 +1,6 @@
+/* Both fonts travel with the app, so it looks the same with no connection. (SIL Open Font License.) */
+@font-face { font-family: "Fredoka"; src: url("fonts/fredoka.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("fonts/nunito.woff2") format("woff2"); font-weight: 200 1000; font-display: swap; }
 :root {
   --paper: #f3ead9; --card: #fffaf0; --ink: #3b3346; --ink-soft: #6c6477; --line: #e2d7c2;
   --accent: #ff7a59; --accent-deep: #d95a3c; --good: #35c27a;
@@ -8,7 +11,7 @@
 * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
 html, body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); }
-body { font: 700 16px/1.45 var(--f-body); -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none; overscroll-behavior-y: none; }
+body { font: 700 16px/1.45 var(--f-body); -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior-y: none; }
 h1, h2, h3, p { margin: 0; }
 h1, h2, h3 { font-family: var(--f-display); line-height: 1.1; }
 button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; text-align: inherit; }
@@ -81,3 +84,6 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .sheet ol { margin: 0 0 16px; padding-left: 22px; display: grid; gap: 8px; font-size: 15.5px; }
 .sheet p { font-size: 15.5px; margin-bottom: 16px; }
 .sheet .btn { display: block; width: 100%; }
+.sheet canvas { display: block; width: 100%; border-radius: 16px; }
+.sheet .cap { font: 600 22px/1.2 var(--f-display); text-align: center; margin: 12px 0 14px; min-height: 27px; }
+.sheet ol.fine { font-size: 13.5px; color: var(--ink-soft); gap: 4px; }

@@ -1,2 +1,4 @@
 # GitHub Pages skips dot-folders by default; Apple reads the app-link file from .well-known.
 include: [".well-known"]
+# The iPhone app's source and the level-building tools live in this repo but are not part of the website.
+exclude: ["lightbox-ios", "lightbox/tools", "lightbox/README.md"]

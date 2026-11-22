@@ -46,3 +46,20 @@ export class Fx {
     ctx.globalAlpha = 1;
   }
 }
+
+// A pointing finger for the how-to: a ring that pulses once per tap, with the taps counted beside it when there are two.
+// `press` (0 to 1) drives the pulse by hand; left out, it pulses on its own.
+export function finger(ctx, x, y, t, taps = 1, press = -1) {
+  const beat = press >= 0 ? press : (t * 1.6) % 1, pulse = Math.max(0, 1 - beat * 2.2);
+  ctx.save();
+  ctx.fillStyle = `rgba(255,122,89,${0.22 + pulse * 0.3})`; ctx.beginPath(); ctx.arc(x, y, 17 + pulse * 5, 0, TAU); ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = `rgba(255,122,89,${0.9 - beat * 0.7})`; ctx.beginPath(); ctx.arc(x, y, 12 + beat * 16, 0, TAU); ctx.stroke();
+  ctx.font = '30px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = '#000';
+  ctx.fillText('\u{1F446}', x + 2, y + 6 - pulse * 5);
+  if (taps > 1) {
+    ctx.font = '700 14px Fredoka, ui-rounded, system-ui, sans-serif'; ctx.textBaseline = 'middle';
+    const w = 34; rr(ctx, x + 20, y - 26, w, 22, 11); ctx.fillStyle = '#ff7a59'; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillText('\u00d7' + taps, x + 20 + w / 2, y - 14.5);
+  }
+  ctx.restore();
+}

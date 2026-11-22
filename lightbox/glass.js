@@ -164,6 +164,15 @@ export class Game {
     this.hintK = d.k; this.hintP = d.p;
     return `This ${d.k < this.p.N ? 'row' : 'column'} settles the flashing pane.`;
   }
+  // The next sure move as a place to tap and how many taps it takes. Used by the animated how-to.
+  autoStep() {
+    if (this.won) return null;
+    let q = this.st.findIndex((v, i) => v && (v === 1) !== this.p.sol[i]), want;
+    if (q >= 0) want = this.p.sol[q] ? 1 : 2;
+    else { const d = deduce(this.p.lines, this.st); if (!d) return null; q = d.p; want = d.v; }
+    const i = this.p.pane.indexOf(q), N = this.p.N;
+    return { x: GUT + (i % N + 0.5) * this.cell, y: GUT + (((i / N) | 0) + 0.5) * this.cell, taps: (want - this.st[q] + 3) % 3 };
+  }
   frame(ctx, dt) {
     const g = this, p = this.p, N = p.N, C = this.cell, X = GUT, Y = GUT; g.t += dt; g.flashT = Math.max(0, g.flashT - dt * 1.5);
     g.fx.step(dt);
@@ -190,9 +199,14 @@ export class Game {
       const done = !un && lit === ln.target, bad = lit > ln.target || lit + un < ln.target, hint = g.hintK === k;
       const x = k < N ? X / 2 - 1 : X + (k - N + 0.5) * C, y = k < N ? Y + (k + 0.5) * C : Y / 2 - 1;
       if (hint) { ctx.fillStyle = `rgba(255,122,89,${0.5 + 0.3 * Math.sin(g.t * 8)})`; ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill(); }
-      ctx.font = `700 ${done ? 15 : 17}px Fredoka, system-ui, sans-serif`;
+      ctx.font = `700 ${done ? 15 : 17}px Fredoka, ui-rounded, system-ui, sans-serif`;
       ctx.fillStyle = bad ? '#ff5d5d' : done ? 'rgba(53,160,105,.75)' : '#3b3346'; ctx.fillText(ln.target, x, y);
     });
     g.fx.draw(ctx);
   }
 }
+
+// A tiny window for the animated how-to, played by the same sure steps the game checks for.
+export const demos = [
+  { puzzle: build(['yy.', 'yy.', 'bbb'], [0, 0, 1, 0, 0, 1, 2, 2, 3], null), caption: 'Numbers count the lit squares in each line' },
+];

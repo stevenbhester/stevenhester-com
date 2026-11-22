@@ -1,18 +1,19 @@
 // OVERLAP
 // See-through shapes, each on or off. A number sits in some patches and says how many of the shapes covering that patch are on.
-// The "on" shapes make the picture and the rest are decoys. Numbers are chosen so the picture can always be finished one sure
-// step at a time: some number settles a shape outright, with no guessing.
-import { TAU, HP, rr, Fx, shuffle, pick, between } from './util.js';
-import { SCENES } from './overlap-scenes.js';
+// The "on" shapes make the picture and the rest are decoys. Numbers are chosen so the picture can always be finished by
+// sure steps, with no guessing. Early pictures only need one number at a time; later ones need two numbers compared.
+// Pictures are drawn in overlap-scenes.js and turned into levels (decoys added, numbers chosen) by tools/build-overlap.mjs.
+import { TAU, HP, rr, Fx, shuffle, pick, between, finger } from './util.js';
+import LEVELS from './overlap-levels.js';
 
 export const id = 'overlap';
 export const title = 'Overlap';
 export const blurb = 'Switch on the right shapes to make the picture.';
 export const endlessName = 'Totems';
 export const howto = [
-  'Each number counts how many of the shapes covering that spot are switched on.',
-  'Tap a shape to switch it on. Tap again to mark it off (dashed). Tap once more to clear it.',
-  'A 0 means every shape over it is off. A number equal to the shapes over it means they are all on.',
+  'A number counts the switched-on shapes under it.',
+  'Tap: on. Tap again: off (dashed). Tap again: clear.',
+  'Stuck? Imagine a shape on. If a number breaks, that shape is off.',
   'Where shapes overlap, a tap goes to the smallest one.',
 ];
 export const W = 360, H = 378;
@@ -20,10 +21,10 @@ const G = 3, GW = 120, GH = 126;
 const PAPER = ['#ff8f70', '#ffd54d', '#74b9ff', '#7fdcae', '#c7a0ff', '#ff9fcd', '#5fd4d0', '#d9a878'];
 const NIGHT = ['#ffe9a8', '#3a5cc0', '#2c9a94', '#6f55c8', '#2f6fd0', '#e0567a', '#ffd54d', '#e08a3c'];
 
-export const levels = SCENES.map(s => ({ id: s.id, name: s.name }));
+export const levels = LEVELS.map(s => ({ id: s.id, name: s.name }));
 
 // Scene shapes are written compactly: kind, numbers, colour. A leading '-' on the kind marks a decoy.
-function make(a) {
+export function make(a) {
   const k = a[0].replace('-', ''), col = a[a.length - 1];
   const s = k === 'c' ? { k, x: a[1], y: a[2], r: a[3], area: Math.PI * a[3] * a[3] }
     : k === 'e' ? { k, x: a[1], y: a[2], w: a[3] * 2, h: a[4] * 2, a: a[5], area: Math.PI * a[3] * a[4] }
@@ -43,7 +44,7 @@ export function inside(s, x, y) {
   const dx = x - s.x, dy = y - s.y, c = Math.cos(-s.a), n = Math.sin(-s.a), u = (dx * c - dy * n) / (s.w / 2), v = (dx * n + dy * c) / (s.h / 2);
   return s.k === 'e' ? u * u + v * v <= 1 : Math.abs(u) <= 1 && Math.abs(v) <= 1;
 }
-function bounds(s) {
+export function bounds(s) {
   if (s.k === 'c') return [s.x - s.r, s.y - s.r, s.x + s.r, s.y + s.r];
   if (s.k === 'p') return [Math.min(...s.pts.map(p => p[0])), Math.min(...s.pts.map(p => p[1])), Math.max(...s.pts.map(p => p[0])), Math.max(...s.pts.map(p => p[1]))];
   const ex = (Math.abs(Math.cos(s.a)) * s.w + Math.abs(Math.sin(s.a)) * s.h) / 2, ey = (Math.abs(Math.sin(s.a)) * s.w + Math.abs(Math.cos(s.a)) * s.h) / 2;
@@ -65,48 +66,85 @@ export function patches(shapes, maxDepth) {
   const seen = new Uint8Array(n), out = [];
   for (let s = 0; s < n; s++) {
     if (seen[s] || !mask[s]) continue;
-    const st = [s]; seen[s] = 1; let best = s;
+    const st = [s]; seen[s] = 1; let best = s, size = 0;
     while (st.length) {
-      const i = st.pop(), gx = i % GW; if (d[i] > d[best]) best = i;
+      const i = st.pop(), gx = i % GW; size++; if (d[i] > d[best]) best = i;
       for (const j of [gx > 0 ? i - 1 : -1, gx < GW - 1 ? i + 1 : -1, i - GW, i + GW]) if (j >= 0 && j < n && !seen[j] && mask[j] === mask[s]) { seen[j] = 1; st.push(j); }
     }
-    out.push({ mask: mask[s], d: d[best], x: (best % GW) * G + 1.5, y: ((best / GW) | 0) * G + 1.5 });
+    out.push({ mask: mask[s], d: d[best], size: size * G * G, x: (best % GW) * G + 1.5, y: ((best / GW) | 0) * G + 1.5 });
   }
   return out;
 }
-const bits = m => { const o = []; for (let s = 0; m; s++, m >>>= 1) if (m & 1) o.push(s); return o; };
+export const bits = m => { const o = []; for (let s = 0; m; s++, m >>>= 1) if (m & 1) o.push(s); return o; };
 
-// A number that settles shapes right now: none left to switch on, or every undecided one is needed. st: 0 undecided, 1 on, 2 off.
-export function force(clues, st) {
+// One sure step from where things stand, or null. st: 0 undecided, 1 on, 2 off.
+// The plain step uses a single number: nothing left to switch on under it, or every undecided shape under it is needed.
+// Two harder steps are used when `deep` is set:
+//  - comparing two numbers that share shapes: if one needs more than the other by exactly as many as the shapes only it
+//    covers, those are all on and the shapes only the other covers are all off;
+//  - trying a shape: if switching it on (or off) makes some number impossible within a few plain steps, it is the other.
+// A step is { ks: the number(s) used, on: shapes to switch on, off: shapes to mark off, tried: the shape tested, if any }.
+export function force(clues, st, pairs) {
+  const left = clues.map(c => { let need = c.v; const u = []; for (const s of c.over) { if (st[s] === 1) need--; else if (!st[s]) u.push(s); } return { need, u }; });
   for (let k = 0; k < clues.length; k++) {
-    const c = clues[k]; let on = 0; const u = [];
-    for (const s of c.over) { if (st[s] === 1) on++; else if (!st[s]) u.push(s); }
-    if (u.length && (c.v === on || c.v === on + u.length)) return { k, shapes: u, v: c.v === on ? 2 : 1 };
+    const { need, u } = left[k]; if (!u.length) continue;
+    if (need === 0) return { ks: [k], on: [], off: u };
+    if (need === u.length) return { ks: [k], on: u, off: [] };
+  }
+  if (pairs) for (let a = 0; a < clues.length; a++) {
+    const A = left[a]; if (!A.u.length) continue;
+    for (let b = 0; b < clues.length; b++) {
+      const B = left[b]; if (a === b || !B.u.length) continue;
+      const onlyA = A.u.filter(s => !B.u.includes(s)), onlyB = B.u.filter(s => !A.u.includes(s));
+      if (onlyA.length === A.u.length || (!onlyA.length && !onlyB.length)) continue;
+      if (A.need - B.need === onlyA.length) return { ks: [a, b], on: onlyA, off: onlyB };
+    }
+  }
+  if (pairs) for (let s = 0; s < st.length; s++) {
+    if (st[s]) continue;
+    for (const v of [1, 2]) { const k = breaks(clues, st, s, v); if (k >= 0) return { ks: [k], on: v === 2 ? [s] : [], off: v === 1 ? [s] : [], tried: s }; }
   }
   return null;
 }
-function finishable(clues, n) {
-  const st = new Array(n).fill(0); let f;
-  while ((f = force(clues, st))) f.shapes.forEach(s => { st[s] = f.v; });
-  return st.every(v => v);
+// Suppose shape s had value v. Follow up to three plain steps; return a number that can no longer be met, or -1.
+function breaks(clues, st0, s, v) {
+  const st = st0.slice(); st[s] = v;
+  for (let round = 0; round <= 3; round++) {
+    let moved = false;
+    for (let k = 0; k < clues.length; k++) {
+      const c = clues[k]; let need = c.v, u = 0;
+      for (const q of c.over) { if (st[q] === 1) need--; else if (!st[q]) u++; }
+      if (need < 0 || need > u) return k;
+      if (u && round < 3 && (need === 0 || need === u)) { for (const q of c.over) if (!st[q]) st[q] = need ? 1 : 2; moved = true; }
+    }
+    if (!moved) break;
+  }
+  return -1;
 }
-// Start with a number in every roomy patch, then drop numbers while the picture can still be finished step by step.
+// Plays the sure steps through. `ok` says whether they finish the picture; `hard` counts the steps that needed a harder step.
+export function playThrough(clues, n, pairs) {
+  const st = new Array(n).fill(0); let f, hard = 0;
+  while ((f = force(clues, st, pairs))) { f.on.forEach(s => { st[s] = 1; }); f.off.forEach(s => { st[s] = 2; }); if (f.ks.length > 1 || f.tried !== undefined) hard++; }
+  return { ok: st.every(v => v), hard };
+}
+// Start with a number in every roomy patch, then drop numbers while the picture can still be finished by sure steps.
 // Lone-shape numbers go first, since they give the answer away. Null if even the full set is not enough.
-function chooseClues(shapes, sol, big, R) {
-  const n = shapes.length;
+// opts.pairs: allow the two-number step, which lets more numbers go and makes the picture harder.
+// opts.spares: how many dropped numbers to put back, so there is more than one place to make progress.
+export function chooseClues(shapes, sol, big, R, opts = {}) {
+  const n = shapes.length, pairs = !!opts.pairs;
   let clues = big.map(p => { const over = bits(p.mask); return { x: p.x, y: p.y, d: p.d, over, v: over.filter(s => sol[s]).length }; });
-  if (!finishable(clues, n)) return null;
-  const order = shuffle(clues.filter(c => c.over.length === 1), R).concat(shuffle(clues.filter(c => c.over.length > 1), R)), cut = [];
-  for (const c of order) { const rest = clues.filter(x => x !== c); if (finishable(rest, n)) { clues = rest; if (c.over.length > 1) cut.push(c); } }
-  // A few spare numbers back in, so there is usually more than one place to make progress.
-  return clues.concat(shuffle(cut, R).slice(0, Math.ceil(n / 3)));
+  if (!playThrough(clues, n, pairs).ok) return null;
+  // Giveaway numbers go first: a 0, or a number equal to the shapes under it, settles those shapes at a glance.
+  // With the harder steps allowed every giveaway is tried before any other number, which leaves the ones that need thought.
+  const easy = c => (c.v === 0 || c.v === c.over.length ? (c.over.length === 1 ? 0 : 1) : 2);
+  const order = shuffle(clues.slice(), R).sort((a, b) => (pairs ? easy(a) - easy(b) : (a.over.length > 1) - (b.over.length > 1))), cut = [];
+  for (const c of order) { const rest = clues.filter(x => x !== c); if (playThrough(rest, n, pairs).ok) { clues = rest; if (c.over.length > 1) cut.push(c); } }
+  return clues.concat(shuffle(cut, R).slice(0, opts.spares || 0));
 }
 
-export function art(i) { const S = SCENES[i]; return { shapes: S.s.map(make), sol: S.s.map(a => a[0][0] !== '-'), night: !!S.night }; }
-export function makeLevel(i, R = Math.random) {
-  const S = SCENES[i], shapes = S.s.map(make), sol = S.s.map(a => a[0][0] !== '-');
-  return { shapes, sol, clues: chooseClues(shapes, sol, patches(shapes, 9).filter(p => p.d >= 4), R), name: S.name, night: !!S.night };
-}
+export function art(i) { const L = LEVELS[i]; return { shapes: L.shapes.map(make), sol: L.sol.map(Boolean), night: !!L.night }; }
+export function makeLevel(i) { const L = LEVELS[i]; return { ...art(i), clues: L.clues, name: L.name }; }
 
 // Totems: endless symmetrical figures. A few shapes sit on the centre line and the rest come in mirrored pairs,
 // so whatever is left switched on reads as a face, a creature or a mask rather than a scatter.
@@ -144,11 +182,13 @@ export function makeEndless(R, size = 0) {
     if (shapes.some((s, i) => !big.some(p => p.mask >> i & 1))) continue;
     // The finished figure should hang together: enough places where two switched-on shapes cross.
     if (big.filter(p => bits(p.mask).filter(i => sol[i]).length > 1).length < crossings) continue;
-    const clues = chooseClues(shapes, sol, big, R);
+    // The first couple are gentle; after that they need two numbers compared.
+    const clues = chooseClues(shapes, sol, big, R, size < 2 ? { spares: 2 } : { pairs: true });
     if (!clues || clues.filter(c => c.over.length === 1).length > Math.ceil(shapes.length / 3) + 1) continue;
+    if (size >= 2 && t < 1200 && !playThrough(clues, shapes.length, true).hard) continue;
     return { shapes, sol, clues, name: null, night };
   }
-  return makeLevel(0, R);
+  return makeLevel(0);
 }
 
 function path(ctx, s) {
@@ -184,7 +224,8 @@ export class Game {
     const n = p.shapes.length;
     this.st = saved && saved.st && saved.st.length === n ? saved.st.slice() : new Array(n).fill(0);
     this.hist = []; this.pop = new Array(n).fill(0);
-    this.won = false; this.fade = 0; this.hintK = -1; this.hintT = 0; this.flash = -1; this.flashT = 0; this.t = 0; this.fx = new Fx();
+    this.won = false; this.fade = 0; this.hintK = []; this.hintT = 0; this.flash = -1; this.flashT = 0; this.t = 0; this.fx = new Fx();
+    this.coach = false; this.spots = [];
   }
   get left() { return this.st.filter(v => !v).length; }
   save() { return { st: this.st }; }
@@ -198,21 +239,45 @@ export class Game {
     if (this.won) return false;
     const i = this.pickAt(x, y); if (i < 0) return false;
     this.hist.push(this.st.slice());
-    this.st[i] = (this.st[i] + 1) % 3; this.pop[i] = 1; this.hintK = -1;
+    this.st[i] = (this.st[i] + 1) % 3; this.pop[i] = 1; this.hintK = [];
     if (this.st[i] === 1) this.sfx.on(i); else this.sfx.off(this.st[i] === 2);
     this.check(); return true;
   }
   check() { if (!this.won && this.solved()) { this.won = true; this.st = this.st.map(v => v || 2); this.fx.confetti(W); this.sfx.win(); } }
-  undo() { if (this.won || !this.hist.length) return false; this.st = this.hist.pop(); this.hintK = -1; return true; }
-  clear() { if (this.won) return; this.hist.push(this.st.slice()); this.st.fill(0); this.hintK = -1; }
+  undo() { if (this.won || !this.hist.length) return false; this.st = this.hist.pop(); this.hintK = []; return true; }
+  clear() { if (this.won) return; this.hist.push(this.st.slice()); this.st.fill(0); this.hintK = []; }
   // Returns a line of advice, or null when there is nothing to say.
   hint() {
     if (this.won) return null;
     const wrong = this.st.findIndex((v, s) => v && (v === 1) !== this.p.sol[s]);
     if (wrong >= 0) { this.hist.push(this.st.slice()); this.st[wrong] = 0; this.flash = wrong; this.flashT = 1; return 'That shape was wrong, so it is undecided again.'; }
-    const f = force(this.p.clues, this.st); if (!f) return null;
-    this.hintK = f.k; this.hintT = 0;
-    return f.v === 1 ? 'This number needs every undecided shape on it.' : 'This number is already full, so the rest on it are off.';
+    const f = force(this.p.clues, this.st, true); if (!f) return null;
+    this.hintK = f.ks; this.hintT = 0;
+    if (f.tried !== undefined) { this.flash = f.tried; this.flashT = 1.6; return `Try the flashing shape ${f.on.length ? 'off' : 'on'}: this number stops working. So it must be ${f.on.length ? 'on' : 'off'}.`; }
+    if (f.ks.length > 1) return 'Compare these two numbers. The shapes under only one of them are settled.';
+    return f.on.length ? 'This number needs every undecided shape under it.' : 'This number is already full, so the rest under it are off.';
+  }
+  // The roomiest place where a tap reaches this shape.
+  spot(s) {
+    if (this.spots[s]) return this.spots[s];
+    let best = null, bd = -99;
+    for (let y = 3; y < H; y += 3) for (let x = 3; x < W; x += 3) {
+      if (this.pickAt(x, y) !== s) continue;
+      let d = 1; while (d < 14 && [[d, 0], [-d, 0], [0, d], [0, -d]].every(([a, b]) => this.pickAt(x + a * 3, y + b * 3) === s)) d++;
+      // Keep clear of the numbers, so a pointing finger does not sit on top of one.
+      if (this.p.clues.some(c => Math.hypot(c.x - x, c.y - y) < 30)) d -= 6;
+      if (d > bd) { bd = d; best = { x, y }; }
+    }
+    return (this.spots[s] = best);
+  }
+  // The next sure move as a place to tap and how many taps it takes. Used by the pointing finger and the animated how-to.
+  autoStep() {
+    if (this.won) return null;
+    let s = this.st.findIndex((v, i) => v && (v === 1) !== this.p.sol[i]), want;
+    if (s >= 0) want = this.p.sol[s] ? 1 : 2;
+    else { const f = force(this.p.clues, this.st, true); if (!f) return null; s = f.on.length ? f.on[0] : f.off[0]; want = f.on.length ? 1 : 2; }
+    const at = this.spot(s); if (!at) return null;
+    return { x: at.x, y: at.y, taps: (want - this.st[s] + 3) % 3 };
   }
   frame(ctx, dt) {
     const o = this, p = this.p; o.t += dt; o.hintT += dt; o.flashT = Math.max(0, o.flashT - dt * 1.5);
@@ -235,14 +300,25 @@ export class Game {
     ctx.setLineDash([]); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     if (o.fade < 1) p.clues.forEach((c, k) => {
       let on = 0, un = 0; for (const s of c.over) { if (o.st[s] === 1) on++; else if (!o.st[s]) un++; }
-      const done = !un && on === c.v, bad = on > c.v || on + un < c.v, hint = o.hintK === k, small = c.d < 5, r = (small ? 8.5 : 10) + (hint ? 2.5 + 2.5 * Math.sin(o.hintT * 8) : 0);
+      const done = !un && on === c.v, bad = on > c.v || on + un < c.v, hint = o.hintK.includes(k), small = c.d < 5, r = (small ? 8.5 : 10) + (hint ? 2.5 + 2.5 * Math.sin(o.hintT * 8) : 0);
       ctx.globalAlpha = (1 - o.fade) * (done ? 0.75 : 1);
       if (hint) { ctx.fillStyle = 'rgba(255,122,89,.4)'; ctx.beginPath(); ctx.arc(c.x, c.y, r + 6, 0, TAU); ctx.fill(); }
       ctx.fillStyle = bad ? '#ff5d5d' : done ? '#35c27a' : '#fff'; ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, TAU); ctx.fill();
       ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(59,51,70,.55)'; ctx.stroke();
-      ctx.font = `700 ${small ? 11 : 13}px Fredoka, system-ui, sans-serif`; ctx.fillStyle = bad || done ? '#fff' : '#3b3346'; ctx.fillText(c.v, c.x, c.y + 0.5);
+      ctx.font = `700 ${small ? 11 : 13}px Fredoka, ui-rounded, system-ui, sans-serif`; ctx.fillStyle = bad || done ? '#fff' : '#3b3346'; ctx.fillText(c.v, c.x, c.y + 0.5);
     });
     ctx.globalAlpha = 1; ctx.restore();
+    if (o.coach && !o.won) { const a = o.autoStep(); if (a) finger(ctx, a.x, a.y, o.t, a.taps); }
     o.fx.draw(ctx);
   }
 }
+
+// Tiny puzzles for the animated how-to. Each is played by the same sure steps the game checks for.
+const tiny = (raw, sol, clues, caption) => ({ puzzle: { shapes: raw.map(make), sol, clues, night: false, name: null }, caption, view: { y: 100, h: 180 } });
+export const demos = [
+  tiny([['c', 180, 190, 64, '#ff8f70']], [true], [{ x: 180, y: 170, d: 9, over: [0], v: 1 }], '1 = on'),
+  tiny([['c', 180, 190, 64, '#74b9ff']], [false], [{ x: 180, y: 170, d: 9, over: [0], v: 0 }], '0 = off'),
+  tiny([['c', 135, 190, 66, '#ff8f70'], ['c', 225, 190, 66, '#ffd54d']], [true, true], [{ x: 180, y: 190, d: 9, over: [0, 1], v: 2 }], '2 = both on'),
+  tiny([['c', 135, 190, 66, '#7fdcae'], ['c', 225, 190, 66, '#ff9fcd']], [false, true], [{ x: 180, y: 190, d: 9, over: [0, 1], v: 1 }, { x: 96, y: 190, d: 9, over: [0], v: 0 }], 'Count the shapes under each number'),
+];
+

@@ -1,0 +1,39 @@
+name: Lightbox
+options:
+  bundleIdPrefix: com.stevenhester
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: 7FR35W6Q64
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+targets:
+  Lightbox:
+    type: application
+    platform: iOS
+    sources:
+      - path: Lightbox
+      # The game itself: the whole web folder goes into the app as a folder named "lightbox", so it runs with no connection.
+      - path: ../lightbox
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.stevenhester.lightbox
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Lightbox
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance: NO
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.puzzle-games
+    info:
+      path: Lightbox/Info.plist
+      properties:
+        UILaunchScreen:
+          UIColorName: LaunchBackground

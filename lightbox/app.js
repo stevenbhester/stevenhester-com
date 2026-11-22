@@ -8,10 +8,10 @@
 //   #/overlap/daily         today's puzzle
 import * as overlap from './overlap.js';
 import * as glass from './glass.js';
-import { seeded, hash } from './util.js';
+import { seeded, hash, finger } from './util.js';
 
 const MODES = { overlap, glass };
-const BUILD = 1;
+const BUILD = 2;
 const START_HINTS = 5, REFILL = 3, AHEAD = 3;   // AHEAD: how many unsolved pictures are open at once
 const root = document.getElementById('root'), modal = document.getElementById('modal');
 
@@ -34,11 +34,13 @@ function blip(freq, dur = 0.08, type = 'triangle', vol = 0.12) {
 }
 const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
 const note = (i, dur = 0.12, vol = 0.1) => blip(262 * Math.pow(2, SCALE[i % SCALE.length] / 12), dur, 'triangle', vol);
-const buzz = ms => { if (navigator.vibrate) navigator.vibrate(ms); };
+// Inside the iPhone app, taps are felt through the phone's own haptics. In a browser, vibration is used where it exists.
+const native = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.lightbox;
+const buzz = (ms, kind = 'tick') => { if (native) native.postMessage({ haptic: kind }); else if (navigator.vibrate) navigator.vibrate(ms); };
 const sfx = {
   on: i => { note(2 + (i % 7)); buzz(8); },
   off: dark => { blip(dark ? 240 : 320, 0.05); buzz(6); },
-  win: () => [0, 2, 4, 5, 7, 9].forEach((k, j) => setTimeout(() => note(k + 1, 0.2), j * 90)),
+  win: () => { buzz(30, 'success'); [0, 2, 4, 5, 7, 9].forEach((k, j) => setTimeout(() => note(k + 1, 0.2), j * 90)); },
   tick: () => blip(520, 0.04),
 };
 
@@ -63,7 +65,7 @@ function streak() {
 
 /* ── screens ── */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-let play = null, raf = 0;
+let play = null, raf = 0, demoRaf = 0;
 
 function route() {
   cancelAnimationFrame(raf); play = null; closeModal();
@@ -141,12 +143,14 @@ function playScreen(r) {
   cv.width = size.w * dpr; cv.height = size.h * dpr; cv.style.aspectRatio = `${size.w} / ${size.h}`;
   const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   play = { r, key, game, cv, ctx, size, puzzle };
+  // The very first picture points at each move, so the rules can be picked up without reading.
+  game.coach = r.kind === 'level' && r.i === 0 && !S.solved[r.mode][M.levels[0].id];
   cv.addEventListener('pointerdown', e => {
     audio();
     const b = cv.getBoundingClientRect(), k = size.w / b.width;
     if (game.tap((e.clientX - b.left) * k, (e.clientY - b.top) * k)) { say(''); afterMove(); }
   });
-  say(game.won ? '' : r.kind === 'level' && r.i === 0 ? M.howto[1] : '');
+  say(game.won || !game.coach ? '' : 'Follow the finger.');
   refresh();
   let last = 0;
   raf = requestAnimationFrame(function loop(t) {
@@ -191,10 +195,45 @@ function hint() {
 
 /* ── pop-ups ── */
 function openModal(html) { modal.innerHTML = html; modal.hidden = false; }
-function closeModal() { modal.hidden = true; modal.innerHTML = ''; }
+function closeModal() { cancelAnimationFrame(demoRaf); modal.hidden = true; modal.innerHTML = ''; }
 function help(m) {
   const M = MODES[m];
-  openModal(`<div class="sheet"><h3>${esc(M.title)}</h3><ol>${M.howto.map(t => `<li>${esc(t)}</li>`).join('')}</ol><button class="btn go" data-act="close">Got it</button></div>`);
+  openModal(`<div class="sheet"><h3>${esc(M.title)}</h3>
+    ${M.demos ? '<canvas id="demo"></canvas><p class="cap" id="cap"></p>' : ''}
+    <ol class="${M.demos ? 'fine' : ''}">${M.howto.map(t => `<li>${esc(t)}</li>`).join('')}</ol><button class="btn go" data-act="close">Got it</button></div>`);
+  if (M.demos) runDemo(M, document.getElementById('demo'), document.getElementById('cap'));
+}
+// The animated how-to: tiny puzzles that play themselves, one after another, with a finger showing each tap.
+function runDemo(M, cv, cap) {
+  const quiet = { on() {}, off() {}, win() {} }, dpr = Math.min(window.devicePixelRatio || 1, 3);
+  let n = -1, g, view, at = null, to = null, move = 0, wait = 0, taps = 0, press = 1, hold = 0, last = 0, t = 0;
+  const ctx = cv.getContext('2d');
+  const next = () => {
+    n = (n + 1) % M.demos.length; const d = M.demos[n];
+    g = new M.Game(d.puzzle, null, quiet); g.fx.confetti = () => {};
+    view = d.view || { y: 0, h: M.sizeOf(d.puzzle).h };
+    cv.width = M.W * dpr; cv.height = view.h * dpr; cv.style.aspectRatio = `${M.W} / ${view.h}`;
+    cap.textContent = d.caption; to = null; hold = 0; wait = 0.5;
+    if (!at) at = { x: M.W / 2, y: view.y + view.h + 30 };
+  };
+  next();
+  demoRaf = requestAnimationFrame(function loop(now) {
+    const dt = Math.min(0.033, (now - last) / 1000 || 0); last = now; t += dt; press = Math.min(1, press + dt * 2.4);
+    if (wait > 0) wait -= dt;
+    else if (!to) {
+      const a = g.autoStep();
+      if (a) { to = a; taps = a.taps; move = 0; to.from = { ...at }; }
+      else if ((hold += dt) > 1.5) next();
+    } else if (move < 1) {
+      move = Math.min(1, move + dt / 0.55); const e = 1 - Math.pow(1 - move, 3);
+      at = { x: to.from.x + (to.x - to.from.x) * e, y: to.from.y + (to.y - to.from.y) * e };
+      if (move >= 1) wait = 0.25;
+    } else { g.tap(to.x, to.y); press = 0; taps--; wait = 0.55; if (taps <= 0) to = null; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, -view.y * dpr);
+    g.frame(ctx, dt);
+    finger(ctx, at.x, at.y, t, 1, press);
+    demoRaf = requestAnimationFrame(loop);
+  });
 }
 
 /* ── one listener for every button ── */
