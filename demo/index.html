@@ -103,6 +103,8 @@ header p { color: var(--ink-soft); margin-top: 6px; }
 .tabgroup + .tabgroup { margin-top: 12px; }
 .tabgroup small { display: block; font: 700 12px var(--f-mono); color: var(--ink-soft); text-transform: uppercase; letter-spacing: .08em; margin: 0 4px 7px; }
 .tabgroup .tabs { margin: 0; }
+.tabs.fresh { flex-wrap: wrap; }
+.tabs.fresh .tab { flex: 1 1 40%; }
 .tabs.old { display: flex; flex-wrap: wrap; }
 .tabs.old .tab { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; font-size: 14px; }
 .tabs.old .tab { font-size: 15px; padding: 10px 6px 11px; }
@@ -137,7 +139,9 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
   </header>
 
   <div class="tabgroup"><small>New</small>
-    <nav class="tabs" role="tablist">
+    <nav class="tabs fresh" role="tablist">
+      <button class="tab" role="tab" aria-selected="false" data-tab="lap">Overlap</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="glass">Stained Glass</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="trip">One Trip</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="nest">Nest</button>
     </nav>
@@ -164,6 +168,24 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
     </nav>
   </div>
   <div id="panels">
+
+  <!-- OVERLAP -->
+  <section class="card" id="p-lap" hidden>
+    <div class="hud" style="margin-top:0"><span>Composition <strong id="ov-n">1</strong></span><span>Undecided <strong id="ov-left">0</strong></span></div>
+    <p class="how one" style="margin:0 0 12px"><b>Switch on the right shapes to make the picture.</b> Each number counts how many of the shapes covering that spot are on. Tap a shape to turn it on, tap again to mark it off (dashed). A 0 means every shape over it is off.</p>
+    <canvas class="game" id="ov-cv"></canvas>
+    <p class="msg" id="ov-msg"></p>
+    <div class="row"><button class="btn plain" id="ov-hint">Hint</button><button class="btn plain" id="ov-retry">Clear</button><button class="btn" id="ov-next" hidden>Next one</button></div>
+  </section>
+
+  <!-- STAINED GLASS -->
+  <section class="card" id="p-glass" hidden>
+    <div class="hud" style="margin-top:0"><span>Window <strong id="sg-n">1</strong>/5</span><span>Undecided <strong id="sg-left">0</strong></span></div>
+    <p class="how one" style="margin:0 0 12px"><b>Light the right panes to reveal the window.</b> Each number is how many squares in that row or column are lit. Tap a pane to light all of it, tap again to mark it dark.</p>
+    <canvas class="game" id="sg-cv"></canvas>
+    <p class="msg" id="sg-msg"></p>
+    <div class="row"><button class="btn plain" id="sg-hint">Hint</button><button class="btn plain" id="sg-retry">Clear</button><button class="btn" id="sg-next" hidden>Next window</button></div>
+  </section>
 
   <!-- ONE TRIP -->
   <section class="card" id="p-trip" hidden>
@@ -312,7 +334,7 @@ const COLORS = ['#ff5d5d', '#4d8dff', '#ffc53d', '#a26bf5', '#35c27a', '#ff7ab8'
 /* ── tabs + frame loop ── */
 const started = {}, loops = {};
 let current = null, lastT = 0, MUTE = false;
-const KEYS = ['trip', 'nest', 'boba', 'coat', 'brick', 'slice', 'drop', 'bloom', 'defrag', 'even', 'batch'];
+const KEYS = ['lap', 'glass', 'trip', 'nest', 'boba', 'coat', 'brick', 'slice', 'drop', 'bloom', 'defrag', 'even', 'batch'];
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === t));
   KEYS.forEach(k => document.getElementById('p-' + k).hidden = k !== t.dataset.tab);
@@ -321,7 +343,7 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
 function start(k) {
   current = k;
   if (started[k]) return; started[k] = true;
-  ({ trip: otInit, nest: nsInit, brick: bkInit, slice: fsInit, coat: tcInit, boba: bbInit, drop: dsInit, bloom: blInit, defrag: dfInit, even: esInit, batch: brInit })[k]();
+  ({ lap: ovInit, glass: sgInit, trip: otInit, nest: nsInit, brick: bkInit, slice: fsInit, coat: tcInit, boba: bbInit, drop: dsInit, bloom: blInit, defrag: dfInit, even: esInit, batch: brInit })[k]();
 }
 requestAnimationFrame(function raf(t) {
   const dt = Math.min(0.033, (t - lastT) / 1000 || 0); lastT = t;
@@ -2072,6 +2094,290 @@ function nsFrame(dt) {
       nsCup(ctx, cx, y, c);
     });
     if (s.length && nsWhole(s)) { ctx.font = '16px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⭐', x, NS_BASE - g.S * NS_STEP - 18); }
+  });
+  g.fx.draw(ctx);
+}
+
+/* ════════ OVERLAP ════════ */
+// See-through shapes, each on or off. A number sits in some patches and says how many of the shapes covering that patch are on.
+// Every composition is checked so it can be finished one sure step at a time: some number always settles a shape outright.
+const OV_W = 360, OV_H = 378, OV_G = 3, OV_GW = 120, OV_GH = 126, OV_SIZES = [4, 5, 7, 9, 11];
+const OV_COL = ['#ff8f70', '#ffd54d', '#74b9ff', '#7fdcae', '#c7a0ff', '#ff9fcd', '#5fd4d0'];
+let ov = null, ovCtx = null, ovCount = 0;
+function ovIn(s, x, y) {
+  if (s.k === 'c') return (x - s.x) * (x - s.x) + (y - s.y) * (y - s.y) <= s.r * s.r;
+  const dx = x - s.x, dy = y - s.y, c = Math.cos(-s.a), n = Math.sin(-s.a), u = dx * c - dy * n, v = dx * n + dy * c;
+  return Math.abs(u) <= s.w / 2 && Math.abs(v) <= s.h / 2;
+}
+function ovShape() {
+  for (;;) {
+    if (Math.random() < 0.55) { const r = 34 + rand(40); return { k: 'c', x: r + 8 + Math.random() * (OV_W - 2 * r - 16), y: r + 8 + Math.random() * (OV_H - 2 * r - 16), r, area: Math.PI * r * r }; }
+    const w = 130 + rand(140), h = 30 + rand(22), a = [0, 0, Math.PI / 2, Math.PI / 2, Math.PI / 6, -Math.PI / 6, Math.PI / 4, -Math.PI / 4, Math.PI / 3, -Math.PI / 3][rand(10)];
+    const s = { k: 'b', x: 30 + Math.random() * (OV_W - 60), y: 30 + Math.random() * (OV_H - 60), w, h, a, area: w * h };
+    const ex = (Math.abs(Math.cos(a)) * w + Math.abs(Math.sin(a)) * h) / 2, ey = (Math.abs(Math.sin(a)) * w + Math.abs(Math.cos(a)) * h) / 2;
+    if (s.x - ex >= 6 && s.x + ex <= OV_W - 6 && s.y - ey >= 6 && s.y + ey <= OV_H - 6) return s;
+  }
+}
+// Patches: connected areas covered by the same set of shapes. `d` is how far inside the patch its roomiest point is.
+function ovPatches(shapes) {
+  const n = OV_GW * OV_GH, mask = new Int32Array(n);
+  for (let gy = 0; gy < OV_GH; gy++) for (let gx = 0; gx < OV_GW; gx++) {
+    let m = 0, depth = 0; const x = gx * OV_G + 1.5, y = gy * OV_G + 1.5;
+    for (let s = 0; s < shapes.length; s++) if (ovIn(shapes[s], x, y)) { m |= 1 << s; depth++; }
+    if (depth > 3) return null;
+    mask[gy * OV_GW + gx] = m;
+  }
+  const d = new Int32Array(n);
+  for (let i = 0; i < n; i++) { const gx = i % OV_GW; d[i] = Math.min(gx > 0 && mask[i - 1] === mask[i] ? d[i - 1] + 1 : 1, i >= OV_GW && mask[i - OV_GW] === mask[i] ? d[i - OV_GW] + 1 : 1); }
+  for (let i = n - 1; i >= 0; i--) { const gx = i % OV_GW; d[i] = Math.min(d[i], gx < OV_GW - 1 && mask[i + 1] === mask[i] ? d[i + 1] + 1 : 1, i < n - OV_GW && mask[i + OV_GW] === mask[i] ? d[i + OV_GW] + 1 : 1); }
+  const seen = new Uint8Array(n), out = [];
+  for (let s = 0; s < n; s++) {
+    if (seen[s] || !mask[s]) continue;
+    const st = [s]; seen[s] = 1; let best = s;
+    while (st.length) { const i = st.pop(), gx = i % OV_GW; if (d[i] > d[best]) best = i;
+      for (const j of [gx > 0 ? i - 1 : -1, gx < OV_GW - 1 ? i + 1 : -1, i - OV_GW, i + OV_GW]) if (j >= 0 && j < n && !seen[j] && mask[j] === mask[s]) { seen[j] = 1; st.push(j); } }
+    out.push({ mask: mask[s], d: d[best], x: (best % OV_GW) * OV_G + 1.5, y: ((best / OV_GW) | 0) * OV_G + 1.5 });
+  }
+  return out;
+}
+const ovBits = m => { const o = []; for (let s = 0; m; s++, m >>>= 1) if (m & 1) o.push(s); return o; };
+// A number that settles shapes right now: none left to switch on, or every undecided one is needed. st: 0 undecided, 1 on, 2 off.
+function ovForce(clues, st) {
+  for (let k = 0; k < clues.length; k++) {
+    const c = clues[k]; let on = 0; const u = [];
+    for (const s of c.over) { if (st[s] === 1) on++; else if (!st[s]) u.push(s); }
+    if (u.length && (c.v === on || c.v === on + u.length)) return { k, shapes: u, v: c.v === on ? 2 : 1 };
+  }
+  return null;
+}
+function ovRounds(clues, n) {
+  const st = new Array(n).fill(0); let f, steps = 0;
+  while ((f = ovForce(clues, st))) { f.shapes.forEach(s => { st[s] = f.v; }); steps++; }
+  return st.every(v => v) ? steps : 0;
+}
+function ovGenerate(n) {
+  for (let t = 0; t < 4000; t++) {
+    const shapes = []; for (let s = 0; s < n; s++) shapes.push(ovShape());
+    const P = ovPatches(shapes); if (!P) continue;
+    const big = P.filter(p => p.d >= 5);
+    if (shapes.some((s, i) => !big.some(p => p.mask === 1 << i))) continue;
+    if (n > 4 && big.filter(p => p.mask & (p.mask - 1)).length < n - 1) continue;
+    const sol = shuffle(shapes.map((s, i) => i < Math.round(n * 0.6)));
+    const cols = shuffle(OV_COL.slice()); shapes.forEach((s, i) => { s.col = cols[i % cols.length]; });
+    let clues = big.map(p => { const over = ovBits(p.mask); return { x: p.x, y: p.y, over, v: over.filter(s => sol[s]).length }; });
+    // Drop numbers while the picture can still be finished step by step; lone-shape numbers go first, since they give the answer away.
+    const order = shuffle(clues.filter(c => c.over.length === 1)).concat(shuffle(clues.filter(c => c.over.length > 1)));
+    const cut = [];
+    for (const c of order) { const rest = clues.filter(x => x !== c); if (ovRounds(rest, n)) { clues = rest; if (c.over.length > 1) cut.push(c); } }
+    // A few spare numbers back in, so there is usually more than one place to make progress.
+    clues = clues.concat(shuffle(cut).slice(0, Math.ceil(n / 3)));
+    if (n > 4 && clues.filter(c => c.over.length === 1).length > Math.ceil(n / 3)) continue;
+    return { shapes, sol, clues };
+  }
+  return null;
+}
+function ovInit() {
+  const cv = document.getElementById('ov-cv'); ovCtx = fitCanvas(cv, OV_W, OV_H);
+  cv.addEventListener('pointerdown', e => { if (ov) { const p = cvPoint(cv, e, OV_W); ovTap(p.x, p.y); } });
+  document.getElementById('ov-hint').onclick = ovHint;
+  document.getElementById('ov-retry').onclick = () => ovLoad(ov.src);
+  document.getElementById('ov-next').onclick = () => { ovCount++; ovLoad(); };
+  loops.lap = ovFrame;
+  ovLoad();
+}
+function ovLoad(keep) {
+  const src = keep || ovGenerate(OV_SIZES[Math.min(ovCount, OV_SIZES.length - 1)]);
+  ov = { src, st: src.shapes.map(() => 0), pop: src.shapes.map(() => 0), fade: 0, won: false, hintK: -1, hintT: 0, flash: -1, flashT: 0, fx: new Fx(), t: 0 };
+  document.getElementById('ov-n').textContent = ovCount + 1;
+  document.getElementById('ov-msg').textContent = 'Tap a shape: on, off, then undecided again.';
+  document.getElementById('ov-next').hidden = true;
+  ovHud();
+}
+function ovHud() { document.getElementById('ov-left').textContent = ov.st.filter(v => !v).length; }
+// Where shapes overlap, a tap goes to the smallest one. Every shape also has a patch that is its alone.
+function ovPick(x, y) {
+  let best = -1;
+  ov.src.shapes.forEach((s, i) => { if (ovIn(s, x, y) && (best < 0 || s.area < ov.src.shapes[best].area)) best = i; });
+  return best;
+}
+function ovTap(x, y) {
+  if (ov.won) return;
+  audio();
+  const i = ovPick(x, y); if (i < 0) return;
+  ov.st[i] = (ov.st[i] + 1) % 3; ov.pop[i] = 1; ov.hintK = -1;
+  if (ov.st[i] === 1) note(3 + i % 6, 0.12, 0.09); else blip(ov.st[i] === 2 ? 240 : 320, 0.05); buzz(8);
+  document.getElementById('ov-msg').textContent = ''; ovHud();
+  if (ov.st.every((v, s) => (v === 1) === ov.src.sol[s])) {
+    ov.won = true; ov.fx.confetti(OV_W);
+    document.getElementById('ov-msg').textContent = `Composition No. ${ovCount + 1}, finished.`;
+    [0, 2, 4, 5, 7, 9].forEach((k, j) => setTimeout(() => note(k + 3, 0.2), j * 90));
+    document.getElementById('ov-next').hidden = false;
+  }
+}
+function ovHint() {
+  if (!ov || ov.won) return;
+  const msg = document.getElementById('ov-msg');
+  const wrong = ov.st.findIndex((v, s) => v && (v === 1) !== ov.src.sol[s]);
+  if (wrong >= 0) { ov.st[wrong] = 0; ov.flash = wrong; ov.flashT = 1; msg.textContent = 'That shape was wrong, so it is undecided again.'; blip(240, 0.08); ovHud(); return; }
+  const f = ovForce(ov.src.clues, ov.st);
+  if (f) { ov.hintK = f.k; ov.hintT = 0; msg.textContent = f.v === 1 ? 'This number needs every undecided shape on it.' : 'This number is already full: the rest on it are off.'; blip(620, 0.08); }
+}
+function ovPath(ctx, s) {
+  ctx.beginPath();
+  if (s.k === 'c') { ctx.arc(s.x, s.y, s.r, 0, TAU); return; }
+  const c = Math.cos(s.a), n = Math.sin(s.a), hw = s.w / 2, hh = s.h / 2;
+  [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].forEach(([u, v], k) => { const x = s.x + u * c - v * n, y = s.y + u * n + v * c; if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+  ctx.closePath();
+}
+function ovFrame(dt) {
+  const o = ov, ctx = ovCtx; if (!o) return; o.t += dt; o.hintT += dt; o.flashT = Math.max(0, o.flashT - dt * 1.5);
+  if (o.won) o.fade = Math.min(1, o.fade + dt * 1.2);
+  o.fx.step(dt);
+  ctx.clearRect(0, 0, OV_W, OV_H);
+  ctx.save(); rr(ctx, 0, 0, OV_W, OV_H, 16); ctx.clip();
+  ctx.fillStyle = '#fbf6ea'; ctx.fillRect(0, 0, OV_W, OV_H);
+  const S = o.src.shapes;
+  ctx.globalCompositeOperation = 'multiply';
+  S.forEach((s, i) => { o.pop[i] = Math.max(0, o.pop[i] - dt * 4); if (o.st[i] === 1) { ctx.globalAlpha = 1 - o.pop[i] * 0.35; ctx.fillStyle = s.col; ovPath(ctx, s); ctx.fill(); } });
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  ctx.lineJoin = 'round';
+  S.forEach((s, i) => {
+    const v = o.st[i], a = (v === 2 ? 0.26 : v === 1 ? 0.5 : 0.8) * (1 - o.fade);
+    if (a <= 0.01 && o.flash !== i) return;
+    ctx.setLineDash(v === 2 ? [5, 6] : []); ctx.lineWidth = (v === 2 ? 1.5 : 2) + o.pop[i] * 3;
+    ctx.strokeStyle = o.flash === i && o.flashT > 0 ? `rgba(255,93,93,${Math.max(a, o.flashT)})` : `rgba(59,51,70,${a})`;
+    ovPath(ctx, s); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 13px Fredoka, system-ui, sans-serif';
+  if (o.fade < 1) o.src.clues.forEach((c, k) => {
+    let on = 0, un = 0; for (const s of c.over) { if (o.st[s] === 1) on++; else if (!o.st[s]) un++; }
+    const done = !un && on === c.v, bad = on > c.v || on + un < c.v, hint = o.hintK === k, r = 10 + (hint ? 2.5 + 2.5 * Math.sin(o.hintT * 8) : 0);
+    ctx.globalAlpha = (1 - o.fade) * (done ? 0.75 : 1);
+    if (hint) { ctx.fillStyle = 'rgba(255,122,89,.35)'; ctx.beginPath(); ctx.arc(c.x, c.y, r + 6, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = bad ? '#ff5d5d' : done ? '#35c27a' : '#fff'; ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, TAU); ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(59,51,70,.55)'; ctx.stroke();
+    ctx.fillStyle = bad || done ? '#fff' : '#3b3346'; ctx.fillText(c.v, c.x, c.y + 0.5);
+  });
+  ctx.globalAlpha = 1;
+  ctx.restore();
+  o.fx.draw(ctx);
+}
+
+/* ════════ STAINED GLASS ════════ */
+// A window cut into panes. Each row and column number is how many squares in that line are lit. Tap a pane to light or darken all of it.
+// The cuts were chosen offline so every window can be finished one line at a time, with no guessing.
+const SG_W = 360, SG_GUT = 30, SG_CH = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const SG_PAL = { r: '#ff5d5d', p: '#ffb3c1', y: '#ffc53d', o: '#ff8a3d', w: '#fff7ea', t: '#e8c08a', n: '#a8683a', b: '#4d8dff', m: '#7a4a22' };
+const SG_LEVELS = [
+  { label: "a gem", pic: ['..y..', '.yoy.', 'yoooy', '.yoy.', '..y..'],
+    panes: ['11566', '180b6', '70009', '230a4', '22c44'] },
+  { label: "a heart", pic: ['.rr.rr.', 'rprrrrr', 'rprrrrr', '.rrrrr.', '..rrr..', '...r...', '.......'],
+    panes: ['f11e44c', '5911444', '5933666', '233366b', '2280dbb', '2aa077b', '2aaa777'] },
+  { label: "a mushroom", pic: ['..rrrr..', '.rwrrwr.', 'rrrrrrrr', 'rwrrrrwr', 'rrrrrrrr', '..tttt..', '..tttt..', '.tttttt.'],
+    panes: ['66aaaa99', '6lha8gbk', '077784bb', '0j7744ib', '000cc4db', '1133ff22', '1133fe22', '155ffee2'] },
+  { label: "a rubber duck", pic: ['...yy...', '..yyny..', '..yyyoo.', '..yyy...', 'y.yyyy..', 'yyyyyyy.', 'yyyyyyy.', '.yyyyy..'],
+    panes: ['222ggddd', '22cg6ed5', '44cggbb5', '44c1i995', 'a4011k99', 'aa088k39', 'a70j883h', 'f70jj8lh'] },
+  { label: "a sailboat", pic: ['....m....', '...wm....', '..wwmr...', '.wwwmrr..', 'wwwwmrrr.', '....m....', 'nnnnnnnnn', '.nnnnnnn.', 'bbbbbbbbb'],
+    panes: ['naaafp6gg', '00aefp666', '00hef2688', '0hhef2k88', 'mheef22bc', 'lllljcccc', '33i99oo55', 'qiii9555d', '771114444'] },
+];
+let sg = null, sgCtx = null;
+// Each line: the panes that cross it, how many squares each has in it, and how many squares must be lit.
+function sgLines(N, pane, sol) {
+  const out = [];
+  for (let k = 0; k < 2 * N; k++) {
+    const m = new Map(); let target = 0;
+    for (let j = 0; j < N; j++) { const i = k < N ? k * N + j : j * N + (k - N); m.set(pane[i], (m.get(pane[i]) || 0) + 1); if (sol[pane[i]]) target++; }
+    out.push({ panes: [...m.keys()], cnt: [...m.values()], target });
+  }
+  return out;
+}
+// A pane one line settles on its own: lit in every way of reaching the line's number, or in none. st: 0 undecided, 1 lit, 2 dark.
+function sgDeduce(L, st) {
+  for (let k = 0; k < L.length; k++) {
+    const ln = L[k]; let need = ln.target; const u = [];
+    ln.panes.forEach((p, j) => { if (st[p] === 1) need -= ln.cnt[j]; else if (!st[p]) u.push(j); });
+    if (!u.length) continue; let can1 = 0, can0 = 0;
+    for (let m = 0; m < 1 << u.length; m++) { let s = 0; for (let j = 0; j < u.length; j++) if (m >> j & 1) s += ln.cnt[u[j]]; if (s === need) { can1 |= m; can0 |= ~m; } }
+    for (let j = 0; j < u.length; j++) { if (!(can1 >> j & 1)) return { p: ln.panes[u[j]], v: 2, k }; if (!(can0 >> j & 1)) return { p: ln.panes[u[j]], v: 1, k }; }
+  }
+  return null;
+}
+function sgInit() {
+  const cv = document.getElementById('sg-cv');
+  cv.addEventListener('pointerdown', e => { if (!sg) return; const p = cvPoint(cv, e, SG_W), c = Math.floor((p.x - SG_GUT) / sg.cell), r = Math.floor((p.y - SG_GUT) / sg.cell); if (c >= 0 && r >= 0 && c < sg.N && r < sg.N) sgTap(sg.pane[r * sg.N + c]); });
+  document.getElementById('sg-hint').onclick = sgHint;
+  document.getElementById('sg-retry').onclick = () => sgLoad(sg.n);
+  document.getElementById('sg-next').onclick = () => sgLoad((sg.n + 1) % SG_LEVELS.length);
+  loops.glass = sgFrame;
+  sgLoad(0);
+}
+function sgLoad(n) {
+  const L = SG_LEVELS[n], N = L.pic.length, cell = Math.floor((SG_W - SG_GUT - 6) / N), pic = L.pic.join('');
+  const pane = L.panes.join('').split('').map(c => SG_CH.indexOf(c)), count = Math.max(...pane) + 1, sol = new Array(count).fill(false), col = new Array(count);
+  const inks = [...new Set(pic.replace(/\./g, '').split(''))];
+  pane.forEach((p, i) => { if (pic[i] !== '.') { sol[p] = true; col[p] = SG_PAL[pic[i]]; } });
+  // Panes that belong dark still get a colour, so lighting one by mistake does not give itself away.
+  for (let p = 0; p < count; p++) if (!col[p]) col[p] = SG_PAL[inks[rand(inks.length)]];
+  sgCtx = fitCanvas(document.getElementById('sg-cv'), SG_W, SG_GUT + N * cell + 6);
+  sg = { n, N, cell, H: SG_GUT + N * cell + 6, pane, sol, col, label: L.label, lines: sgLines(N, pane, sol), st: sol.map(() => 0), pop: sol.map(() => 0), won: false, hintK: -1, hintP: -1, flash: -1, flashT: 0, fx: new Fx(), t: 0 };
+  document.getElementById('sg-n').textContent = n + 1;
+  document.getElementById('sg-msg').textContent = 'Tap a pane: lit, dark, then undecided again.';
+  document.getElementById('sg-next').hidden = true;
+  sgHud();
+}
+function sgHud() { document.getElementById('sg-left').textContent = sg.st.filter(v => !v).length; }
+function sgTap(p) {
+  if (sg.won) return;
+  audio();
+  sg.st[p] = (sg.st[p] + 1) % 3; sg.pop[p] = 1; sg.hintK = sg.hintP = -1;
+  if (sg.st[p] === 1) note(2 + p % 7, 0.12, 0.09); else blip(sg.st[p] === 2 ? 240 : 320, 0.05); buzz(8);
+  document.getElementById('sg-msg').textContent = ''; sgHud();
+  if (sg.st.every((v, q) => (v === 1) === sg.sol[q])) {
+    sg.won = true; sg.st = sg.st.map(v => v || 2); sg.fx.confetti(SG_W); sgHud();
+    document.getElementById('sg-msg').textContent = `It's ${sg.label}!`;
+    [0, 2, 4, 5, 7, 9].forEach((k, j) => setTimeout(() => note(k + 3, 0.2), j * 90));
+    document.getElementById('sg-next').hidden = false;
+  }
+}
+function sgHint() {
+  if (!sg || sg.won) return;
+  const msg = document.getElementById('sg-msg');
+  const wrong = sg.st.findIndex((v, p) => v && (v === 1) !== sg.sol[p]);
+  if (wrong >= 0) { sg.st[wrong] = 0; sg.flash = wrong; sg.flashT = 1; msg.textContent = 'That pane was wrong, so it is undecided again.'; blip(240, 0.08); sgHud(); return; }
+  const d = sgDeduce(sg.lines, sg.st);
+  if (d) { sg.hintK = d.k; sg.hintP = d.p; msg.textContent = `This ${d.k < sg.N ? 'row' : 'column'} settles the flashing pane.`; blip(620, 0.08); }
+}
+function sgFrame(dt) {
+  const g = sg, ctx = sgCtx; if (!g) return; g.t += dt; g.flashT = Math.max(0, g.flashT - dt * 1.5);
+  g.fx.step(dt);
+  const N = g.N, C = g.cell, X = SG_GUT, Y = SG_GUT;
+  ctx.clearRect(0, 0, SG_W, g.H);
+  for (let p = 0; p < g.pop.length; p++) g.pop[p] = Math.max(0, g.pop[p] - dt * 4);
+  for (let i = 0; i < N * N; i++) {
+    const p = g.pane[i], x = X + (i % N) * C, y = Y + ((i / N) | 0) * C, v = g.st[p];
+    ctx.fillStyle = v === 1 ? g.col[p] : v === 2 ? '#514a63' : '#d3dae1'; ctx.fillRect(x, y, C + 0.5, C + 0.5);
+    if (v === 1) { ctx.fillStyle = `rgba(255,255,255,${g.pop[p] * 0.5})`; ctx.fillRect(x, y, C + 0.5, C + 0.5); }
+    else if (g.pop[p] > 0) { ctx.fillStyle = `rgba(255,255,255,${g.pop[p] * 0.4})`; ctx.fillRect(x, y, C + 0.5, C + 0.5); }
+    if (!v && g.hintP === p) { ctx.fillStyle = `rgba(255,122,89,${0.35 + 0.3 * Math.sin(g.t * 8)})`; ctx.fillRect(x, y, C + 0.5, C + 0.5); }
+    if (g.flash === p && g.flashT > 0) { ctx.fillStyle = `rgba(255,93,93,${g.flashT * 0.7})`; ctx.fillRect(x, y, C + 0.5, C + 0.5); }
+  }
+  // lead: heavy lines between panes, hairlines inside one
+  ctx.lineCap = 'round';
+  for (let i = 0; i < N * N; i++) {
+    const c = i % N, r = (i / N) | 0, x = X + c * C, y = Y + r * C;
+    if (c < N - 1) { const cut = g.pane[i] !== g.pane[i + 1]; ctx.strokeStyle = cut ? '#2b2535' : 'rgba(43,37,53,.1)'; ctx.lineWidth = cut ? 3.5 : 1; ctx.beginPath(); ctx.moveTo(x + C, y); ctx.lineTo(x + C, y + C); ctx.stroke(); }
+    if (r < N - 1) { const cut = g.pane[i] !== g.pane[i + N]; ctx.strokeStyle = cut ? '#2b2535' : 'rgba(43,37,53,.1)'; ctx.lineWidth = cut ? 3.5 : 1; ctx.beginPath(); ctx.moveTo(x, y + C); ctx.lineTo(x + C, y + C); ctx.stroke(); }
+  }
+  ctx.strokeStyle = '#2b2535'; ctx.lineWidth = 4.5; rr(ctx, X, Y, N * C, N * C, 5); ctx.stroke();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  g.lines.forEach((ln, k) => {
+    let lit = 0, un = 0; ln.panes.forEach((p, j) => { if (g.st[p] === 1) lit += ln.cnt[j]; else if (!g.st[p]) un += ln.cnt[j]; });
+    const done = !un && lit === ln.target, bad = lit > ln.target || lit + un < ln.target, hint = g.hintK === k;
+    const x = k < N ? X / 2 - 1 : X + (k - N + 0.5) * C, y = k < N ? Y + (k + 0.5) * C : Y / 2 - 1;
+    if (hint) { ctx.fillStyle = `rgba(255,122,89,${0.5 + 0.3 * Math.sin(g.t * 8)})`; ctx.beginPath(); ctx.arc(x, y, 13, 0, TAU); ctx.fill(); }
+    ctx.font = `700 ${done ? 15 : 17}px Fredoka, system-ui, sans-serif`;
+    ctx.fillStyle = bad ? '#ff5d5d' : done ? 'rgba(53,160,105,.75)' : '#3b3346'; ctx.fillText(ln.target, x, y);
   });
   g.fx.draw(ctx);
 }
