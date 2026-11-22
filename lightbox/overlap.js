@@ -1,14 +1,17 @@
 // OVERLAP
 // See-through shapes, each on or off. A number sits in some patches and says how many of the shapes covering that patch are on.
-// Which shapes are on is random, so the numbers are the only way in. They are chosen so a composition can always be
-// finished by sure steps, with no guessing. Early ones keep a spare number or two; later ones drop the giveaways.
-// The numbered levels are made ahead of time by tools/build-overlap.mjs; endless and daily ones are made on the spot.
+// While it is being solved a puzzle looks like an abstract composition, and the numbers are the only way in. They are
+// chosen so it can always be finished by sure steps, with no guessing.
+// The numbered levels each hide a picture: its few big plain shapes are the ones that end up on, mixed in with abstract
+// decoys and shown in unrelated colours. Solving it brings in the real colours and the details, and the picture appears.
+// Those levels are made ahead of time by tools/build-overlap.mjs from overlap-pictures.js. Endless and daily puzzles are
+// plain compositions, made on the spot.
 import { TAU, HP, rr, Fx, shuffle, pick, between, finger } from './util.js';
 import LEVELS from './overlap-levels.js';
 
 export const id = 'overlap';
 export const title = 'Overlap';
-export const blurb = 'Read the numbers. Switch on the right shapes.';
+export const blurb = 'Switch on the right shapes. See what they were hiding.';
 export const endlessName = 'Sketches', endlessOne = 'Sketch';
 export const howto = [
   'A number counts the switched-on shapes under it.',
@@ -21,7 +24,7 @@ const G = 3, GW = 120, GH = 126;
 const PAPER = ['#ff8f70', '#ffd54d', '#74b9ff', '#7fdcae', '#c7a0ff', '#ff9fcd', '#5fd4d0', '#d9a878'];
 const NIGHT = ['#ffe9a8', '#3a5cc0', '#2c9a94', '#6f55c8', '#2f6fd0', '#e0567a', '#ffd54d', '#e08a3c'];
 
-export const levels = LEVELS.map(s => ({ id: s.id, name: null }));
+export const levels = LEVELS.map(s => ({ id: s.id, name: s.name }));
 
 // Scene shapes are written compactly: kind, numbers, colour. A leading '-' on the kind marks a decoy.
 export function make(a) {
@@ -29,6 +32,7 @@ export function make(a) {
   const s = k === 'c' ? { k, x: a[1], y: a[2], r: a[3], area: Math.PI * a[3] * a[3] }
     : k === 'e' ? { k, x: a[1], y: a[2], w: a[3] * 2, h: a[4] * 2, a: a[5], area: Math.PI * a[3] * a[4] }
     : k === 'b' ? { k, x: a[1], y: a[2], w: a[3], h: a[4], a: a[5], area: a[3] * a[4] }
+    : k === 's' ? { k, pts: a[1], w: a[2], area: 0 }
     : { k, pts: a[1], area: polyArea(a[1]) };
   s.col = col; return s;
 }
@@ -143,8 +147,15 @@ export function chooseClues(shapes, sol, big, R, opts = {}) {
   return clues.concat(shuffle(cut, R).slice(0, opts.spares || 0));
 }
 
-export function art(i) { const L = LEVELS[i]; return { shapes: L.shapes.map(make), sol: L.sol.map(Boolean), night: !!L.night }; }
-export function makeLevel(i) { const L = LEVELS[i]; return { ...art(i), clues: L.clues, name: null }; }
+// A level's hidden picture: the other switched-on shapes as a soft backdrop, the picture's own shapes in their true
+// colours, then the details. `bg` is the sheet behind it all, if not paper.
+export function art(i) {
+  const L = LEVELS[i], shapes = L.shapes.map(make), sol = L.sol.map(Boolean);
+  const mine = new Set(L.order), back = shapes.filter((s, k) => sol[k] && !mine.has(k));
+  const picture = { bg: L.bg || null, back, parts: L.order.map(k => ({ ...shapes[k], col: L.cols[k] })), extras: L.extras.map(make) };
+  return { shapes, sol, night: false, picture };
+}
+export function makeLevel(i) { const L = LEVELS[i]; return { ...art(i), clues: L.clues, name: L.name }; }
 
 // COMPOSITIONS
 // Every puzzle is an abstract composition: shapes laid out in one of a few styles, with which ones are on chosen at
@@ -193,21 +204,46 @@ export const STYLES = {
 };
 const ORDER = ['scatter', 'discs', 'planes', 'circles', 'totem'];
 
+// A loose abstract shape to hide a picture among: a circle, strip, ellipse or triangle, sometimes as a mirrored pair
+// so that the picture's own symmetry does not stand out.
+function decoy(R) {
+  const r = R(), a = r < 0.42 ? circle(R, 30, 72) : r < 0.62 ? strip(R, ANGLES[pick(R, 10)])
+    : r < 0.82 ? ['e', between(R, 60, W - 60), between(R, 60, H - 60), between(R, 30, 80), between(R, 24, 58), between(R, -1.5, 1.5)]
+    : (() => { const x = between(R, 70, W - 70), y = between(R, 70, H - 70), t = R() * TAU; return ['p', [0, 2.1 + between(R, -0.4, 0.4), 4.2 + between(R, -0.4, 0.4)].map(d => { const q = between(R, 46, 80); return [x + Math.cos(t + d) * q, y + Math.sin(t + d) * q]; })]; })();
+  return R() < 0.3 && bounds(make([...a, ''])) [2] < 168 ? [a, mirror(a)] : [a];
+}
+
 // One composition in the given style with about n shapes, or null if none came together.
-// opts: { spares, pairs } as for chooseClues, plus tries.
+// opts: { spares, pairs } as for chooseClues, plus tries, plus cores (the shapes of a hidden picture, which stay on).
 export function compose(R, style, n, opts = {}) {
   const tries = opts.tries || 1500;
   for (let t = 0; t < tries; t++) {
     const night = style === 'circles' || (style === 'totem' && R() < 0.3), pal = shuffle((night ? NIGHT : PAPER).slice(), R);
-    const groups = STYLES[style](R, n), raw = [], sol = [];
-    // About three groups in five are on, picked at random.
-    const on = shuffle(groups.map((g, i) => i < Math.round(groups.length * 0.6)), R);
-    groups.forEach((g, i) => g.forEach(a => { raw.push([...a, pal[i % pal.length]]); sol.push(on[i]); }));
+    const cores = opts.cores || [], raw = [], sol = [], fixed = [];
+    let groups, on, own = [];
+    if (cores.length) {
+      // A hidden picture: its shapes are on, and loose abstract shapes are added around them. Some of those are on
+      // as well (they become the backdrop), so that about three groups in five are on and a 0 is not the usual answer.
+      groups = cores.map(a => [a]); let count = cores.length;
+      while (count < n) { const g = decoy(R); groups.push(g); count += g.length; }
+      const extra = Math.max(0, Math.round(groups.length * 0.6) - cores.length), loose = shuffle(groups.map((g, i) => i).slice(cores.length), R).slice(0, extra);
+      on = groups.map((g, i) => i < cores.length || loose.includes(i));
+      // Shuffle the order so the picture's shapes are not always the first ones listed.
+      const mix = shuffle(groups.map((g, i) => i), R); groups = mix.map(i => groups[i]); on = mix.map(i => on[i]); own = mix.map(i => i < cores.length);
+    } else {
+      groups = STYLES[style](R, n);
+      // About three groups in five are on, picked at random.
+      on = shuffle(groups.map((g, i) => i < Math.round(groups.length * 0.6)), R);
+    }
+    groups.forEach((g, i) => g.forEach(a => { raw.push([...a, pal[i % pal.length]]); sol.push(on[i]); fixed.push(!!own[i]); }));
     const shapes = raw.map(make);
-    if (shapes.some(s => { const b = bounds(s); return b[0] < 6 || b[1] < 6 || b[2] > W - 6 || b[3] > H - 6; })) continue;
+    // The picture's own shapes are placed by hand and may run to the edge; everything else must sit inside the sheet.
+    if (shapes.some((s, i) => { if (fixed[i]) return false; const b = bounds(s); return b[0] < 6 || b[1] < 6 || b[2] > W - 6 || b[3] > H - 6; })) continue;
     const P = patches(shapes, 3); if (!P) continue;
     const big = P.filter(p => p.d >= 5);
     if (shapes.some((s, i) => !big.some(p => p.mask >> i & 1))) continue;
+    // Decoys should run through the picture, not sit beside it: most must cross one of its shapes.
+    if (cores.length) { const off = shapes.map((s, i) => i).filter(i => !sol[i]); if (off.filter(i => big.some(p => p.mask >> i & 1 && bits(p.mask).some(k => sol[k]))).length < off.length * 0.7) continue; }
     // Enough places where shapes cross, so the numbers have something to say about each other.
     if (big.filter(p => p.mask & (p.mask - 1)).length < shapes.length - (t < tries / 2 ? 1 : 3)) continue;
     // A tap goes to the smallest shape under it, so every shape needs room where it is the smallest.
@@ -217,7 +253,7 @@ export function compose(R, style, n, opts = {}) {
     const clues = chooseClues(shapes, sol, big, R, opts);
     if (!clues || clues.filter(c => c.over.length === 1).length > Math.ceil(shapes.length / 3) + 1) continue;
     if (opts.pairs && t < tries * 0.6 && !playThrough(clues, shapes.length, true).hard) continue;
-    return { raw, sol, clues, night, style };
+    return { raw, sol, clues, night: cores.length ? false : night, style };
   }
   return null;
 }
@@ -241,13 +277,38 @@ function path(ctx, s) {
   ctx.closePath();
 }
 const paperOf = p => (p.night ? '#17152b' : '#fbf6ea');
+function paint(ctx, s) {
+  if (s.k === 's') {
+    const [a, b, c] = s.pts; ctx.strokeStyle = s.col; ctx.lineWidth = s.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // The stroke passes through its middle point, so a smile or a whisker bends where it was drawn.
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo(2 * b[0] - (a[0] + c[0]) / 2, 2 * b[1] - (a[1] + c[1]) / 2, c[0], c[1]); ctx.stroke(); return;
+  }
+  ctx.fillStyle = s.col; path(ctx, s); ctx.fill();
+}
+const centreOf = s => (s.pts ? [s.pts.reduce((t, q) => t + q[0], 0) / s.pts.length, s.pts.reduce((t, q) => t + q[1], 0) / s.pts.length] : [s.x, s.y]);
+// The hidden picture in flat colour. `t` is seconds since it was solved: the sheet and big shapes fade in, then the
+// details pop in one after another. Leave `t` out for the finished picture.
+function drawPicture(ctx, pic, t = 99) {
+  const a = Math.max(0, Math.min(1, (t - 0.35) / 0.6)); if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.fillStyle = pic.bg || '#fbf6ea'; ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = a * 0.3; pic.back.forEach(s => paint(ctx, s)); ctx.globalAlpha = a;
+  pic.parts.forEach(s => paint(ctx, s));
+  pic.extras.forEach((s, i) => {
+    const k = Math.max(0, Math.min(1, (t - 1.05 - i * 0.055) / 0.22)); if (k <= 0) return;
+    const z = 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2), [cx, cy] = centreOf(s);
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(z, z); ctx.translate(-cx, -cy); paint(ctx, s); ctx.restore();
+  });
+  ctx.restore();
+}
 
 // A small still of the puzzle: the finished picture, or just its outlines if it has not been solved yet.
 export function thumb(ctx, p, size, solved) {
   const k = size / H;
   ctx.save(); ctx.fillStyle = paperOf(p); ctx.fillRect(0, 0, size, size);
   ctx.translate((size - W * k) / 2, 0); ctx.scale(k, k);
-  if (solved) {
+  if (solved && p.picture) drawPicture(ctx, p.picture);
+  else if (solved) {
     ctx.globalCompositeOperation = p.night ? 'screen' : 'multiply';
     p.shapes.forEach((s, i) => { if (p.sol[i]) { ctx.fillStyle = s.col; path(ctx, s); ctx.fill(); } });
   } else {
@@ -265,7 +326,7 @@ export class Game {
     this.st = saved && saved.st && saved.st.length === n ? saved.st.slice() : new Array(n).fill(0);
     this.hist = []; this.pop = new Array(n).fill(0);
     this.won = false; this.fade = 0; this.hintK = []; this.hintT = 0; this.flash = -1; this.flashT = 0; this.t = 0; this.fx = new Fx();
-    this.coach = false; this.spots = [];
+    this.coach = false; this.spots = []; this.wonT = 0;
   }
   get left() { return this.st.filter(v => !v).length; }
   save() { return { st: this.st }; }
@@ -321,7 +382,7 @@ export class Game {
   }
   frame(ctx, dt) {
     const o = this, p = this.p; o.t += dt; o.hintT += dt; o.flashT = Math.max(0, o.flashT - dt * 1.5);
-    if (o.won) o.fade = Math.min(1, o.fade + dt * 1.2);
+    if (o.won) { o.fade = Math.min(1, o.fade + dt * 1.2); o.wonT += dt; }
     o.fx.step(dt);
     const ink = p.night ? '255,255,255' : '59,51,70';
     ctx.clearRect(0, 0, W, H);
@@ -347,7 +408,9 @@ export class Game {
       ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(59,51,70,.55)'; ctx.stroke();
       ctx.font = `700 ${small ? 11 : 13}px Fredoka, ui-rounded, system-ui, sans-serif`; ctx.fillStyle = bad || done ? '#fff' : '#3b3346'; ctx.fillText(c.v, c.x, c.y + 0.5);
     });
-    ctx.globalAlpha = 1; ctx.restore();
+    ctx.globalAlpha = 1;
+    if (o.won && p.picture) drawPicture(ctx, p.picture, o.wonT);
+    ctx.restore();
     if (o.coach && !o.won) { const a = o.autoStep(); if (a) finger(ctx, a.x, a.y, o.t, a.taps); }
     o.fx.draw(ctx);
   }

@@ -5,9 +5,11 @@ Two picture-logic games in one web app, served at `/lightbox/`. No build step: p
 - **Overlap**: see-through shapes that are each on or off. Numbers count how many of the shapes covering a spot are on.
 - **Stained Glass**: a window cut into panes. Row and column numbers count the lit squares. A pane is lit or dark as a whole.
 
-Overlap's puzzles are abstract compositions: which shapes are on is random, so nothing about the layout hints at the
-answer and the numbers are the only way in. Stained Glass has drawn windows. Each mode also has an endless set (Sketches,
-Masks) and a daily puzzle. Every puzzle is checked so it can be finished by sure steps, with no guessing.
+While it is being solved an Overlap puzzle looks like an abstract composition, and the numbers are the only way in. Each
+numbered level hides a picture: its few big plain shapes are among the ones that end up on, and solving it brings in the
+real colours and the details (eyes, beaks, stripes) so the picture appears. Stained Glass has drawn windows. Each mode
+also has an endless set (Sketches, Masks) and a daily puzzle. Every puzzle is checked so it can be finished by sure steps,
+with no guessing.
 
 The iPhone app in `../lightbox-ios` packs this folder inside it.
 
@@ -17,6 +19,7 @@ The iPhone app in `../lightbox-ios` packs this folder inside it.
 |---|---|
 | `app.js` | Screens, saved progress, daily puzzles, hints, sound |
 | `overlap.js` | Overlap rules, the composition styles, number choosing, drawing |
+| `overlap-pictures.js` | The hidden pictures: core shapes and the details added at the reveal |
 | `overlap-levels.js` | Written by `tools/build-overlap.mjs`; do not edit by hand |
 | `glass.js` | Stained Glass rules, pane cutting, the Mask generator, drawing |
 | `glass-pictures.js` | The Stained Glass pictures, as pixel grids |
@@ -24,9 +27,9 @@ The iPhone app in `../lightbox-ios` packs this folder inside it.
 
 ## Adding levels
 
-- **Overlap**: levels are made, not drawn. `STYLES` in `overlap.js` holds the layouts (scatter, discs, planes, circles,
-  totem); add a style there. `tools/build-overlap.mjs` sets how many levels there are, how many shapes each has and how
-  many spare numbers it keeps, and rewrites `overlap-levels.js`.
+- **Overlap**: add a picture to `overlap-pictures.js` (a few big `core` shapes plus `extras` for the reveal), then run
+  `node lightbox/tools/build-overlap.mjs`. It adds the abstract decoys, chooses the numbers and rewrites
+  `overlap-levels.js`. Keep the core to two to four plain shapes: the plainer they are, the less the outline gives away.
 - **Stained Glass**: add a grid to `glass-pictures.js`, then run `node lightbox/tools/cut-glass.mjs`
   to cut it into panes and rewrite `glass-levels.js`.
 

@@ -11,7 +11,7 @@ import * as glass from './glass.js';
 import { seeded, hash, finger } from './util.js';
 
 const MODES = { overlap, glass };
-const BUILD = 3;
+const BUILD = 4;
 const START_HINTS = 5, REFILL = 3, AHEAD = 3;   // AHEAD: how many unsolved pictures are open at once
 const root = document.getElementById('root'), modal = document.getElementById('modal');
 
@@ -174,7 +174,9 @@ function afterMove() {
     if (r.kind === 'endless') S.endless[r.mode] = Math.max(S.endless[r.mode], r.i + 1);
     if (r.kind === 'daily') (S.daily[r.date] = S.daily[r.date] || {})[r.mode] = true;
     const name = play.puzzle.name;
-    say(name ? `It’s ${name}!` : r.kind === 'daily' ? `Today’s ${single(r.mode).toLowerCase()}, done.` : r.kind === 'level' ? `${MODES[r.mode].title} ${r.i + 1}, done.` : `${single(r.mode)} No. ${r.i + 1}, done.`);
+    // A hidden picture takes a moment to appear, so its name waits for it.
+    if (play.puzzle.picture) { say(''); const k = key; setTimeout(() => { if (play && play.key === k) say(`It\u2019s ${name}!`); }, 1700); }
+    else say(name ? `It’s ${name}!` : r.kind === 'daily' ? `Today’s ${single(r.mode).toLowerCase()}, done.` : r.kind === 'level' ? `${MODES[r.mode].title} ${r.i + 1}, done.` : `${single(r.mode)} No. ${r.i + 1}, done.`);
     document.getElementById('tools').hidden = true; document.getElementById('won').hidden = false;
   } else S.saves[key] = game.save();
   persist(); refresh();
