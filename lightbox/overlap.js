@@ -1,15 +1,15 @@
 // OVERLAP
 // See-through shapes, each on or off. A number sits in some patches and says how many of the shapes covering that patch are on.
-// The "on" shapes make the picture and the rest are decoys. Numbers are chosen so the picture can always be finished by
-// sure steps, with no guessing. Early pictures only need one number at a time; later ones need two numbers compared.
-// Pictures are drawn in overlap-scenes.js and turned into levels (decoys added, numbers chosen) by tools/build-overlap.mjs.
+// Which shapes are on is random, so the numbers are the only way in. They are chosen so a composition can always be
+// finished by sure steps, with no guessing. Early ones keep a spare number or two; later ones drop the giveaways.
+// The numbered levels are made ahead of time by tools/build-overlap.mjs; endless and daily ones are made on the spot.
 import { TAU, HP, rr, Fx, shuffle, pick, between, finger } from './util.js';
 import LEVELS from './overlap-levels.js';
 
 export const id = 'overlap';
 export const title = 'Overlap';
-export const blurb = 'Switch on the right shapes to make the picture.';
-export const endlessName = 'Totems';
+export const blurb = 'Read the numbers. Switch on the right shapes.';
+export const endlessName = 'Sketches', endlessOne = 'Sketch';
 export const howto = [
   'A number counts the switched-on shapes under it.',
   'Tap: on. Tap again: off (dashed). Tap again: clear.',
@@ -21,7 +21,7 @@ const G = 3, GW = 120, GH = 126;
 const PAPER = ['#ff8f70', '#ffd54d', '#74b9ff', '#7fdcae', '#c7a0ff', '#ff9fcd', '#5fd4d0', '#d9a878'];
 const NIGHT = ['#ffe9a8', '#3a5cc0', '#2c9a94', '#6f55c8', '#2f6fd0', '#e0567a', '#ffd54d', '#e08a3c'];
 
-export const levels = LEVELS.map(s => ({ id: s.id, name: s.name }));
+export const levels = LEVELS.map(s => ({ id: s.id, name: null }));
 
 // Scene shapes are written compactly: kind, numbers, colour. A leading '-' on the kind marks a decoy.
 export function make(a) {
@@ -144,49 +144,89 @@ export function chooseClues(shapes, sol, big, R, opts = {}) {
 }
 
 export function art(i) { const L = LEVELS[i]; return { shapes: L.shapes.map(make), sol: L.sol.map(Boolean), night: !!L.night }; }
-export function makeLevel(i) { const L = LEVELS[i]; return { ...art(i), clues: L.clues, name: L.name }; }
+export function makeLevel(i) { const L = LEVELS[i]; return { ...art(i), clues: L.clues, name: null }; }
 
-// Totems: endless symmetrical figures. A few shapes sit on the centre line and the rest come in mirrored pairs,
-// so whatever is left switched on reads as a face, a creature or a mask rather than a scatter.
-function randomUnit(R, centred) {
-  const kind = ['c', 'c', 'e', 'b', 'p'][pick(R, 5)], y = between(R, 55, 325);
-  const x = centred ? 180 : 180 - between(R, 45, 135);
+// COMPOSITIONS
+// Every puzzle is an abstract composition: shapes laid out in one of a few styles, with which ones are on chosen at
+// random. Nothing about the layout hints at the answer, so the numbers are the only way in.
+const ANGLES = [0, 0, HP, HP, Math.PI / 6, -Math.PI / 6, Math.PI / 4, -Math.PI / 4, Math.PI / 3, -Math.PI / 3];
+const circle = (R, lo, hi) => { const r = between(R, lo, hi); return ['c', between(R, r + 8, W - r - 8), between(R, r + 8, H - r - 8), r]; };
+const strip = (R, a) => ['b', between(R, 30, W - 30), between(R, 30, H - 30), between(R, 130, 270), between(R, 30, 52), a];
+const mirror = a => {
+  const b = a.slice();
+  if (a[0] === 'p') b[1] = a[1].map(([x, y]) => [360 - x, y]).reverse(); else { b[1] = 360 - a[1]; if (a[0] !== 'c') b[5] = -a[5]; }
+  return b;
+};
+function totemUnit(R, centred) {
+  const kind = ['c', 'c', 'e', 'b', 'p'][pick(R, 5)], y = between(R, 55, 325), x = centred ? 180 : 180 - between(R, 45, 135);
   if (kind === 'c') return ['c', x, y, centred ? between(R, 30, 68) : between(R, 18, 46)];
   if (kind === 'e') return ['e', x, y, centred ? between(R, 34, 95) : between(R, 22, 52), centred ? between(R, 26, 70) : between(R, 16, 40), centred ? 0 : between(R, -0.9, 0.9)];
   if (kind === 'b') return centred ? ['b', x, y, between(R, 110, 300), between(R, 28, 44), R() < 0.6 ? 0 : HP] : ['b', x, y, between(R, 80, 170), between(R, 26, 34), between(R, -1.3, 1.3)];
   const b = centred ? between(R, 45, 85) : between(R, 28, 50), h = (centred ? between(R, 60, 120) : between(R, 45, 80)) * (R() < 0.5 ? 1 : -1);
   return ['p', [[x - b, y + h / 2], [x + b, y + h / 2], [x + (centred ? 0 : between(R, -b, b)), y - h / 2]]];
 }
-const mirror = a => {
-  const b = a.slice();
-  if (a[0] === 'p') b[1] = a[1].map(([x, y]) => [360 - x, y]).reverse(); else { b[1] = 360 - a[1]; if (a[0] !== 'c') b[5] = -a[5]; }
-  return b;
-};
-export function makeEndless(R, size = 0) {
-  const want = Math.min(7, 5 + size);
-  for (let t = 0; t < 2400; t++) {
-    // Ease off a little at a time if a figure this busy will not come together.
-    const units = Math.max(4, want - Math.floor(t / 500)), crossings = t < 1200 ? 3 : 2;
-    const night = R() < 0.3, pal = shuffle((night ? NIGHT : PAPER).slice(), R), centred = 2 + pick(R, 2), raw = [], sol = [];
-    let off = 0;
-    for (let u = 0; u < units; u++) {
-      const a = randomUnit(R, u < centred), on = R() < 0.66; if (!on) off++;
-      const col = pal[u % pal.length];
-      for (const v of u < centred ? [a] : [a, mirror(a)]) { raw.push([...v, col]); sol.push(on); }
+// Each style returns groups of shapes. A group shares one colour and is on or off together (a mirrored pair, usually just one shape).
+export const STYLES = {
+  // Circles and long strips thrown down anywhere.
+  scatter: (R, n) => Array.from({ length: n }, () => [R() < 0.55 ? circle(R, 34, 74) : strip(R, ANGLES[pick(R, 10)])]),
+  // Glowing circles of very different sizes on a dark ground.
+  circles: (R, n) => Array.from({ length: n }, (_, i) => [circle(R, i < 2 ? 56 : 22, i < 2 ? 84 : 58)]),
+  // Discs inside discs, with a few loose ones.
+  discs: (R, n) => {
+    const out = [];
+    while (out.length < n) {
+      const big = circle(R, 56, 86); out.push([big]);
+      for (let r = big[3] - between(R, 24, 34); out.length < n && r > 22 && R() < 0.8; r -= between(R, 24, 34)) out.push([['c', big[1] + between(R, -7, 7), big[2] + between(R, -7, 7), r]]);
+      if (out.length < n && R() < 0.5) out.push([circle(R, 24, 44)]);
     }
-    if (off < 1 || off > units / 2.5 || sol.filter(v => v).length < Math.min(6, units)) continue;
+    return out;
+  },
+  // Broad tilted slabs and strips around one big circle.
+  planes: (R, n) => Array.from({ length: n }, (_, i) => [i === 0 ? circle(R, 52, 80)
+    : R() < (n > 9 ? 0.25 : 0.5) ? ['b', between(R, 60, W - 60), between(R, 60, H - 60), between(R, 90, n > 9 ? 150 : 190), between(R, 60, n > 9 ? 95 : 118), between(R, -0.6, 0.6)] : strip(R, between(R, -1.4, 1.4))]),
+  // Symmetrical figures: a few shapes on the centre line and the rest in mirrored pairs.
+  totem: (R, n) => {
+    const out = [], centred = 2 + pick(R, 2); let count = 0;
+    for (let u = 0; count < n; u++) { const a = totemUnit(R, u < centred); out.push(u < centred ? [a] : [a, mirror(a)]); count += u < centred ? 1 : 2; }
+    return out;
+  },
+};
+const ORDER = ['scatter', 'discs', 'planes', 'circles', 'totem'];
+
+// One composition in the given style with about n shapes, or null if none came together.
+// opts: { spares, pairs } as for chooseClues, plus tries.
+export function compose(R, style, n, opts = {}) {
+  const tries = opts.tries || 1500;
+  for (let t = 0; t < tries; t++) {
+    const night = style === 'circles' || (style === 'totem' && R() < 0.3), pal = shuffle((night ? NIGHT : PAPER).slice(), R);
+    const groups = STYLES[style](R, n), raw = [], sol = [];
+    // About three groups in five are on, picked at random.
+    const on = shuffle(groups.map((g, i) => i < Math.round(groups.length * 0.6)), R);
+    groups.forEach((g, i) => g.forEach(a => { raw.push([...a, pal[i % pal.length]]); sol.push(on[i]); }));
     const shapes = raw.map(make);
     if (shapes.some(s => { const b = bounds(s); return b[0] < 6 || b[1] < 6 || b[2] > W - 6 || b[3] > H - 6; })) continue;
     const P = patches(shapes, 3); if (!P) continue;
-    const big = P.filter(p => p.d >= 4);
+    const big = P.filter(p => p.d >= 5);
     if (shapes.some((s, i) => !big.some(p => p.mask >> i & 1))) continue;
-    // The finished figure should hang together: enough places where two switched-on shapes cross.
-    if (big.filter(p => bits(p.mask).filter(i => sol[i]).length > 1).length < crossings) continue;
-    // The first couple are gentle; after that they need two numbers compared.
-    const clues = chooseClues(shapes, sol, big, R, size < 2 ? { spares: 2 } : { pairs: true });
+    // Enough places where shapes cross, so the numbers have something to say about each other.
+    if (big.filter(p => p.mask & (p.mask - 1)).length < shapes.length - (t < tries / 2 ? 1 : 3)) continue;
+    // A tap goes to the smallest shape under it, so every shape needs room where it is the smallest.
+    const tap = shapes.map(() => 0);
+    P.forEach(p => { const over = bits(p.mask); tap[over.reduce((a, b) => (shapes[b].area < shapes[a].area ? b : a))] += p.size; });
+    if (Math.min(...tap) < 700) continue;
+    const clues = chooseClues(shapes, sol, big, R, opts);
     if (!clues || clues.filter(c => c.over.length === 1).length > Math.ceil(shapes.length / 3) + 1) continue;
-    if (size >= 2 && t < 1200 && !playThrough(clues, shapes.length, true).hard) continue;
-    return { shapes, sol, clues, name: null, night };
+    if (opts.pairs && t < tries * 0.6 && !playThrough(clues, shapes.length, true).hard) continue;
+    return { raw, sol, clues, night, style };
+  }
+  return null;
+}
+// Endless compositions: the styles take turns, and they grow and lose their spare numbers as the count goes up.
+export function makeEndless(R, size = 0) {
+  const n = Math.min(12, 6 + Math.floor(size / 2)), opts = size < 3 ? { spares: 1 } : size < 8 ? {} : { pairs: true };
+  for (let k = 0; k < ORDER.length; k++) {
+    const c = compose(R, ORDER[(size + k) % ORDER.length], n, { ...opts, tries: 700 });
+    if (c) return { shapes: c.raw.map(make), sol: c.sol, clues: c.clues, name: null, night: c.night };
   }
   return makeLevel(0);
 }

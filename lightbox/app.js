@@ -11,7 +11,7 @@ import * as glass from './glass.js';
 import { seeded, hash, finger } from './util.js';
 
 const MODES = { overlap, glass };
-const BUILD = 2;
+const BUILD = 3;
 const START_HINTS = 5, REFILL = 3, AHEAD = 3;   // AHEAD: how many unsolved pictures are open at once
 const root = document.getElementById('root'), modal = document.getElementById('modal');
 
@@ -55,7 +55,7 @@ function makePuzzle(r) {
 }
 const solvedCount = m => MODES[m].levels.filter(l => S.solved[m][l.id]).length;
 const isOpen = (m, i) => i < solvedCount(m) + AHEAD || S.solved[m][MODES[m].levels[i].id];
-const single = m => MODES[m].endlessName.replace(/s$/, '');
+const single = m => MODES[m].endlessOne;
 function streak() {
   let n = 0; const d = new Date();
   if (!S.daily[today()]) d.setDate(d.getDate() - 1);
@@ -98,7 +98,7 @@ function home() {
     return `<button class="mode card" data-go="#/${m}">
       <canvas data-mode="${m}" data-i="${show}" data-solved="${last >= 0 ? 1 : 0}"></canvas>
       <div style="flex:1"><h2>${esc(M.title)}</h2><p>${esc(M.blurb)}</p>
-      <div class="meter"><i style="width:${(100 * n / total).toFixed(1)}%"></i></div><span class="count">${n} of ${total} pictures</span></div></button>`;
+      <div class="meter"><i style="width:${(100 * n / total).toFixed(1)}%"></i></div><span class="count">${n} of ${total} done</span></div></button>`;
   };
   root.innerHTML = `<main class="screen">
     <header class="brand"><img src="icon.svg" alt=""><div><h1>Lightbox</h1><p>Picture puzzles made of paper and glass.</p></div></header>
@@ -116,7 +116,7 @@ function levelList(m) {
   const M = MODES[m];
   const tiles = M.levels.map((l, i) => {
     const solved = !!S.solved[m][l.id];
-    if (solved) return `<button class="tile" data-go="#/${m}/level/${i}"><canvas data-mode="${m}" data-i="${i}" data-solved="1"></canvas><small>${esc(l.name.replace(/^an? /, ''))}</small></button>`;
+    if (solved) return `<button class="tile" data-go="#/${m}/level/${i}"><canvas data-mode="${m}" data-i="${i}" data-solved="1"></canvas>${l.name ? `<small>${esc(l.name.replace(/^an? /, ''))}</small>` : ''}</button>`;
     if (!isOpen(m, i)) return `<div class="tile locked">${i + 1}</div>`;
     return `<button class="tile${S.saves[`${m}:level:${l.id}`] ? ' started' : ''}" data-go="#/${m}/level/${i}">${i + 1}</button>`;
   }).join('');
@@ -137,7 +137,7 @@ function playScreen(r) {
     <div class="stage card"><canvas id="cv"></canvas></div>
     <p class="msg" id="msg"></p>
     <div class="tools" id="tools"><button class="btn" data-act="undo">Undo</button><button class="btn go" data-act="hint">Hint</button><button class="btn" data-act="clear">Clear</button></div>
-    <div class="won" id="won" hidden><button class="btn" data-go="${r.kind === 'daily' ? '#/' : '#/' + r.mode}">${r.kind === 'daily' ? 'Home' : 'All pictures'}</button><button class="btn go" data-act="next">Next</button></div>
+    <div class="won" id="won" hidden><button class="btn" data-go="${r.kind === 'daily' ? '#/' : '#/' + r.mode}">${r.kind === 'daily' ? 'Home' : 'All levels'}</button><button class="btn go" data-act="next">Next</button></div>
   </main>`;
   const cv = document.getElementById('cv'), dpr = Math.min(window.devicePixelRatio || 1, 3);
   cv.width = size.w * dpr; cv.height = size.h * dpr; cv.style.aspectRatio = `${size.w} / ${size.h}`;
@@ -174,7 +174,7 @@ function afterMove() {
     if (r.kind === 'endless') S.endless[r.mode] = Math.max(S.endless[r.mode], r.i + 1);
     if (r.kind === 'daily') (S.daily[r.date] = S.daily[r.date] || {})[r.mode] = true;
     const name = play.puzzle.name;
-    say(name ? `It’s ${name}!` : r.kind === 'daily' ? `Today’s ${single(r.mode).toLowerCase()}, done.` : `${single(r.mode)} No. ${r.i + 1}, done.`);
+    say(name ? `It’s ${name}!` : r.kind === 'daily' ? `Today’s ${single(r.mode).toLowerCase()}, done.` : r.kind === 'level' ? `${MODES[r.mode].title} ${r.i + 1}, done.` : `${single(r.mode)} No. ${r.i + 1}, done.`);
     document.getElementById('tools').hidden = true; document.getElementById('won').hidden = false;
   } else S.saves[key] = game.save();
   persist(); refresh();

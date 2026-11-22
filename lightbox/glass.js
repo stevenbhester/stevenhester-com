@@ -7,7 +7,7 @@ import LEVELS from './glass-levels.js';
 export const id = 'glass';
 export const title = 'Stained Glass';
 export const blurb = 'Light the right panes to reveal the window.';
-export const endlessName = 'Masks';
+export const endlessName = 'Masks', endlessOne = 'Mask';
 export const howto = [
   'Each number is how many squares in that row or column are lit.',
   'Tap a pane to light all of it. Tap again to mark it dark. Tap once more to clear it.',
