@@ -63,3 +63,22 @@ export function finger(ctx, x, y, t, taps = 1, press = -1) {
   }
   ctx.restore();
 }
+
+// A speech bubble with wrapped text, pointing at (x, y). `above` puts it over the point, otherwise under it.
+// It is kept inside a sheet w wide and h tall.
+export function bubble(ctx, x, y, text, above, w, h) {
+  ctx.save();
+  ctx.font = '600 14px Fredoka, ui-rounded, system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const max = 178, lines = []; let line = '';
+  for (const word of text.split(' ')) { const next = line ? line + ' ' + word : word; if (line && ctx.measureText(next).width > max) { lines.push(line); line = word; } else line = next; }
+  lines.push(line);
+  const bw = Math.max(...lines.map(l => ctx.measureText(l).width)) + 22, bh = lines.length * 18 + 16, gap = 24;
+  if (above && y - gap - bh < 6) above = false; else if (!above && y + gap + bh > h - 6) above = true;
+  const bx = Math.max(6, Math.min(w - bw - 6, x - bw / 2)), by = above ? y - gap - bh : y + gap, px = Math.max(bx + 14, Math.min(bx + bw - 14, x));
+  ctx.shadowColor = 'rgba(40,30,55,.3)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
+  ctx.fillStyle = '#3b3346'; rr(ctx, bx, by, bw, bh, 11); ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.beginPath(); ctx.moveTo(px - 8, above ? by + bh - 1 : by + 1); ctx.lineTo(px + 8, above ? by + bh - 1 : by + 1); ctx.lineTo(px, above ? by + bh + 9 : by - 9); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#fff'; lines.forEach((l, i) => ctx.fillText(l, bx + 11, by + 8 + 9 + i * 18));
+  ctx.restore();
+}

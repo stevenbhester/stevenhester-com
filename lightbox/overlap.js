@@ -6,7 +6,7 @@
 // decoys and shown in unrelated colours. Solving it brings in the real colours and the details, and the picture appears.
 // Those levels are made ahead of time by tools/build-overlap.mjs from overlap-pictures.js. Endless and daily puzzles are
 // plain compositions, made on the spot.
-import { TAU, HP, rr, Fx, shuffle, pick, between, finger } from './util.js';
+import { TAU, HP, rr, Fx, shuffle, pick, between, finger, bubble } from './util.js';
 import LEVELS from './overlap-levels.js';
 
 export const id = 'overlap';
@@ -374,11 +374,21 @@ export class Game {
   // The next sure move as a place to tap and how many taps it takes. Used by the pointing finger and the animated how-to.
   autoStep() {
     if (this.won) return null;
-    let s = this.st.findIndex((v, i) => v && (v === 1) !== this.p.sol[i]), want;
+    let s = this.st.findIndex((v, i) => v && (v === 1) !== this.p.sol[i]), want, k = -1, why = 'That one does not fit the numbers.';
     if (s >= 0) want = this.p.sol[s] ? 1 : 2;
-    else { const f = force(this.p.clues, this.st, true); if (!f) return null; s = f.on.length ? f.on[0] : f.off[0]; want = f.on.length ? 1 : 2; }
+    else {
+      const f = force(this.p.clues, this.st, true); if (!f) return null;
+      s = f.on.length ? f.on[0] : f.off[0]; want = f.on.length ? 1 : 2; k = f.ks[0];
+      // Say why, in the plainest words that fit the number being used.
+      const c = this.p.clues[k], n = c.over.length, shapes = n === 1 ? 'the shape' : n === 2 ? 'both shapes' : `all ${n} shapes`;
+      if (f.tried !== undefined) why = `If this shape were ${want === 1 ? 'off' : 'on'}, this ${c.v} could not work.`;
+      else if (f.ks.length > 1) why = 'Compare this number with its neighbour.';
+      else if (want === 2) why = c.v === 0 ? `0 means ${n === 1 ? 'the shape' : 'every shape'} under it is off.` : `This ${c.v} already has ${c.v === 1 ? 'its one' : `all ${c.v}`}. The rest are off.`;
+      else why = c.v === n ? `${c.v} means ${shapes} under it ${n === 1 ? 'is' : 'are'} on.` : `This ${c.v} needs every shape still undecided under it.`;
+    }
     const at = this.spot(s); if (!at) return null;
-    return { x: at.x, y: at.y, taps: (want - this.st[s] + 3) % 3 };
+    const taps = (want - this.st[s] + 3) % 3;
+    return { x: at.x, y: at.y, taps, k, why: `${why} ${taps === 2 ? 'Tap twice.' : 'Tap it.'}` };
   }
   frame(ctx, dt) {
     const o = this, p = this.p; o.t += dt; o.hintT += dt; o.flashT = Math.max(0, o.flashT - dt * 1.5);
@@ -411,7 +421,16 @@ export class Game {
     ctx.globalAlpha = 1;
     if (o.won && p.picture) drawPicture(ctx, p.picture, o.wonT);
     ctx.restore();
-    if (o.coach && !o.won) { const a = o.autoStep(); if (a) finger(ctx, a.x, a.y, o.t, a.taps); }
+    if (o.coach && !o.won) {
+      const a = o.autoStep();
+      if (a) {
+        // The speech bubble hangs off the number being used, on the side away from the finger.
+        const c = a.k >= 0 ? p.clues[a.k] : null;
+        if (c) { ctx.strokeStyle = '#ff7a59'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c.x, c.y, 14 + Math.sin(o.t * 6) * 1.5, 0, TAU); ctx.stroke(); }
+        finger(ctx, a.x, a.y, o.t, a.taps);
+        bubble(ctx, c ? c.x : a.x, c ? c.y : a.y, a.why, c ? a.y > c.y : false, W, H);
+      }
+    }
     o.fx.draw(ctx);
   }
 }

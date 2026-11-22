@@ -11,7 +11,7 @@ import * as glass from './glass.js';
 import { seeded, hash, finger } from './util.js';
 
 const MODES = { overlap, glass };
-const BUILD = 4;
+const BUILD = 5;
 const START_HINTS = 5, REFILL = 3, AHEAD = 3;   // AHEAD: how many unsolved pictures are open at once
 const root = document.getElementById('root'), modal = document.getElementById('modal');
 
@@ -143,14 +143,14 @@ function playScreen(r) {
   cv.width = size.w * dpr; cv.height = size.h * dpr; cv.style.aspectRatio = `${size.w} / ${size.h}`;
   const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   play = { r, key, game, cv, ctx, size, puzzle };
-  // The very first picture points at each move, so the rules can be picked up without reading.
-  game.coach = r.kind === 'level' && r.i === 0 && !S.solved[r.mode][M.levels[0].id];
+  // The first two pictures point at each move and say why, so the rules can be picked up by doing.
+  game.coach = r.kind === 'level' && r.i < 2 && !S.solved[r.mode][M.levels[r.i].id];
   cv.addEventListener('pointerdown', e => {
     audio();
     const b = cv.getBoundingClientRect(), k = size.w / b.width;
     if (game.tap((e.clientX - b.left) * k, (e.clientY - b.top) * k)) { say(''); afterMove(); }
   });
-  say(game.won || !game.coach ? '' : 'Follow the finger.');
+  say(game.won || !game.coach ? '' : 'Read the bubble, then tap where the finger points.');
   refresh();
   let last = 0;
   raf = requestAnimationFrame(function loop(t) {
