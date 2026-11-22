@@ -136,6 +136,12 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
     <p>Rough playable versions of each idea. Placeholder art, real rules.</p>
   </header>
 
+  <div class="tabgroup"><small>New</small>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="false" data-tab="trip">One Trip</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="nest">Nest</button>
+    </nav>
+  </div>
   <div class="tabgroup"><small>Current favs</small>
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true" data-tab="boba">Bubble Paint</button>
@@ -158,6 +164,24 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
     </nav>
   </div>
   <div id="panels">
+
+  <!-- ONE TRIP -->
+  <section class="card" id="p-trip" hidden>
+    <div class="hud" style="margin-top:0"><span>Room <strong id="ot-n">1</strong></span><span>Trips left <strong id="ot-trips">0</strong></span></div>
+    <p class="how one" style="margin:0 0 12px"><b>Tidy the room before you run out of trips.</b> Tap a pile to pick up its top toy. A toy can only go on one that's the same size or bigger, and your arms only hold so many. Tap the toy box to carry the armful over: that's one trip.</p>
+    <canvas class="game" id="ot-cv"></canvas>
+    <p class="msg" id="ot-msg"></p>
+    <div class="row"><button class="btn plain" id="ot-undo">Undo</button><button class="btn plain" id="ot-retry">Retry</button><button class="btn" id="ot-carry">Carry</button><button class="btn" id="ot-next" hidden>Next room</button></div>
+  </section>
+
+  <!-- NEST -->
+  <section class="card" id="p-nest" hidden>
+    <div class="hud" style="margin-top:0"><span>Shelf <strong id="ns-n">1</strong>/5</span><span>Moves <strong id="ns-moves">0</strong> · best <strong id="ns-best">0</strong></span></div>
+    <p class="how one" style="margin:0 0 12px"><b>Stack every color into its own tower, biggest cup at the bottom.</b> Tap a tower, then tap where its top cup should go. A cup only goes onto a bigger cup or an empty spot.</p>
+    <canvas class="game" id="ns-cv"></canvas>
+    <p class="msg" id="ns-msg"></p>
+    <div class="row"><button class="btn plain" id="ns-undo">Undo</button><button class="btn plain" id="ns-retry">Retry</button><button class="btn" id="ns-next" hidden>Next shelf</button></div>
+  </section>
 
   <!-- BRICKWORK -->
   <section class="card" id="p-brick" hidden>
@@ -288,7 +312,7 @@ const COLORS = ['#ff5d5d', '#4d8dff', '#ffc53d', '#a26bf5', '#35c27a', '#ff7ab8'
 /* ── tabs + frame loop ── */
 const started = {}, loops = {};
 let current = null, lastT = 0, MUTE = false;
-const KEYS = ['boba', 'coat', 'brick', 'slice', 'drop', 'bloom', 'defrag', 'even', 'batch'];
+const KEYS = ['trip', 'nest', 'boba', 'coat', 'brick', 'slice', 'drop', 'bloom', 'defrag', 'even', 'batch'];
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === t));
   KEYS.forEach(k => document.getElementById('p-' + k).hidden = k !== t.dataset.tab);
@@ -297,7 +321,7 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
 function start(k) {
   current = k;
   if (started[k]) return; started[k] = true;
-  ({ brick: bkInit, slice: fsInit, coat: tcInit, boba: bbInit, drop: dsInit, bloom: blInit, defrag: dfInit, even: esInit, batch: brInit })[k]();
+  ({ trip: otInit, nest: nsInit, brick: bkInit, slice: fsInit, coat: tcInit, boba: bbInit, drop: dsInit, bloom: blInit, defrag: dfInit, even: esInit, batch: brInit })[k]();
 }
 requestAnimationFrame(function raf(t) {
   const dt = Math.min(0.033, (t - lastT) / 1000 || 0); lastT = t;
@@ -1768,6 +1792,288 @@ function brFinish(path) {
     document.getElementById('br-restart').hidden = false;
   }
   brRender();
+}
+
+/* ════════ ONE TRIP ════════ */
+// Piles of toys, top one only. Arms hold `cap` toys, each no bigger than the one under it. Clear the room in the trips given.
+const OT_W = 360, OT_H = 470, OT_TW = [0, 30, 42, 54, 66], OT_TH = 30, OT_STEP = 33, OT_FLOOR = 448, OT_ARMX = 112, OT_ARMY = 178, OT_BOX = { x: 226, y: 92, w: 112, h: 86 };
+const OT_COL = ['', '#ffc53d', '#4d8dff', '#ff7a59', '#35c27a'], OT_EMO = ['', '🦆', '🚗', '🧸', '🦖'];
+// lo..hi: how often the obvious player (always grab the biggest toy that fits) may clear the room in time.
+const OT_ROOMS = [
+  { piles: 3, h: [2, 3], sizes: 3, cap: 3, lo: 0.5, hi: 1 },
+  { piles: 3, h: [3, 3], sizes: 4, cap: 3, lo: 0, hi: 0.5 },
+  { piles: 4, h: [3, 3], sizes: 4, cap: 3, lo: 0, hi: 0.35 },
+  { piles: 4, h: [3, 4], sizes: 4, cap: 4, lo: 0, hi: 0.25 },
+  { piles: 5, h: [3, 4], sizes: 4, cap: 4, lo: 0, hi: 0.15 },
+];
+let ot = null, otCtx = null, otCount = 0;
+// Fewest trips still needed, counting the armful being held (top = size on top of it, cnt = toys in it).
+function otNeed(piles, cap, top, cnt) {
+  const memo = new Map();
+  const go = (h, top, cnt) => {
+    if (h.every(v => v === 0)) return cnt ? 1 : 0;
+    const key = h.join(',') + '|' + top + '|' + cnt;
+    if (memo.has(key)) return memo.get(key);
+    let best = cnt ? 1 + go(h, 9, 0) : 99;
+    if (cnt < cap) for (let p = 0; p < h.length; p++) {
+      if (!h[p]) continue; const s = piles[p][h[p] - 1];
+      if (s <= top) { h[p]--; best = Math.min(best, go(h, s, cnt + 1)); h[p]++; }
+    }
+    memo.set(key, best); return best;
+  };
+  return go(piles.map(p => p.length), cnt ? top : 9, cnt);
+}
+function otGreedy(piles, cap) {
+  const h = piles.map(p => p.length); let top = 9, cnt = 0, trips = 0;
+  while (h.some(v => v)) {
+    let c = [];
+    if (cnt < cap) for (let p = 0; p < h.length; p++) if (h[p]) { const s = piles[p][h[p] - 1]; if (s <= top) c.push([s, p]); }
+    if (!c.length) { trips++; top = 9; cnt = 0; continue; }
+    const m = Math.max(...c.map(x => x[0])); c = c.filter(x => x[0] === m);
+    const [s, p] = c[rand(c.length)]; h[p]--; top = s; cnt++;
+  }
+  return trips + (cnt ? 1 : 0);
+}
+function otGenerate(n) {
+  const R = OT_ROOMS[n]; let pick = null, pickGap = 9;
+  for (let t = 0; t < 40; t++) {
+    const piles = [];
+    for (let p = 0; p < R.piles; p++) { const a = [], hh = R.h[0] + rand(R.h[1] - R.h[0] + 1); for (let k = 0; k < hh; k++) a.push(1 + rand(R.sizes)); piles.push(a); }
+    const best = otNeed(piles, R.cap, 9, 0); let wins = 0;
+    for (let k = 0; k < 30; k++) if (otGreedy(piles, R.cap) <= best) wins++;
+    const rate = wins / 30, gap = rate < R.lo ? R.lo - rate : rate > R.hi ? rate - R.hi : 0;
+    if (gap < pickGap) { pick = { piles, best, cap: R.cap }; pickGap = gap; }
+    if (!gap) break;
+  }
+  return pick;
+}
+function otInit() {
+  const cv = document.getElementById('ot-cv'); otCtx = fitCanvas(cv, OT_W, OT_H);
+  cv.addEventListener('pointerdown', e => { if (!ot) return; const p = cvPoint(cv, e, OT_W); if (p.y < 200) otCarry(); else otTap(Math.min(ot.piles.length - 1, Math.max(0, (p.x / (OT_W / ot.piles.length)) | 0))); });
+  document.getElementById('ot-undo').onclick = otUndo;
+  document.getElementById('ot-retry').onclick = () => otLoad(ot.src);
+  document.getElementById('ot-carry').onclick = otCarry;
+  document.getElementById('ot-next').onclick = () => { otCount++; otLoad(); };
+  loops.trip = otFrame;
+  otLoad();
+}
+function otLoad(keep) {
+  const src = keep || otGenerate(Math.min(otCount, OT_ROOMS.length - 1));
+  ot = { src, piles: src.piles.map(p => p.slice()), arms: [], out: [], after: null, cap: src.cap, trips: src.best, hist: [], over: false, won: false, fx: new Fx(), t: 0, nope: -1, nopeT: 0, bump: 0, boxed: 0 };
+  document.getElementById('ot-n').textContent = otCount + 1;
+  document.getElementById('ot-msg').textContent = 'Tap a pile to pick up its top toy.';
+  document.getElementById('ot-next').hidden = true; document.getElementById('ot-carry').hidden = false;
+  otHud();
+}
+function otHud() { document.getElementById('ot-trips').textContent = ot.trips; }
+const otPileX = p => (OT_W / ot.piles.length) * (p + 0.5);
+const otArmTop = () => ot.arms.length ? ot.arms[ot.arms.length - 1].s : 9;
+const otLeft = () => ot.piles.reduce((a, p) => a + p.length, 0);
+function otSave() { ot.hist.push({ piles: ot.piles.map(p => p.slice()), arms: ot.arms.map(a => a.s), trips: ot.trips, boxed: ot.boxed }); }
+function otUndo() {
+  if (!ot || !ot.hist.length || ot.won) return;
+  const h = ot.hist.pop(); ot.piles = h.piles; ot.arms = h.arms.map(s => ({ s, a: 1 })); ot.trips = h.trips; ot.boxed = h.boxed; ot.out = []; ot.after = null; ot.over = false;
+  blip(300, 0.05); otHud(); otWarn();
+}
+// Tell the player as soon as the room can no longer be cleared in the trips left.
+function otWarn() {
+  const msg = document.getElementById('ot-msg');
+  msg.textContent = otNeed(ot.piles, ot.cap, otArmTop(), ot.arms.length) > ot.trips ? 'Not enough trips left from here. Undo?' : '';
+}
+function otTap(p) {
+  if (ot.over || !ot.piles[p].length) return;
+  audio();
+  const pile = ot.piles[p], s = pile[pile.length - 1], msg = document.getElementById('ot-msg');
+  const full = ot.arms.length >= ot.cap;
+  if (full || s > otArmTop()) {
+    ot.nope = p; ot.nopeT = 0.35; blip(150, 0.07, 'square', 0.05); buzz(20);
+    msg.textContent = full ? 'Arms full. Carry them to the toy box.' : 'Too big to sit on top of that one.'; return;
+  }
+  otSave();
+  const fx = otPileX(p), fy = OT_FLOOR - pile.length * OT_STEP;
+  pile.pop(); ot.arms.push({ s, a: 0, fx, fy });
+  note(ot.arms.length + 1, 0.1, 0.09); buzz(8);
+  otWarn();
+}
+function otCarry() {
+  if (!ot || ot.over || !ot.arms.length) return;
+  audio(); otSave();
+  ot.out = ot.arms.map((a, k) => ({ s: a.s, x: OT_ARMX, y: OT_ARMY - (k + 1) * OT_STEP, a: -k * 0.3 }));
+  ot.arms = []; ot.trips--; otHud();
+  ot.after = otCheck;
+}
+function otCheck() {
+  const msg = document.getElementById('ot-msg'), left = otLeft();
+  if (!left) {
+    ot.over = ot.won = true; ot.fx.confetti(OT_W);
+    msg.textContent = `Room tidy in ${ot.src.best} trip${ot.src.best === 1 ? '' : 's'}!`;
+    [0, 2, 4, 5, 7, 9].forEach((k, j) => setTimeout(() => note(k + 3, 0.2), j * 90));
+    document.getElementById('ot-next').hidden = false; document.getElementById('ot-carry').hidden = true;
+  } else if (ot.trips <= 0) {
+    ot.over = true; msg.textContent = `Out of trips with ${left} toy${left === 1 ? '' : 's'} left. Undo or retry.`; blip(170, 0.3, 'sawtooth', 0.07);
+  } else otWarn();
+}
+function otToy(ctx, cx, y, s, sc) {
+  const w = OT_TW[s] * (sc || 1), h = OT_TH * (sc || 1), x = cx - w / 2;
+  ctx.fillStyle = OT_COL[s]; rr(ctx, x, y, w, h, 9); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.16)'; rr(ctx, x, y + h - 7, w, 7, 5); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; rr(ctx, x + 4, y + 3, w - 8, 5, 3); ctx.fill();
+  ctx.font = `${Math.round(17 * (sc || 1))}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#3b3346';
+  ctx.fillText(OT_EMO[s], cx, y + h / 2 - 1);
+}
+function otFrame(dt) {
+  const o = ot, ctx = otCtx; if (!o) return; o.t += dt;
+  o.nopeT = Math.max(0, o.nopeT - dt); o.bump = Math.max(0, o.bump - dt * 3);
+  for (const a of o.arms) a.a = Math.min(1, a.a + dt / 0.16);
+  for (const q of o.out) {
+    const before = q.a; q.a += dt / 0.3;
+    if (before < 1 && q.a >= 1) { o.boxed++; o.bump = 1; o.fx.burst(OT_BOX.x + OT_BOX.w / 2, OT_BOX.y + 8, [OT_COL[q.s], '#fff6c2'], 8, 130, 3.5, 160); note(4 + (o.boxed % 6), 0.1, 0.08); buzz(8); }
+  }
+  if (o.out.length && o.out.every(q => q.a >= 1)) { o.out = []; if (o.after) { const f = o.after; o.after = null; f(); } }
+  o.fx.step(dt);
+  ctx.clearRect(0, 0, OT_W, OT_H);
+  ctx.save(); rr(ctx, 0, 0, OT_W, OT_H, 16); ctx.clip();
+  ctx.fillStyle = '#fbeed6'; ctx.fillRect(0, 0, OT_W, 200);
+  ctx.fillStyle = '#e7cfa6'; ctx.fillRect(0, 200, OT_W, OT_H - 200);
+  ctx.fillStyle = '#d9bd8e'; ctx.fillRect(0, 200, OT_W, 6);
+  ctx.fillStyle = 'rgba(255,255,255,.28)'; rr(ctx, 14, 232, OT_W - 28, OT_H - 246, 26); ctx.fill();
+  ctx.restore();
+  // arms: a tray with one outline per toy it can hold
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#6c6477'; ctx.font = '700 12px "Space Mono", monospace'; ctx.fillText(`ARMS · HOLD ${o.cap}`, OT_ARMX, OT_ARMY + 14);
+  ctx.fillStyle = '#3b3346'; rr(ctx, OT_ARMX - 46, OT_ARMY - 1, 92, 6, 3); ctx.fill();
+  ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(59,51,70,.28)';
+  for (let k = o.arms.length; k < o.cap; k++) { rr(ctx, OT_ARMX - 33, OT_ARMY - (k + 1) * OT_STEP, 66, OT_TH, 9); ctx.stroke(); }
+  ctx.setLineDash([]);
+  o.arms.forEach((a, k) => {
+    const e = 1 - Math.pow(1 - a.a, 3), ty = OT_ARMY - (k + 1) * OT_STEP;
+    const x = a.fx === undefined ? OT_ARMX : a.fx + (OT_ARMX - a.fx) * e, y = a.fy === undefined ? ty : a.fy + (ty - a.fy) * e - Math.sin(e * Math.PI) * 26;
+    otToy(ctx, x, y, a.s);
+  });
+  // toy box
+  const B = OT_BOX, by = B.y + o.bump * 5, ready = o.arms.length && !o.over;
+  ctx.fillStyle = '#b9763c'; rr(ctx, B.x, by, B.w, B.h, 12); ctx.fill();
+  ctx.fillStyle = '#d6945a'; rr(ctx, B.x, by, B.w, B.h - 8, 12); ctx.fill();
+  ctx.fillStyle = '#7a4a22'; rr(ctx, B.x + 8, by + 8, B.w - 16, 14, 7); ctx.fill();
+  ctx.fillStyle = '#fff7ea'; ctx.font = '700 15px Fredoka, system-ui, sans-serif'; ctx.fillText('TOY BOX', B.x + B.w / 2, by + 46);
+  ctx.font = '700 11px "Space Mono", monospace'; ctx.fillStyle = 'rgba(255,247,234,.85)'; ctx.fillText(ready ? 'tap to carry' : `${o.boxed} inside`, B.x + B.w / 2, by + 64);
+  if (ready) { ctx.strokeStyle = `rgba(255,122,89,${0.55 + 0.35 * Math.sin(o.t * 6)})`; ctx.lineWidth = 3; rr(ctx, B.x - 4, by - 4, B.w + 8, B.h + 8, 15); ctx.stroke(); }
+  // piles: only the top toy of each can be picked up
+  const top = otArmTop(), room = o.arms.length < o.cap;
+  o.piles.forEach((pile, p) => {
+    const cx = otPileX(p) + (o.nope === p ? Math.sin(o.nopeT * 50) * 5 * (o.nopeT / 0.35) : 0);
+    ctx.fillStyle = 'rgba(90,60,20,.16)'; ctx.beginPath(); ctx.ellipse(otPileX(p), OT_FLOOR + 3, 36, 6, 0, 0, TAU); ctx.fill();
+    pile.forEach((s, k) => {
+      const y = OT_FLOOR - (k + 1) * OT_STEP, isTop = k === pile.length - 1;
+      otToy(ctx, cx, y, s);
+      if (isTop && !o.over && room && s <= top) { ctx.strokeStyle = `rgba(255,255,255,${0.6 + 0.35 * Math.sin(o.t * 5 + p)})`; ctx.lineWidth = 2.5; rr(ctx, cx - OT_TW[s] / 2 - 3, y - 3, OT_TW[s] + 6, OT_TH + 6, 11); ctx.stroke(); }
+    });
+  });
+  for (const q of o.out) {
+    const e = Math.max(0, Math.min(1, q.a)), tx = OT_BOX.x + OT_BOX.w / 2, ty = OT_BOX.y - 6;
+    if (q.a < 1) otToy(ctx, q.x + (tx - q.x) * e, q.y + (ty - q.y) * e - Math.sin(e * Math.PI) * 34, q.s, 1 - e * 0.25);
+  }
+  o.fx.draw(ctx);
+}
+
+/* ════════ NEST ════════ */
+// Towers of stacking cups, top one only. A cup goes onto a bigger cup or an empty spot. Finish with one colour per tower, big to small.
+// A cup is colour * 10 + size. `best` is the fewest moves, found offline by searching every position.
+const NS_W = 360, NS_H = 340, NS_CW = [0, 26, 38, 50, 62], NS_STEP = 24, NS_CH = 28, NS_BASE = 300;
+const NS_COL = ['#ff5d5d', '#4d8dff', '#35c27a'], NS_DARK = ['#c93a4b', '#2f66cc', '#1f9457'];
+const NS_LEVELS = [
+  { S: 3, best: 6, t: [[1, 2, 3], [11, 12, 13], []] },
+  { S: 3, best: 8, t: [[23, 13, 3], [21, 12, 2], [1, 22, 11], [], []] },
+  { S: 3, best: 13, t: [[13, 3, 23], [21, 12, 22], [11, 2, 1], []] },
+  { S: 4, best: 16, t: [[4, 22, 23, 11], [12, 21, 14, 13], [3, 1, 2, 24], [], []] },
+  { S: 4, best: 19, t: [[4, 14, 3, 2], [13, 23, 1, 21], [12, 11, 24, 22], [], []] },
+];
+let ns = null, nsCtx = null;
+const nsTop = s => s[s.length - 1];
+const nsFits = (a, b) => a !== b && ns.t[a].length > 0 && (!ns.t[b].length || nsTop(ns.t[b]) % 10 > nsTop(ns.t[a]) % 10);
+const nsWhole = s => s.length === ns.S && s.every((c, i) => ((c / 10) | 0) === ((s[0] / 10) | 0) && c % 10 === ns.S - i);
+// A move that only shuffles a lone cup to another empty spot does not count as a way forward.
+function nsAnyMove() {
+  for (let a = 0; a < ns.t.length; a++) for (let b = 0; b < ns.t.length; b++) if (nsFits(a, b) && !(ns.t[a].length === 1 && !ns.t[b].length)) return true;
+  return false;
+}
+function nsInit() {
+  const cv = document.getElementById('ns-cv'); nsCtx = fitCanvas(cv, NS_W, NS_H);
+  cv.addEventListener('pointerdown', e => { if (!ns) return; const p = cvPoint(cv, e, NS_W); nsTap(Math.min(ns.t.length - 1, Math.max(0, (p.x / (NS_W / ns.t.length)) | 0))); });
+  document.getElementById('ns-undo').onclick = nsUndo;
+  document.getElementById('ns-retry').onclick = () => nsLoad(ns.n);
+  document.getElementById('ns-next').onclick = () => nsLoad((ns.n + 1) % NS_LEVELS.length);
+  loops.nest = nsFrame;
+  nsLoad(0);
+}
+function nsLoad(n) {
+  const L = NS_LEVELS[n];
+  ns = { n, S: L.S, best: L.best, t: L.t.map(s => s.slice()), sel: -1, moves: 0, hist: [], won: false, fly: null, fx: new Fx(), time: 0, nope: -1, nopeT: 0, lift: L.t.map(() => 0) };
+  document.getElementById('ns-n').textContent = n + 1;
+  document.getElementById('ns-msg').textContent = 'Tap a tower, then tap where its top cup goes.';
+  document.getElementById('ns-next').hidden = true;
+  nsHud();
+}
+function nsHud() { document.getElementById('ns-moves').textContent = ns.moves; document.getElementById('ns-best').textContent = ns.best; }
+const nsX = i => (NS_W / ns.t.length) * (i + 0.5);
+function nsUndo() {
+  if (!ns || !ns.hist.length || ns.won) return;
+  ns.t = ns.hist.pop(); ns.moves--; ns.sel = -1; ns.fly = null; blip(300, 0.05);
+  document.getElementById('ns-msg').textContent = ''; nsHud();
+}
+function nsTap(i) {
+  if (ns.won) return;
+  audio();
+  const msg = document.getElementById('ns-msg');
+  if (ns.sel < 0) { if (ns.t[i].length) { ns.sel = i; blip(520, 0.05); buzz(6); } return; }
+  if (i === ns.sel) { ns.sel = -1; blip(380, 0.05); return; }
+  if (!nsFits(ns.sel, i)) {
+    ns.nope = i; ns.nopeT = 0.35; blip(150, 0.07, 'square', 0.05); buzz(20);
+    msg.textContent = 'Only onto a bigger cup or an empty spot.'; ns.sel = -1; return;
+  }
+  const a = ns.sel;
+  ns.hist.push(ns.t.map(s => s.slice()));
+  ns.fly = { b: i, x0: nsX(a), y0: NS_BASE - ns.t[a].length * NS_STEP - 18, a: 0 };
+  ns.t[i].push(ns.t[a].pop()); ns.moves++; ns.sel = -1; ns.lift[a] = 0;
+  note(ns.t[i].length + 1, 0.1, 0.09); buzz(8); msg.textContent = ''; nsHud();
+  if (nsWhole(ns.t[i])) { ns.fx.say(nsX(i), NS_BASE - ns.S * NS_STEP - 30, 'Nested!', '#fff'); ns.fx.burst(nsX(i), NS_BASE - ns.S * NS_STEP / 2, [NS_COL[(ns.t[i][0] / 10) | 0], '#fff6c2'], 16, 150, 4, 160); setTimeout(() => note(9, 0.18), 120); }
+  if (ns.t.every(s => !s.length || nsWhole(s))) {
+    ns.won = true; ns.fx.confetti(NS_W);
+    msg.textContent = ns.moves <= ns.best ? `Perfect: ${ns.moves} moves, the fewest possible!` : `Solved in ${ns.moves} moves. The fewest possible is ${ns.best}.`;
+    [0, 2, 4, 5, 7, 9].forEach((k, j) => setTimeout(() => note(k + 3, 0.2), j * 90));
+    document.getElementById('ns-next').hidden = false;
+  } else if (!nsAnyMove()) { msg.textContent = 'No moves left. Undo or retry.'; blip(170, 0.3, 'sawtooth', 0.07); }
+}
+function nsCup(ctx, cx, y, c) {
+  const s = c % 10, k = (c / 10) | 0, w = NS_CW[s], t = w - 9;
+  ctx.lineJoin = 'round'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(cx - t / 2, y + 2); ctx.lineTo(cx + t / 2, y + 2); ctx.lineTo(cx + w / 2, y + NS_CH - 2); ctx.lineTo(cx - w / 2, y + NS_CH - 2); ctx.closePath();
+  ctx.fillStyle = NS_COL[k]; ctx.strokeStyle = NS_COL[k]; ctx.fill(); ctx.stroke();
+  ctx.fillStyle = NS_DARK[k]; rr(ctx, cx - w / 2 - 2, y + NS_CH - 7, w + 4, 7, 3.5); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.4)'; rr(ctx, cx - t / 2 + 2, y + 4, Math.max(4, t * 0.3), 4, 2); ctx.fill();
+}
+function nsFrame(dt) {
+  const g = ns, ctx = nsCtx; if (!g) return; g.time += dt;
+  g.nopeT = Math.max(0, g.nopeT - dt);
+  if (g.fly) { g.fly.a += dt / 0.2; if (g.fly.a >= 1) g.fly = null; }
+  g.t.forEach((s, i) => { const want = g.sel === i ? 1 : 0; g.lift[i] += (want - g.lift[i]) * Math.min(1, dt * 18); });
+  g.fx.step(dt);
+  ctx.clearRect(0, 0, NS_W, NS_H);
+  ctx.fillStyle = '#e4f1f5'; rr(ctx, 0, 0, NS_W, NS_H, 16); ctx.fill();
+  ctx.fillStyle = '#c99a63'; rr(ctx, 8, NS_BASE + 4, NS_W - 16, 14, 7); ctx.fill();
+  ctx.fillStyle = '#a97a45'; rr(ctx, 8, NS_BASE + 12, NS_W - 16, 6, 3); ctx.fill();
+  g.t.forEach((s, i) => {
+    const x = nsX(i), ok = g.sel >= 0 && nsFits(g.sel, i), sh = g.nope === i ? Math.sin(g.nopeT * 50) * 5 * (g.nopeT / 0.35) : 0;
+    ctx.fillStyle = ok ? `rgba(53,194,122,${0.5 + 0.3 * Math.sin(g.time * 6)})` : 'rgba(59,51,70,.12)'; rr(ctx, x - 33, NS_BASE - 3, 66, 7, 3.5); ctx.fill();
+    s.forEach((c, k) => {
+      const isTop = k === s.length - 1; let cx = x + sh, y = NS_BASE - (k + 1) * NS_STEP - 4;
+      if (isTop) y -= g.lift[i] * 18;
+      if (isTop && g.fly && g.fly.b === i) { const e = 1 - Math.pow(1 - g.fly.a, 3); cx = g.fly.x0 + (cx - g.fly.x0) * e; y = g.fly.y0 + (y - g.fly.y0) * e - Math.sin(e * Math.PI) * 30; }
+      nsCup(ctx, cx, y, c);
+    });
+    if (s.length && nsWhole(s)) { ctx.font = '16px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⭐', x, NS_BASE - g.S * NS_STEP - 18); }
+  });
+  g.fx.draw(ctx);
 }
 
 /* ── rate a game: stars for fun, frustration and originality, plus a comment ── */
