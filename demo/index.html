@@ -332,6 +332,23 @@ const rand = n => Math.floor(Math.random() * n);
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 const COLORS = ['#ff5d5d', '#4d8dff', '#ffc53d', '#a26bf5', '#35c27a', '#ff7ab8'];
 
+/* ── no double-tap zoom ──
+   Safari can still zoom on a fast second tap even with touch-action set, so that tap's default is cancelled here.
+   Cancelling it also cancels its click, so the click is sent by hand. Canvas games listen for pointerdown and are unaffected. */
+(function () {
+  let lastEnd = 0, sx = 0, sy = 0;
+  const field = t => t && t.closest && t.closest('textarea, input, select');
+  document.addEventListener('touchstart', e => { if (e.touches.length > 1) { e.preventDefault(); return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: false });
+  document.addEventListener('touchend', e => {
+    const now = Date.now(), quick = now - lastEnd < 500; lastEnd = now;
+    if (!quick || field(e.target) || !e.cancelable) return;
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    if (t && Math.hypot(t.clientX - sx, t.clientY - sy) < 12 && e.target.click) e.target.click();
+  }, { passive: false });
+  ['gesturestart', 'gesturechange', 'dblclick'].forEach(n => document.addEventListener(n, e => e.preventDefault(), { passive: false }));
+})();
+
 /* ── tabs + frame loop ── */
 const started = {}, loops = {};
 let current = null, lastT = 0, MUTE = false;
