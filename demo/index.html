@@ -313,7 +313,7 @@ canvas.game { display: block; width: 100%; border-radius: 16px; touch-action: ma
 
   </div>
 
-  <p class="note">Sound on for the full effect. Works best on a phone.<br>Page version 6</p>
+  <p class="note">Sound on for the full effect. Works best on a phone.<br>Page version 7</p>
 </main>
 
 <script>
@@ -2125,31 +2125,63 @@ function nsFrame(dt) {
 
 /* ════════ OVERLAP ════════ */
 // See-through shapes, each on or off. A number sits in some patches and says how many of the shapes covering that patch are on.
-// Every composition is checked so it can be finished one sure step at a time: some number always settles a shape outright.
-const OV_W = 360, OV_H = 378, OV_G = 3, OV_GW = 120, OV_GH = 126, OV_SIZES = [4, 5, 7, 9, 11];
+// The first levels are drawn pictures: the "on" shapes make the picture and the rest are decoys. After those, compositions are random.
+// Either way the numbers are chosen so the picture can be finished one sure step at a time: some number always settles a shape outright.
+const OV_W = 360, OV_H = 378, OV_G = 3, OV_GW = 120, OV_GH = 126, OV_SIZES = [7, 9, 11];
 const OV_COL = ['#ff8f70', '#ffd54d', '#74b9ff', '#7fdcae', '#c7a0ff', '#ff9fcd', '#5fd4d0'];
+const HP = Math.PI / 2;
+// Shapes: c circle, e ellipse, b bar, p polygon. The last item is the colour; a leading '-' on the kind marks a decoy.
+// Paper scenes layer like tissue paper (colours darken where they cross); night scenes layer like light (they brighten).
+const OV_SCENES = [
+  { name: 'a sunset', s: [['c', 180, 205, 72, '#ff8f70'], ['b', 180, 300, 344, 120, 0, '#74b9ff'], ['e', 70, 245, 120, 50, 0, '#7fdcae'], ['b', 215, 302, 100, 26, 0, '#ffd54d'], ['e', 225, 120, 78, 24, 0, '#c7a0ff'],
+    ['-c', 285, 85, 44, '#ffd54d'], ['-b', 300, 170, 250, 34, HP, '#ff9fcd'], ['-c', 95, 110, 52, '#5fd4d0']] },
+  { name: 'a sailboat', s: [['b', 180, 318, 344, 100, 0, '#74b9ff'], ['p', [[80, 250], [290, 250], [255, 300], [115, 300]], '#ff8f70'], ['b', 185, 165, 180, 26, HP, '#d9a878'], ['p', [[190, 80], [300, 235], [190, 235]], '#ffd54d'],
+    ['p', [[180, 100], [180, 235], [95, 235]], '#ff9fcd'], ['c', 75, 80, 42, '#ff8f70'],
+    ['-c', 290, 90, 44, '#7fdcae'], ['-p', [[40, 150], [120, 235], [40, 235]], '#c7a0ff'], ['-b', 180, 200, 330, 28, 0, '#5fd4d0']] },
+  { name: 'a flower', s: [['c', 180, 79, 40, '#ff9fcd'], ['c', 233, 118, 40, '#ff8f70'], ['c', 213, 180, 40, '#ff9fcd'], ['c', 147, 180, 40, '#ff8f70'], ['c', 127, 118, 40, '#ff9fcd'], ['c', 180, 135, 30, '#ffd54d'],
+    ['b', 180, 275, 190, 26, HP, '#7fdcae'], ['e', 222, 290, 52, 22, -0.5, '#5fd4d0'], ['e', 138, 320, 52, 22, 0.5, '#5fd4d0'],
+    ['-c', 60, 70, 40, '#74b9ff'], ['-c', 310, 250, 44, '#c7a0ff'], ['-b', 180, 60, 300, 28, 0, '#74b9ff']] },
+  { name: 'a bird', s: [['e', 165, 215, 92, 58, -0.15, '#ff8f70'], ['c', 255, 150, 42, '#ff9fcd'], ['e', 150, 215, 62, 30, 0.35, '#74b9ff'], ['p', [[288, 128], [352, 152], [288, 176]], '#ffd54d'], ['c', 262, 142, 15, '#6b5a8a'],
+    ['p', [[30, 250], [95, 205], [100, 262]], '#c7a0ff'], ['b', 150, 300, 80, 26, HP, '#ffd54d'], ['b', 195, 300, 80, 26, HP, '#ffd54d'], ['b', 180, 345, 320, 26, 0, '#7fdcae'],
+    ['-c', 80, 90, 48, '#ffd54d'], ['-c', 300, 270, 46, '#7fdcae'], ['-b', 200, 80, 240, 30, -0.52, '#74b9ff']] },
+  { name: 'a fish', s: [['e', 165, 190, 105, 62, 0, '#ff8f70'], ['p', [[255, 190], [335, 130], [335, 250]], '#ffd54d'], ['p', [[130, 140], [200, 75], [215, 140]], '#ff9fcd'], ['c', 100, 175, 15, '#6b5a8a'], ['e', 195, 190, 22, 55, 0, '#c7a0ff'],
+    ['c', 50, 110, 18, '#74b9ff'], ['c', 75, 60, 24, '#74b9ff'], ['b', 300, 310, 120, 26, HP - 0.2, '#7fdcae'], ['b', 60, 310, 120, 26, HP + 0.2, '#7fdcae'], ['b', 180, 362, 344, 30, 0, '#ffd54d'],
+    ['-c', 250, 70, 46, '#5fd4d0'], ['-c', 160, 285, 44, '#7fdcae'], ['-b', 120, 250, 200, 28, 0.5, '#74b9ff']] },
+  { name: 'a moonrise', night: true, s: [['c', 230, 130, 58, '#ffe9a8'], ['c', 230, 130, 100, '#2f4fa8'], ['p', [[20, 340], [140, 170], [260, 340]], '#2c9a94'], ['p', [[160, 340], [270, 210], [350, 340]], '#6f55c8'], ['b', 180, 356, 344, 36, 0, '#2f6fd0'],
+    ['c', 60, 70, 18, '#ffd54d'], ['c', 118, 112, 16, '#ffd54d'],
+    ['-c', 320, 60, 34, '#ff8f70'], ['-c', 70, 230, 44, '#c7a0ff'], ['-b', 180, 250, 300, 26, -0.4, '#5fd4d0']] },
+];
 let ov = null, ovCtx = null, ovCount = 0;
+function ovMake(a) {
+  const k = a[0].replace('-', ''), col = a[a.length - 1];
+  const s = k === 'c' ? { k, x: a[1], y: a[2], r: a[3], area: Math.PI * a[3] * a[3] }
+    : k === 'e' ? { k, x: a[1], y: a[2], w: a[3] * 2, h: a[4] * 2, a: a[5], area: Math.PI * a[3] * a[4] }
+    : k === 'b' ? { k, x: a[1], y: a[2], w: a[3], h: a[4], a: a[5], area: a[3] * a[4] }
+    : { k, pts: a[1], area: Math.abs(a[1].reduce((t, p, i) => { const q = a[1][(i + 1) % a[1].length]; return t + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2 };
+  s.col = col; return s;
+}
 function ovIn(s, x, y) {
   if (s.k === 'c') return (x - s.x) * (x - s.x) + (y - s.y) * (y - s.y) <= s.r * s.r;
-  const dx = x - s.x, dy = y - s.y, c = Math.cos(-s.a), n = Math.sin(-s.a), u = dx * c - dy * n, v = dx * n + dy * c;
-  return Math.abs(u) <= s.w / 2 && Math.abs(v) <= s.h / 2;
+  if (s.k === 'p') { let inside = false; for (let i = 0, j = s.pts.length - 1; i < s.pts.length; j = i++) { const [xi, yi] = s.pts[i], [xj, yj] = s.pts[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside; } return inside; }
+  const dx = x - s.x, dy = y - s.y, c = Math.cos(-s.a), n = Math.sin(-s.a), u = (dx * c - dy * n) / (s.w / 2), v = (dx * n + dy * c) / (s.h / 2);
+  return s.k === 'e' ? u * u + v * v <= 1 : Math.abs(u) <= 1 && Math.abs(v) <= 1;
 }
 function ovShape() {
   for (;;) {
     if (Math.random() < 0.55) { const r = 34 + rand(40); return { k: 'c', x: r + 8 + Math.random() * (OV_W - 2 * r - 16), y: r + 8 + Math.random() * (OV_H - 2 * r - 16), r, area: Math.PI * r * r }; }
-    const w = 130 + rand(140), h = 30 + rand(22), a = [0, 0, Math.PI / 2, Math.PI / 2, Math.PI / 6, -Math.PI / 6, Math.PI / 4, -Math.PI / 4, Math.PI / 3, -Math.PI / 3][rand(10)];
+    const w = 130 + rand(140), h = 30 + rand(22), a = [0, 0, HP, HP, Math.PI / 6, -Math.PI / 6, Math.PI / 4, -Math.PI / 4, Math.PI / 3, -Math.PI / 3][rand(10)];
     const s = { k: 'b', x: 30 + Math.random() * (OV_W - 60), y: 30 + Math.random() * (OV_H - 60), w, h, a, area: w * h };
     const ex = (Math.abs(Math.cos(a)) * w + Math.abs(Math.sin(a)) * h) / 2, ey = (Math.abs(Math.sin(a)) * w + Math.abs(Math.cos(a)) * h) / 2;
     if (s.x - ex >= 6 && s.x + ex <= OV_W - 6 && s.y - ey >= 6 && s.y + ey <= OV_H - 6) return s;
   }
 }
 // Patches: connected areas covered by the same set of shapes. `d` is how far inside the patch its roomiest point is.
-function ovPatches(shapes) {
+function ovPatches(shapes, maxDepth) {
   const n = OV_GW * OV_GH, mask = new Int32Array(n);
   for (let gy = 0; gy < OV_GH; gy++) for (let gx = 0; gx < OV_GW; gx++) {
     let m = 0, depth = 0; const x = gx * OV_G + 1.5, y = gy * OV_G + 1.5;
     for (let s = 0; s < shapes.length; s++) if (ovIn(shapes[s], x, y)) { m |= 1 << s; depth++; }
-    if (depth > 3) return null;
+    if (depth > maxDepth) return null;
     mask[gy * OV_GW + gx] = m;
   }
   const d = new Int32Array(n);
@@ -2180,23 +2212,32 @@ function ovRounds(clues, n) {
   while ((f = ovForce(clues, st))) { f.shapes.forEach(s => { st[s] = f.v; }); steps++; }
   return st.every(v => v) ? steps : 0;
 }
+// Numbers for a set of shapes: start with one in every roomy patch, then drop them while the picture can still be finished
+// step by step. Lone-shape numbers go first, since they give the answer away. Null if even the full set is not enough.
+function ovClues(shapes, sol, big) {
+  const n = shapes.length;
+  let clues = big.map(p => { const over = ovBits(p.mask); return { x: p.x, y: p.y, d: p.d, over, v: over.filter(s => sol[s]).length }; });
+  if (!ovRounds(clues, n)) return null;
+  const order = shuffle(clues.filter(c => c.over.length === 1)).concat(shuffle(clues.filter(c => c.over.length > 1))), cut = [];
+  for (const c of order) { const rest = clues.filter(x => x !== c); if (ovRounds(rest, n)) { clues = rest; if (c.over.length > 1) cut.push(c); } }
+  // A few spare numbers back in, so there is usually more than one place to make progress.
+  return clues.concat(shuffle(cut).slice(0, Math.ceil(n / 3)));
+}
+function ovScene(i) {
+  const S = OV_SCENES[i], shapes = S.s.map(ovMake), sol = S.s.map(a => a[0][0] !== '-');
+  return { shapes, sol, clues: ovClues(shapes, sol, ovPatches(shapes, 9).filter(p => p.d >= 4)), name: S.name, night: !!S.night };
+}
 function ovGenerate(n) {
   for (let t = 0; t < 4000; t++) {
     const shapes = []; for (let s = 0; s < n; s++) shapes.push(ovShape());
-    const P = ovPatches(shapes); if (!P) continue;
+    const P = ovPatches(shapes, 3); if (!P) continue;
     const big = P.filter(p => p.d >= 5);
     if (shapes.some((s, i) => !big.some(p => p.mask === 1 << i))) continue;
-    if (n > 4 && big.filter(p => p.mask & (p.mask - 1)).length < n - 1) continue;
+    if (big.filter(p => p.mask & (p.mask - 1)).length < n - 1) continue;
     const sol = shuffle(shapes.map((s, i) => i < Math.round(n * 0.6)));
     const cols = shuffle(OV_COL.slice()); shapes.forEach((s, i) => { s.col = cols[i % cols.length]; });
-    let clues = big.map(p => { const over = ovBits(p.mask); return { x: p.x, y: p.y, over, v: over.filter(s => sol[s]).length }; });
-    // Drop numbers while the picture can still be finished step by step; lone-shape numbers go first, since they give the answer away.
-    const order = shuffle(clues.filter(c => c.over.length === 1)).concat(shuffle(clues.filter(c => c.over.length > 1)));
-    const cut = [];
-    for (const c of order) { const rest = clues.filter(x => x !== c); if (ovRounds(rest, n)) { clues = rest; if (c.over.length > 1) cut.push(c); } }
-    // A few spare numbers back in, so there is usually more than one place to make progress.
-    clues = clues.concat(shuffle(cut).slice(0, Math.ceil(n / 3)));
-    if (n > 4 && clues.filter(c => c.over.length === 1).length > Math.ceil(n / 3)) continue;
+    const clues = ovClues(shapes, sol, big);
+    if (!clues || clues.filter(c => c.over.length === 1).length > Math.ceil(n / 3) + 1) continue;
     return { shapes, sol, clues };
   }
   return null;
@@ -2211,7 +2252,8 @@ function ovInit() {
   ovLoad();
 }
 function ovLoad(keep) {
-  const src = keep || ovGenerate(OV_SIZES[Math.min(ovCount, OV_SIZES.length - 1)]);
+  const free = ovCount - OV_SCENES.length;
+  const src = keep || (free < 0 ? ovScene(ovCount) : ovGenerate(OV_SIZES[Math.min(free, OV_SIZES.length - 1)]));
   ov = { src, st: src.shapes.map(() => 0), pop: src.shapes.map(() => 0), fade: 0, won: false, hintK: -1, hintT: 0, flash: -1, flashT: 0, fx: new Fx(), t: 0 };
   document.getElementById('ov-n').textContent = ovCount + 1;
   document.getElementById('ov-msg').textContent = 'Tap a shape: on, off, then undecided again.';
@@ -2219,7 +2261,7 @@ function ovLoad(keep) {
   ovHud();
 }
 function ovHud() { document.getElementById('ov-left').textContent = ov.st.filter(v => !v).length; }
-// Where shapes overlap, a tap goes to the smallest one. Every shape also has a patch that is its alone.
+// Where shapes overlap, a tap goes to the smallest one.
 function ovPick(x, y) {
   let best = -1;
   ov.src.shapes.forEach((s, i) => { if (ovIn(s, x, y) && (best < 0 || s.area < ov.src.shapes[best].area)) best = i; });
@@ -2234,7 +2276,7 @@ function ovTap(x, y) {
   document.getElementById('ov-msg').textContent = ''; ovHud();
   if (ov.st.every((v, s) => (v === 1) === ov.src.sol[s])) {
     ov.won = true; ov.fx.confetti(OV_W);
-    document.getElementById('ov-msg').textContent = `Composition No. ${ovCount + 1}, finished.`;
+    document.getElementById('ov-msg').textContent = ov.src.name ? `It's ${ov.src.name}!` : `Composition No. ${ovCount + 1 - OV_SCENES.length}, finished.`;
     [0, 2, 4, 5, 7, 9].forEach((k, j) => setTimeout(() => note(k + 3, 0.2), j * 90));
     document.getElementById('ov-next').hidden = false;
   }
@@ -2250,6 +2292,8 @@ function ovHint() {
 function ovPath(ctx, s) {
   ctx.beginPath();
   if (s.k === 'c') { ctx.arc(s.x, s.y, s.r, 0, TAU); return; }
+  if (s.k === 'e') { ctx.ellipse(s.x, s.y, s.w / 2, s.h / 2, s.a, 0, TAU); return; }
+  if (s.k === 'p') { s.pts.forEach(([x, y], k) => { if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.closePath(); return; }
   const c = Math.cos(s.a), n = Math.sin(s.a), hw = s.w / 2, hh = s.h / 2;
   [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].forEach(([u, v], k) => { const x = s.x + u * c - v * n, y = s.y + u * n + v * c; if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
   ctx.closePath();
@@ -2258,31 +2302,32 @@ function ovFrame(dt) {
   const o = ov, ctx = ovCtx; if (!o) return; o.t += dt; o.hintT += dt; o.flashT = Math.max(0, o.flashT - dt * 1.5);
   if (o.won) o.fade = Math.min(1, o.fade + dt * 1.2);
   o.fx.step(dt);
+  const night = o.src.night, ink = night ? '255,255,255' : '59,51,70';
   ctx.clearRect(0, 0, OV_W, OV_H);
   ctx.save(); rr(ctx, 0, 0, OV_W, OV_H, 16); ctx.clip();
-  ctx.fillStyle = '#fbf6ea'; ctx.fillRect(0, 0, OV_W, OV_H);
+  ctx.fillStyle = night ? '#17152b' : '#fbf6ea'; ctx.fillRect(0, 0, OV_W, OV_H);
   const S = o.src.shapes;
-  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalCompositeOperation = night ? 'screen' : 'multiply';
   S.forEach((s, i) => { o.pop[i] = Math.max(0, o.pop[i] - dt * 4); if (o.st[i] === 1) { ctx.globalAlpha = 1 - o.pop[i] * 0.35; ctx.fillStyle = s.col; ovPath(ctx, s); ctx.fill(); } });
   ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
   ctx.lineJoin = 'round';
   S.forEach((s, i) => {
-    const v = o.st[i], a = (v === 2 ? 0.26 : v === 1 ? 0.5 : 0.8) * (1 - o.fade);
+    const v = o.st[i], a = (v === 2 ? 0.28 : v === 1 ? 0.5 : 0.8) * (1 - o.fade);
     if (a <= 0.01 && o.flash !== i) return;
     ctx.setLineDash(v === 2 ? [5, 6] : []); ctx.lineWidth = (v === 2 ? 1.5 : 2) + o.pop[i] * 3;
-    ctx.strokeStyle = o.flash === i && o.flashT > 0 ? `rgba(255,93,93,${Math.max(a, o.flashT)})` : `rgba(59,51,70,${a})`;
+    ctx.strokeStyle = o.flash === i && o.flashT > 0 ? `rgba(255,93,93,${Math.max(a, o.flashT)})` : `rgba(${ink},${a})`;
     ovPath(ctx, s); ctx.stroke();
   });
   ctx.setLineDash([]);
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 13px Fredoka, system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if (o.fade < 1) o.src.clues.forEach((c, k) => {
     let on = 0, un = 0; for (const s of c.over) { if (o.st[s] === 1) on++; else if (!o.st[s]) un++; }
-    const done = !un && on === c.v, bad = on > c.v || on + un < c.v, hint = o.hintK === k, r = 10 + (hint ? 2.5 + 2.5 * Math.sin(o.hintT * 8) : 0);
+    const done = !un && on === c.v, bad = on > c.v || on + un < c.v, hint = o.hintK === k, small = c.d < 5, r = (small ? 8.5 : 10) + (hint ? 2.5 + 2.5 * Math.sin(o.hintT * 8) : 0);
     ctx.globalAlpha = (1 - o.fade) * (done ? 0.75 : 1);
-    if (hint) { ctx.fillStyle = 'rgba(255,122,89,.35)'; ctx.beginPath(); ctx.arc(c.x, c.y, r + 6, 0, TAU); ctx.fill(); }
+    if (hint) { ctx.fillStyle = 'rgba(255,122,89,.4)'; ctx.beginPath(); ctx.arc(c.x, c.y, r + 6, 0, TAU); ctx.fill(); }
     ctx.fillStyle = bad ? '#ff5d5d' : done ? '#35c27a' : '#fff'; ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, TAU); ctx.fill();
     ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(59,51,70,.55)'; ctx.stroke();
-    ctx.fillStyle = bad || done ? '#fff' : '#3b3346'; ctx.fillText(c.v, c.x, c.y + 0.5);
+    ctx.font = `700 ${small ? 11 : 13}px Fredoka, system-ui, sans-serif`; ctx.fillStyle = bad || done ? '#fff' : '#3b3346'; ctx.fillText(c.v, c.x, c.y + 0.5);
   });
   ctx.globalAlpha = 1;
   ctx.restore();
