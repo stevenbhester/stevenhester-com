@@ -1,0 +1,25 @@
+// Pictures for Stained Glass, as small pixel grids. '.' is dark glass; letters are colours (see PAL in glass.js).
+// After editing, run tools/cut-glass.mjs to cut each picture into panes and write glass-levels.js.
+export const PICTURES = [
+  { id: 'gem', label: 'a gem', pic: ['..y..', '.yoy.', 'yoooy', '.yoy.', '..y..'] },
+  { id: 'heart', label: 'a heart', pic: ['.rr.rr.', 'rprrrrr', 'rprrrrr', '.rrrrr.', '..rrr..', '...r...', '.......'] },
+  { id: 'tulip', label: 'a tulip', pic: ['.r.r.r.', '.rrrrr.', '.rrrrr.', '..rrr..', '...g...', '.g.g.g.', '..ggg..'] },
+  { id: 'apple', label: 'an apple', pic: ['....n..', '...gg..', '.rr.rr.', 'rrrrrrr', 'rwrrrrr', 'rrrrrrr', '.rrrrr.'] },
+  { id: 'star', label: 'a star', pic: ['...y...', '...y...', 'yyyyyyy', '.yyyyy.', '..yyy..', '.yy.yy.', '.y...y.'] },
+  { id: 'ghost', label: 'a ghost', pic: ['..www..', '.wwwww.', 'wwkwkww', 'wwwwwww', 'wwwwwww', 'wwwwwww', 'w.w.w.w'] },
+  { id: 'mushroom', label: 'a mushroom', pic: ['..rrrr..', '.rwrrwr.', 'rrrrrrrr', 'rwrrrrwr', 'rrrrrrrr', '..tttt..', '..tttt..', '.tttttt.'] },
+  { id: 'duck', label: 'a rubber duck', pic: ['...yy...', '..yyny..', '..yyyoo.', '..yyy...', 'y.yyyy..', 'yyyyyyy.', 'yyyyyyy.', '.yyyyy..'] },
+  { id: 'cat', label: 'a cat', pic: ['o.....o.', 'oo...oo.', 'ooooooo.', 'ogooogo.', 'ooopooo.', 'ooooooo.', '.ooooo..', '........'] },
+  { id: 'tree', label: 'an apple tree', pic: ['..gggg..', '.gggggg.', 'gggrgggg', 'gggggrgg', '.gggggg.', '...nn...', '...nn...', '..nnnn..'] },
+  { id: 'house', label: 'a house', pic: ['...rr...', '..rrrr..', '.rrrrrr.', 'rrrrrrrr', '.yyyyyy.', '.ybyyny.', '.yyyyny.', '.yyyyny.'] },
+  { id: 'fish', label: 'a fish', pic: ['........', '.ooo...o', 'ooooo.oo', 'okoooooo', 'ooooo.oo', '.ooo...o', '........', '........'] },
+  { id: 'umbrella', label: 'an umbrella', pic: ['...vv...', '.vvvvvv.', 'vvvvvvvv', 'vvvvvvvv', '...n....', '...n....', '...n.n..', '...nnn..'] },
+  { id: 'rocket', label: 'a rocket', pic: ['...rr...', '..rrrr..', '..wwww..', '..wbbw..', '..wwww..', '.rwwwwr.', '.r.yy.r.', '...yy...'] },
+  { id: 'cupcake', label: 'a cupcake', pic: ['...rr...', '..pppp..', '.pppppp.', 'pppwpppp', 'pppppppp', '.tttttt.', '.tttttt.', '..tttt..'] },
+  { id: 'cactus', label: 'a cactus', pic: ['...gg...', '...gg.g.', '.g.gg.g.', '.g.gggg.', '.gggg...', '...gg...', '..oooo..', '..oooo..'] },
+  { id: 'robot', label: 'a robot', pic: ['..y..y..', '.bbbbbb.', '.bwbbwb.', '.bbbbbb.', '.brrrrb.', '..bbbb..', 'vvvvvvvv', 'v.vvvv.v'] },
+  { id: 'owl', label: 'an owl', pic: ['n......n', 'nnnnnnnn', 'nywnnywn', 'nyynnyyn', 'nnnoonnn', '.nttttn.', '.nttttn.', '..n..n..'] },
+  { id: 'boat', label: 'a sailboat', pic: ['....m....', '...wm....', '..wwmr...', '.wwwmrr..', 'wwwwmrrr.', '....m....', 'nnnnnnnnn', '.nnnnnnn.', 'bbbbbbbbb'] },
+  { id: 'butterfly', label: 'a butterfly', pic: ['.oo...oo.', 'oooo.oooo', 'oyyonoyyo', 'oyyonoyyo', '.ooonooo.', '.vvvnvvv.', 'vvpvnvpvv', 'vvvv.vvvv', '.vv...vv.'] },
+  { id: 'mask', label: 'a mask', pic: ['o...yy...o', 'oo.yyyy.oo', '.oyyyyyyo.', '.ybbyybby.', '.ybkyykby.', '.yyyppyyy.', '.yyyppyyy.', '..yrrrry..', '..yyrryy..', '...yyyy...'] },
+];
