@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Game sketches</title>
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -19,7 +19,8 @@
   --f-body: "Nunito", ui-rounded, system-ui, sans-serif;
   --f-mono: "Space Mono", ui-monospace, Menlo, monospace;
 }
-* { box-sizing: border-box; }
+/* Quick repeated taps are moves in a game, not a double-tap zoom. */
+* { box-sizing: border-box; touch-action: manipulation; }
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 700 17px/1.45 var(--f-body); -webkit-font-smoothing: antialiased; }
 h1, h2 { font-family: var(--f-display); margin: 0; line-height: 1.05; }
