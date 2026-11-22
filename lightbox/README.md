@@ -33,9 +33,21 @@ The iPhone app in `../lightbox-ios` packs this folder inside it.
 - **Stained Glass**: add a grid to `glass-pictures.js`, then run `node lightbox/tools/cut-glass.mjs`
   to cut it into panes and rewrite `glass-levels.js`.
 
+## Music
+
+`music.m4a` is an original 92-second loop written by `tools/make-music.py` (needs numpy and ffmpeg): swung eighths, a
+walking bass, a 50s doo-wop chord loop and a soft chiptune lead, in F major at 104 bpm. Change the notes or the mix in
+that script and run it again to replace the file.
+
+## Settings
+
+- **Numbers change colour**: never, always, or only from a hint until the next move (the default).
+- **Hints**: 3 per puzzle. Restarting a puzzle clears it and gives 3 more.
+- **Music** and **Sounds** each switch on and off.
+
 ## Not done yet
 
-- Hints refill for free. The refill pop-up marks where a rewarded ad would go.
+- No ads or purchases. A natural place for a rewarded ad is extra hints without restarting.
 - Progress is saved on the device only.
 - On the website the app needs a connection to load. The iPhone app does not.
 - Bump `BUILD` in `app.js`, `version.json` and the `?v=` numbers in `index.html` on each release, so phones pick up the new files.

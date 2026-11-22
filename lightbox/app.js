@@ -11,13 +11,14 @@ import * as glass from './glass.js';
 import { seeded, hash, finger } from './util.js';
 
 const MODES = { overlap, glass };
-const BUILD = 5;
-const START_HINTS = 5, REFILL = 3, AHEAD = 3;   // AHEAD: how many unsolved pictures are open at once
+const BUILD = 6;
+const AHEAD = 3;   // how many unsolved pictures are open at once
 const root = document.getElementById('root'), modal = document.getElementById('modal');
 
 /* ── saved progress ── */
 const KEY = 'lightbox:v1';
-const fresh = () => ({ solved: { overlap: {}, glass: {} }, saves: {}, hints: START_HINTS, sound: true, daily: {}, endless: { overlap: 0, glass: 0 }, seenHelp: {} });
+// colours: whether numbers turn green and red as they are met or broken: 'on', 'off', or 'hint' (only after a hint, until the next move).
+const fresh = () => ({ solved: { overlap: {}, glass: {} }, saves: {}, sound: true, music: true, colours: 'hint', daily: {}, endless: { overlap: 0, glass: 0 }, seenHelp: {} });
 function load() { try { const j = JSON.parse(localStorage.getItem(KEY)); return j ? Object.assign(fresh(), j) : fresh(); } catch (e) { return fresh(); } }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* private mode: play on without saving */ } }
 let S = load();
@@ -43,6 +44,26 @@ const sfx = {
   win: () => { buzz(30, 'success'); [0, 2, 4, 5, 7, 9].forEach((k, j) => setTimeout(() => note(k + 1, 0.2), j * 90)); },
   tick: () => blip(520, 0.04),
 };
+
+/* ── music: one track, looped, kept low ── */
+const MUSIC_LEVEL = 0.5;
+let music = null;
+async function startMusic() {
+  if (music || !S.music) return; const ac = audio(); if (!ac) return;
+  const gain = ac.createGain(); gain.gain.value = 0; gain.connect(ac.destination); music = { gain };
+  try {
+    const buf = await ac.decodeAudioData(await (await fetch('music.m4a?v=' + BUILD)).arrayBuffer());
+    const src = ac.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(gain); src.start();
+    gain.gain.linearRampToValueAtTime(S.music ? MUSIC_LEVEL : 0, ac.currentTime + 3);
+  } catch (e) { music = null; /* no music on this device: the game is fine without it */ }
+}
+function setMusic(on) {
+  S.music = on; persist();
+  if (!on) { if (music && AC) music.gain.gain.linearRampToValueAtTime(0, AC.currentTime + 0.6); return; }
+  if (music && AC) music.gain.gain.linearRampToValueAtTime(MUSIC_LEVEL, AC.currentTime + 1.5); else startMusic();
+}
+// Quiet when the app is put away, back when it returns.
+document.addEventListener('visibilitychange', () => { if (!AC) return; if (document.hidden) AC.suspend(); else AC.resume(); });
 
 /* ── which puzzle ── */
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -107,7 +128,7 @@ function home() {
       <div class="daily-row">${Object.keys(MODES).map(m => `<button class="pill${done[m] ? ' done' : ''}" data-go="#/${m}/daily">${done[m] ? '✓ ' : ''}${esc(single(m))}</button>`).join('')}</div>
     </section>
     ${card('overlap')}${card('glass')}
-    <div class="foot"><button data-act="sound">Sound: ${S.sound ? 'on' : 'off'}</button><span>Build ${BUILD}</span></div>
+    <div class="foot"><button data-act="settings">Settings</button><span>Build ${BUILD}</span></div>
   </main>`;
   drawThumbs();
 }
@@ -136,19 +157,19 @@ function playScreen(r) {
     <div class="hud"><span>Undecided <strong id="left"></strong></span><span>Hints <strong id="hints"></strong></span></div>
     <div class="stage card"><canvas id="cv"></canvas></div>
     <p class="msg" id="msg"></p>
-    <div class="tools" id="tools"><button class="btn" data-act="undo">Undo</button><button class="btn go" data-act="hint">Hint</button><button class="btn" data-act="clear">Clear</button></div>
+    <div class="tools" id="tools"><button class="btn" data-act="undo">Undo</button><button class="btn go" data-act="hint">Hint</button><button class="btn" data-act="restart">Restart</button></div>
     <div class="won" id="won" hidden><button class="btn" data-go="${r.kind === 'daily' ? '#/' : '#/' + r.mode}">${r.kind === 'daily' ? 'Home' : 'All levels'}</button><button class="btn go" data-act="next">Next</button></div>
   </main>`;
   const cv = document.getElementById('cv'), dpr = Math.min(window.devicePixelRatio || 1, 3);
   cv.width = size.w * dpr; cv.height = size.h * dpr; cv.style.aspectRatio = `${size.w} / ${size.h}`;
   const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  play = { r, key, game, cv, ctx, size, puzzle };
+  play = { r, key, game, cv, ctx, size, puzzle, lit: false };
   // The first two pictures point at each move and say why, so the rules can be picked up by doing.
   game.coach = r.kind === 'level' && r.i < 2 && !S.solved[r.mode][M.levels[r.i].id];
   cv.addEventListener('pointerdown', e => {
-    audio();
+    audio(); startMusic();
     const b = cv.getBoundingClientRect(), k = size.w / b.width;
-    if (game.tap((e.clientX - b.left) * k, (e.clientY - b.top) * k)) { say(''); afterMove(); }
+    if (game.tap((e.clientX - b.left) * k, (e.clientY - b.top) * k)) { play.lit = false; say(''); afterMove(); }
   });
   say(game.won || !game.coach ? '' : 'Read the bubble, then tap where the finger points.');
   refresh();
@@ -164,7 +185,9 @@ const say = t => { const el = document.getElementById('msg'); if (el) el.textCon
 function refresh() {
   if (!play) return;
   document.getElementById('left').textContent = play.game.left;
-  document.getElementById('hints').textContent = S.hints;
+  document.getElementById('hints').textContent = play.game.hints;
+  // Numbers show their colours always, never, or only from a hint until the next move. The guided first levels always show them.
+  play.game.colours = play.game.coach || play.game.won || S.colours === 'on' || (S.colours === 'hint' && play.lit);
 }
 function afterMove() {
   const { game, key, r } = play;
@@ -189,10 +212,18 @@ function next() {
 }
 function hint() {
   if (!play || play.game.won) return;
-  if (S.hints <= 0) return openModal(`<div class="sheet"><h3>Out of hints</h3><p>In the finished app, watching a short ad would give you ${REFILL} more. For now they are free.</p><button class="btn go" data-act="refill">Get ${REFILL} hints</button></div>`);
+  if (play.game.hints <= 0) return say('No hints left. Restart the puzzle for 3 more.');
   const t = play.game.hint();
   if (!t) return say('Nothing to point at right now.');
-  S.hints--; sfx.tick(); say(t); S.saves[play.key] = play.game.save(); persist(); refresh();
+  play.game.hints--; play.lit = true; sfx.tick(); say(t); S.saves[play.key] = play.game.save(); persist(); refresh();
+}
+function settings() {
+  const seg = (key, options) => `<div class="seg">${options.map(([v, label]) => `<button class="${S[key] === v ? 'on' : ''}" data-act="set" data-key="${key}" data-val="${v}">${label}</button>`).join('')}</div>`;
+  openModal(`<div class="sheet"><h3>Settings</h3>
+    <div class="row"><span>Music</span>${seg('music', [[true, 'On'], [false, 'Off']])}</div>
+    <div class="row"><span>Sounds</span>${seg('sound', [[true, 'On'], [false, 'Off']])}</div>
+    <div class="row tall"><span>Numbers change colour<small>Green when met, red when broken</small></span>${seg('colours', [['off', 'Never'], ['hint', 'With a hint'], ['on', 'Always']])}</div>
+    <button class="btn go" data-act="close">Done</button></div>`);
 }
 
 /* ── pop-ups ── */
@@ -242,17 +273,22 @@ function runDemo(M, cv, cap) {
 document.addEventListener('click', e => {
   if (e.target === modal) return closeModal();
   const b = e.target.closest('[data-go], [data-act]'); if (!b) return;
-  audio();
+  audio(); startMusic();
   if (b.dataset.go) { sfx.tick(); return go(b.dataset.go); }
   const a = b.dataset.act;
-  if (a === 'sound') { S.sound = !S.sound; persist(); sfx.tick(); home(); }
+  if (a === 'settings') settings();
+  else if (a === 'set') {
+    const v = b.dataset.val === 'true' ? true : b.dataset.val === 'false' ? false : b.dataset.val;
+    if (b.dataset.key === 'music') setMusic(v); else { S[b.dataset.key] = v; persist(); }
+    sfx.tick(); settings(); refresh();
+  }
+  else if (a === 'restart') openModal('<div class="sheet"><h3>Restart this puzzle?</h3><p>You start from scratch and get 3 fresh hints.</p><button class="btn go" data-act="restart-yes">Restart</button><button class="btn" data-act="close" style="margin-top:10px">Keep going</button></div>');
+  else if (a === 'restart-yes') { closeModal(); if (play) { play.game.restart(); play.lit = false; sfx.tick(); say(''); afterMove(); } }
   else if (a === 'help') help(b.dataset.mode);
   else if (a === 'close') closeModal();
-  else if (a === 'refill') { S.hints += REFILL; persist(); refresh(); closeModal(); }
   else if (a === 'hint') hint();
   else if (a === 'next') next();
-  else if (play && a === 'undo') { if (play.game.undo()) { sfx.tick(); say(''); afterMove(); } }
-  else if (play && a === 'clear') { play.game.clear(); sfx.tick(); say(''); afterMove(); }
+  else if (play && a === 'undo') { if (play.game.undo()) { play.lit = false; sfx.tick(); say(''); afterMove(); } }
 });
 
 /* ── no double-tap zoom ──

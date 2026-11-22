@@ -327,9 +327,13 @@ export class Game {
     this.hist = []; this.pop = new Array(n).fill(0);
     this.won = false; this.fade = 0; this.hintK = []; this.hintT = 0; this.flash = -1; this.flashT = 0; this.t = 0; this.fx = new Fx();
     this.coach = false; this.spots = []; this.wonT = 0;
+    // colours: whether numbers turn green and red as they are met or broken. hints: how many are left for this puzzle.
+    this.colours = true; this.hints = saved && saved.hints >= 0 ? saved.hints : 3;
   }
   get left() { return this.st.filter(v => !v).length; }
-  save() { return { st: this.st }; }
+  save() { return { st: this.st, hints: this.hints }; }
+  // Back to the start, with a fresh set of hints.
+  restart() { this.st.fill(0); this.hist = []; this.hints = 3; this.hintK = []; }
   pickAt(x, y) {
     let best = -1;
     this.p.shapes.forEach((s, i) => { if (inside(s, x, y) && (best < 0 || s.area < this.p.shapes[best].area)) best = i; });
@@ -411,7 +415,7 @@ export class Game {
     ctx.setLineDash([]); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     if (o.fade < 1) p.clues.forEach((c, k) => {
       let on = 0, un = 0; for (const s of c.over) { if (o.st[s] === 1) on++; else if (!o.st[s]) un++; }
-      const done = !un && on === c.v, bad = on > c.v || on + un < c.v, hint = o.hintK.includes(k), small = c.d < 5, r = (small ? 8.5 : 10) + (hint ? 2.5 + 2.5 * Math.sin(o.hintT * 8) : 0);
+      const done = o.colours && !un && on === c.v, bad = o.colours && (on > c.v || on + un < c.v), hint = o.hintK.includes(k), small = c.d < 5, r = (small ? 8.5 : 10) + (hint ? 2.5 + 2.5 * Math.sin(o.hintT * 8) : 0);
       ctx.globalAlpha = (1 - o.fade) * (done ? 0.75 : 1);
       if (hint) { ctx.fillStyle = 'rgba(255,122,89,.4)'; ctx.beginPath(); ctx.arc(c.x, c.y, r + 6, 0, TAU); ctx.fill(); }
       ctx.fillStyle = bad ? '#ff5d5d' : done ? '#35c27a' : '#fff'; ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, TAU); ctx.fill();

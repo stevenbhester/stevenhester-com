@@ -14,7 +14,7 @@ const { seeded, hash } = await import('../util.js');
 
 // Shapes in each level, decoys included, by its place in the list. The first four keep two spare numbers, the next six
 // keep one, the next six none, and the rest also drop every giveaway number they can.
-const SIZES = [6, 6, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 11, 12, 12, 12, 12];
+const SIZES = [6, 6, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 13, 13, 13, 13];
 const round = v => (typeof v === 'number' ? Math.round(v * 10) / 10 : Array.isArray(v) ? v.map(round) : v);
 
 const rows = []; let bad = 0;

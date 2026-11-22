@@ -10,7 +10,7 @@ export const blurb = 'Light the right panes to reveal the window.';
 export const endlessName = 'Masks', endlessOne = 'Mask';
 export const howto = [
   'Each number is how many squares in that row or column are lit.',
-  'Tap a pane to light all of it. Tap again to mark it dark. Tap once more to clear it.',
+  'Tap a pane to light all of it. Tap again to cross it out as dark. Tap once more to clear it.',
   'If a pane has more squares in a line than the line’s number, it must be dark.',
   'A number turns green when its line is finished, and red when it cannot work.',
 ];
@@ -139,9 +139,13 @@ export class Game {
     this.st = saved && saved.st && saved.st.length === n ? saved.st.slice() : new Array(n).fill(0);
     this.hist = []; this.pop = new Array(n).fill(0);
     this.won = false; this.hintK = -1; this.hintP = -1; this.flash = -1; this.flashT = 0; this.t = 0; this.fx = new Fx();
+    // colours: whether numbers turn green and red as lines are met or broken. hints: how many are left for this puzzle.
+    this.colours = true; this.hints = saved && saved.hints >= 0 ? saved.hints : 3;
   }
   get left() { return this.st.filter(v => !v).length; }
-  save() { return { st: this.st }; }
+  save() { return { st: this.st, hints: this.hints }; }
+  // Back to the start, with a fresh set of hints.
+  restart() { this.st.fill(0); this.hist = []; this.hints = 3; this.hintK = this.hintP = -1; }
   solved() { return this.st.every((v, q) => (v === 1) === this.p.sol[q]); }
   tap(x, y) {
     if (this.won) return false;
@@ -180,7 +184,21 @@ export class Game {
     for (let q = 0; q < g.pop.length; q++) g.pop[q] = Math.max(0, g.pop[q] - dt * 4);
     for (let i = 0; i < N * N; i++) {
       const q = p.pane[i], x = X + (i % N) * C, y = Y + ((i / N) | 0) * C, v = g.st[q];
-      ctx.fillStyle = v === 1 ? p.col[q] : v === 2 ? '#514a63' : '#d3dae1'; ctx.fillRect(x, y, C + 0.5, C + 0.5);
+      // Three states that cannot be mistaken for each other, whatever colour a lit pane turns out to be:
+      // untouched glass is pale with fine diagonal lines, a pane marked dark is near-black with a cross,
+      // and a lit pane is flat colour with a bright rim and a glint, as if light were coming through it.
+      ctx.fillStyle = v === 1 ? p.col[q] : v === 2 ? '#2f2a3d' : '#e3e7ec'; ctx.fillRect(x, y, C + 0.5, C + 0.5);
+      if (v === 0) {
+        ctx.save(); ctx.beginPath(); ctx.rect(x, y, C, C); ctx.clip(); ctx.strokeStyle = 'rgba(59,51,70,.13)'; ctx.lineWidth = 1.5; ctx.beginPath();
+        for (let d = -C; d < C; d += 9) { ctx.moveTo(x + d, y + C); ctx.lineTo(x + d + C, y); }
+        ctx.stroke(); ctx.restore();
+      } else if (v === 2) {
+        const m = C * 0.32; ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(x + m, y + m); ctx.lineTo(x + C - m, y + C - m); ctx.moveTo(x + C - m, y + m); ctx.lineTo(x + m, y + C - m); ctx.stroke();
+      } else {
+        ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; ctx.strokeRect(x + 3, y + 3, C - 6, C - 6);
+        ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.beginPath(); ctx.moveTo(x + 6, y + 6); ctx.lineTo(x + 6 + C * 0.3, y + 6); ctx.lineTo(x + 6, y + 6 + C * 0.3); ctx.closePath(); ctx.fill();
+      }
       if (g.pop[q] > 0) { ctx.fillStyle = `rgba(255,255,255,${g.pop[q] * 0.45})`; ctx.fillRect(x, y, C + 0.5, C + 0.5); }
       if (!v && g.hintP === q) { ctx.fillStyle = `rgba(255,122,89,${0.35 + 0.3 * Math.sin(g.t * 8)})`; ctx.fillRect(x, y, C + 0.5, C + 0.5); }
       if (g.flash === q && g.flashT > 0) { ctx.fillStyle = `rgba(255,93,93,${g.flashT * 0.7})`; ctx.fillRect(x, y, C + 0.5, C + 0.5); }
@@ -196,7 +214,7 @@ export class Game {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     p.lines.forEach((ln, k) => {
       let lit = 0, un = 0; ln.panes.forEach((q, j) => { if (g.st[q] === 1) lit += ln.cnt[j]; else if (!g.st[q]) un += ln.cnt[j]; });
-      const done = !un && lit === ln.target, bad = lit > ln.target || lit + un < ln.target, hint = g.hintK === k;
+      const done = g.colours && !un && lit === ln.target, bad = g.colours && (lit > ln.target || lit + un < ln.target), hint = g.hintK === k;
       const x = k < N ? X / 2 - 1 : X + (k - N + 0.5) * C, y = k < N ? Y + (k + 0.5) * C : Y / 2 - 1;
       if (hint) { ctx.fillStyle = `rgba(255,122,89,${0.5 + 0.3 * Math.sin(g.t * 8)})`; ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill(); }
       ctx.font = `700 ${done ? 15 : 17}px Fredoka, ui-rounded, system-ui, sans-serif`;
