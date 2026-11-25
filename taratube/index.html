@@ -99,6 +99,9 @@
   .dock .big-btn.same { background: var(--lilac); box-shadow: 0 4px 0 var(--lilac-deep); }
   .dock .big-btn.same:active { box-shadow: 0 1px 0 var(--lilac-deep); }
   .err-line { color: var(--blush-deep); font-weight: 700; font-size: 14px; text-align: center; margin: 4px 0 12px; }
+  .top-btns { display: flex; gap: 8px; }
+  .trophy-btn { padding: 10px 13px; background: color-mix(in srgb, var(--sun) 40%, var(--surface)); color: var(--ink); font-size: 16px; }
+  .trophy-btn span:empty { display: none; }
   @media (max-width: 360px) { .timer .big { font-size: 25px; } .when-time { font-size: 34px; } }
 </style>
 </head>
@@ -109,8 +112,11 @@
       <span id="brandStar"></span>
       <div><h1>Tara<b>Tube</b></h1><small>for our little star</small></div>
     </a>
+    <div class="top-btns">
+    <a class="pill-btn trophy-btn" href="trophies/" aria-label="Trophy cabinet">🏆<span id="awCount"></span></a>
     <a class="pill-btn" href="stats/">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>Stats</a>
+    </div>
   </header>
 
   <section class="timers" aria-live="polite">
@@ -182,6 +188,7 @@
 <div class="dock"><button class="big-btn" id="logBtn" type="button" disabled>Pick new or same</button></div>
 
 <script src="tt.js"></script>
+<script src="tt-awards.js"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -287,6 +294,7 @@
   // ----- log -----
   $('logBtn').onclick = async () => {
     if (!st.kind || !st.side || st.saving) return;
+    TTA.unlock(); // inside the tap, so the award can play sound after the save
     st.saving = true; renderChoices();
     const body = { at: current().toISOString(), kind: st.kind, side: st.side, length_cm: st.len };
     try {
@@ -296,7 +304,8 @@
       const wasNew = st.kind === 'new';
       st.at = null; st.kind = null; st.len = null; $('len').value = lenStart();
       if (navigator.vibrate) navigator.vibrate([15, 40, 15]);
-      TT.toast(wasNew ? 'New tube logged ✦' : 'Re-drop logged ✦', {
+      const award = TTA.forEvent(TTA.compute(evs), event.id);
+      const done = () => TT.toast(wasNew ? 'New tube logged ✦' : 'Re-drop logged ✦', {
         action: 'Undo', ms: 9000, onAction: async () => {
           try {
             await TT.api('/events/' + event.id, { method: 'DELETE' });
@@ -307,6 +316,7 @@
           } catch (err) { TT.toast(err.message, { err: true }); }
         },
       });
+      if (award) TTA.reveal(award, { onClose: done }); else done();
     } catch (err) {
       TT.toast("Didn't save: " + err.message, { err: true });
     }
@@ -315,7 +325,8 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  function renderAll() { renderTimers(); renderWhen(); renderChoices(); renderLen(); }
+  function renderAwCount() { $('awCount').textContent = evs.length ? ' ' + evs.length : ''; }
+  function renderAll() { renderAwCount(); renderTimers(); renderWhen(); renderChoices(); renderLen(); }
 
   function defaults() {
     const last = evs[evs.length - 1];
